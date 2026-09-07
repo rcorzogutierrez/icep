@@ -1,5 +1,5 @@
-<div class="mx-auto flex max-w-2xl flex-col gap-10 px-6 py-12">
-  <header class="flex items-center justify-between gap-4">
+<div class="mx-auto flex max-w-2xl flex-col gap-8 px-6 py-12">
+  <header class="flex flex-wrap items-center justify-between gap-4">
     <div class="flex items-center gap-3">
       <img src="logo.png" alt="ICEP Gradebook" class="size-10" />
       @if (auth.user()?.photoURL; as photo) {
@@ -37,24 +37,49 @@
           EN
         </button>
       </div>
-      @if (userProfileService.isAdmin() || userProfileService.isTeacher()) {
-        <app-button variant="secondary" size="sm" (pressed)="goToInvitations()">
-          {{ i18n.t('dashboard', 'invitations') }}
-        </app-button>
-      }
-      @if (userProfileService.isAdmin()) {
-        <app-button variant="secondary" size="sm" (pressed)="goToSubjects()">
-          {{ i18n.t('dashboard', 'subjectsLink') }}
-        </app-button>
-        <app-button variant="secondary" size="sm" (pressed)="goToAdmin()">
-          {{ i18n.t('dashboard', 'adminPanel') }}
-        </app-button>
-      }
       <app-button variant="ghost" size="sm" (pressed)="onSignOut()">
         {{ i18n.t('common', 'signOut') }}
       </app-button>
     </div>
   </header>
+
+  @if (userProfileService.isAdmin() || userProfileService.isTeacher()) {
+    <section class="flex flex-col gap-3">
+      <h2 class="text-sm font-semibold text-text">{{ i18n.t('dashboard', 'toolsTitle') }}</h2>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          class="flex flex-col items-start gap-1 rounded-lg border border-border bg-surface p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
+          (click)="goToInvitations()"
+        >
+          <span class="font-medium text-text">{{ i18n.t('dashboard', 'invitations') }}</span>
+          <span class="text-sm text-text-muted">{{ i18n.t('dashboard', 'invitationsDesc') }}</span>
+        </button>
+
+        @if (userProfileService.isAdmin()) {
+          <button
+            type="button"
+            class="flex flex-col items-start gap-1 rounded-lg border border-border bg-surface p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
+            (click)="goToSubjects()"
+          >
+            <span class="font-medium text-text">{{ i18n.t('dashboard', 'subjectsLink') }}</span>
+            <span class="text-sm text-text-muted">{{
+              i18n.t('dashboard', 'subjectsLinkDesc')
+            }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="flex flex-col items-start gap-1 rounded-lg border border-border bg-surface p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
+            (click)="goToAdmin()"
+          >
+            <span class="font-medium text-text">{{ i18n.t('dashboard', 'adminPanel') }}</span>
+            <span class="text-sm text-text-muted">{{ i18n.t('dashboard', 'adminPanelDesc') }}</span>
+          </button>
+        }
+      </div>
+    </section>
+  }
 
   @if (userProfileService.isStudent()) {
     <section class="flex flex-col gap-3">
@@ -77,43 +102,4 @@
       }
     </section>
   }
-
-  <section class="flex flex-col gap-3">
-    <h2 class="text-sm font-semibold text-text">Button</h2>
-    <div class="flex flex-wrap items-center gap-3">
-      @for (variant of buttonVariants; track variant) {
-        <app-button [variant]="variant">{{ variant }}</app-button>
-      }
-    </div>
-    <div class="flex flex-wrap items-center gap-3">
-      <app-button size="sm">sm</app-button>
-      <app-button size="md">md</app-button>
-      <app-button size="lg">lg</app-button>
-      <app-button [loading]="true">Guardando…</app-button>
-      <app-button [disabled]="true">Deshabilitado</app-button>
-    </div>
-  </section>
-
-  <section class="flex flex-col gap-3">
-    <h2 class="text-sm font-semibold text-text">Select (Angular Aria) + Signal Forms</h2>
-    <form class="flex max-w-xs flex-col gap-4" (submit)="$event.preventDefault(); onSubmit()">
-      <app-select
-        label="Framework"
-        placeholder="Elegí un framework"
-        [options]="frameworkOptions"
-        [value]="demoForm.framework().value()"
-        (valueChange)="demoForm.framework().value.set($event ?? '')"
-        [invalid]="demoForm.framework().invalid() && demoForm.framework().touched()"
-        [errorMessage]="demoForm.framework().errors()[0]?.message"
-      />
-
-      <app-button type="submit" [loading]="loadingDemo()">Guardar</app-button>
-
-      @if (submittedOk()) {
-        <p class="text-sm text-status-active">
-          Formulario válido: {{ demoForm.framework().value() }}
-        </p>
-      }
-    </form>
-  </section>
 </div>
