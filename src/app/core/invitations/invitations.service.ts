@@ -2,6 +2,7 @@ import { Injectable, effect, inject, signal } from '@angular/core';
 import type { User } from 'firebase/auth';
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   onSnapshot,
@@ -136,6 +137,17 @@ export class InvitationsService {
 
   revoke(code: string) {
     return updateDoc(doc(this.firestore, 'invitations', code), { status: 'revoked' });
+  }
+
+  /** Corrige el email de una invitación todavía pendiente (ej. typo). */
+  updateEmail(code: string, email: string) {
+    return updateDoc(doc(this.firestore, 'invitations', code), {
+      email: email.trim().toLowerCase(),
+    });
+  }
+
+  remove(code: string) {
+    return deleteDoc(doc(this.firestore, 'invitations', code));
   }
 
   /** Canjea el código y crea el perfil del usuario en un solo paso. true si funcionó. */

@@ -66,7 +66,13 @@ service cloud.firestore {
         && request.resource.data.status == 'revoked'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
 
-      allow delete: if isAdmin();
+      // Corregir el email (ej. typo) antes de que se canjee: quien la creó, o un admin.
+      allow update: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid)
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email']);
+
+      // Borrar del historial: quien la creó, o un admin (cualquier estado).
+      allow delete: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid);
     }
 
     // subjects/{id}: catálogo de materias. Solo el admin crea/edita/borra;

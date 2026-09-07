@@ -28,9 +28,24 @@
 
     @if (role() === 'student') {
       <div class="flex flex-col gap-2">
-        <span class="text-sm font-medium text-text">{{
-          i18n.t('invitationsPage', 'subjectsLabel')
-        }}</span>
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-text">{{
+            i18n.t('invitationsPage', 'subjectsLabel')
+          }}</span>
+          @if (availableSubjects().length > 0) {
+            <button
+              type="button"
+              class="text-sm text-brand-700 hover:underline"
+              (click)="toggleAllSubjects()"
+            >
+              {{
+                allSubjectsSelected()
+                  ? i18n.t('invitationsPage', 'deselectAll')
+                  : i18n.t('invitationsPage', 'selectAll')
+              }}
+            </button>
+          }
+        </div>
         @if (availableSubjects().length > 0) {
           <div class="flex flex-wrap gap-2">
             @for (subject of availableSubjects(); track subject.id) {
@@ -91,7 +106,18 @@
       <tbody>
         @for (invitation of invitationsService.invitations(); track invitation.code) {
           <tr class="border-b border-border last:border-0">
-            <td class="px-4 py-3 text-text">{{ invitation.email }}</td>
+            @if (editingCode() === invitation.code) {
+              <td class="px-4 py-3">
+                <input
+                  type="email"
+                  class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  [value]="editEmail()"
+                  (input)="editEmail.set($any($event.target).value)"
+                />
+              </td>
+            } @else {
+              <td class="px-4 py-3 text-text">{{ invitation.email }}</td>
+            }
             <td class="px-4 py-3 text-text-muted">
               {{
                 invitation.role === 'teacher'
@@ -112,17 +138,56 @@
               }
             </td>
             <td class="px-4 py-3">
-              @if (invitation.status === 'pending') {
-                <app-button
-                  variant="danger"
-                  size="sm"
-                  [loading]="revokingCode() === invitation.code"
-                  (pressed)="onRevoke(invitation)"
-                >
-                  {{ i18n.t('invitationsPage', 'revokeAction') }}
-                </app-button>
+              @if (editingCode() === invitation.code) {
+                <div class="flex gap-2">
+                  <app-button
+                    size="sm"
+                    [loading]="savingEdit()"
+                    [disabled]="!editEmail().trim()"
+                    (pressed)="saveEdit(invitation)"
+                  >
+                    {{ i18n.t('invitationsPage', 'save') }}
+                  </app-button>
+                  <app-button variant="secondary" size="sm" (pressed)="cancelEdit()">
+                    {{ i18n.t('invitationsPage', 'cancel') }}
+                  </app-button>
+                </div>
               } @else {
-                <span class="text-text-muted">—</span>
+                <div class="flex flex-wrap gap-2">
+                  @if (invitation.status === 'pending') {
+                    <app-button variant="secondary" size="sm" (pressed)="startEdit(invitation)">
+                      {{ i18n.t('invitationsPage', 'edit') }}
+                    </app-button>
+                  }
+                  @if (invitation.status !== 'used') {
+                    <app-button
+                      variant="secondary"
+                      size="sm"
+                      [loading]="resendingCode() === invitation.code"
+                      (pressed)="onResend(invitation)"
+                    >
+                      {{ i18n.t('invitationsPage', 'resendAction') }}
+                    </app-button>
+                  }
+                  @if (invitation.status === 'pending') {
+                    <app-button
+                      variant="danger"
+                      size="sm"
+                      [loading]="revokingCode() === invitation.code"
+                      (pressed)="onRevoke(invitation)"
+                    >
+                      {{ i18n.t('invitationsPage', 'revokeAction') }}
+                    </app-button>
+                  }
+                  <app-button
+                    variant="danger"
+                    size="sm"
+                    [loading]="removingCode() === invitation.code"
+                    (pressed)="onRemove(invitation)"
+                  >
+                    {{ i18n.t('invitationsPage', 'deleteAction') }}
+                  </app-button>
+                </div>
               }
             </td>
           </tr>
