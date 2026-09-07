@@ -22,7 +22,7 @@ export class AdminSubjects {
   protected readonly teacherOptions = computed<SelectOption<string>[]>(() =>
     this.usersService
       .users()
-      .filter((user) => user.role === 'teacher')
+      .filter((user) => user.role === 'teacher' || user.role === 'admin')
       .map((user) => ({ value: user.uid, label: user.displayName ?? user.email ?? user.uid })),
   );
 
