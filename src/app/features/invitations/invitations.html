@@ -1,0 +1,118 @@
+<div class="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
+  <header class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-lg font-semibold text-text">{{ i18n.t('invitationsPage', 'title') }}</h1>
+      <p class="text-sm text-text-muted">{{ i18n.t('invitationsPage', 'subtitle') }}</p>
+    </div>
+    <app-button variant="ghost" size="sm" (pressed)="goToDashboard()">
+      {{ i18n.t('invitationsPage', 'back') }}
+    </app-button>
+  </header>
+
+  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+    <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
+      <div class="flex flex-col gap-1">
+        <label for="invitation-email" class="text-sm font-medium text-text">{{
+          i18n.t('invitationsPage', 'emailLabel')
+        }}</label>
+        <input
+          id="invitation-email"
+          type="email"
+          class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [value]="email()"
+          (input)="email.set($any($event.target).value)"
+        />
+      </div>
+      <app-select
+        [label]="i18n.t('invitationsPage', 'roleLabel')"
+        [options]="roleOptions()"
+        [value]="role()"
+        (valueChange)="role.set($event ?? 'student')"
+      />
+    </div>
+
+    <div>
+      <app-button [loading]="creating()" [disabled]="!email().trim()" (pressed)="onCreate()">
+        {{ i18n.t('invitationsPage', 'generate') }}
+      </app-button>
+    </div>
+
+    @if (createdCode(); as code) {
+      <div
+        class="flex items-center justify-between gap-3 rounded-md border border-border bg-slate-50 p-3"
+      >
+        <div class="flex flex-col gap-1">
+          <p class="text-sm text-text-muted">{{ i18n.t('invitationsPage', 'linkGenerated') }}</p>
+          <p class="font-mono text-sm text-text">{{ inviteLink(code) }}</p>
+        </div>
+        <app-button variant="secondary" size="sm" (pressed)="onCopy(code)">
+          {{ copied() ? i18n.t('common', 'copied') : i18n.t('common', 'copy') }}
+        </app-button>
+      </div>
+    }
+  </section>
+
+  <div class="overflow-x-auto rounded-lg border border-border">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-border bg-slate-50 text-text-muted">
+        <tr>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colEmail') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colRole') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colStatus') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colCreated') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colActions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (invitation of invitationsService.invitations(); track invitation.code) {
+          <tr class="border-b border-border last:border-0">
+            <td class="px-4 py-3 text-text">{{ invitation.email }}</td>
+            <td class="px-4 py-3 text-text-muted">
+              {{
+                invitation.role === 'teacher'
+                  ? i18n.t('invitationsPage', 'roleTeacher')
+                  : i18n.t('invitationsPage', 'roleStudent')
+              }}
+            </td>
+            <td class="px-4 py-3">
+              <span [class]="statusClass[invitation.status]">{{
+                statusLabel(invitation.status)
+              }}</span>
+            </td>
+            <td class="px-4 py-3 text-text-muted">
+              @if (invitation.createdAt) {
+                {{ invitation.createdAt.toDate() | date: 'short' }}
+              } @else {
+                —
+              }
+            </td>
+            <td class="px-4 py-3">
+              @if (invitation.status === 'pending') {
+                <app-button
+                  variant="danger"
+                  size="sm"
+                  [loading]="revokingCode() === invitation.code"
+                  (pressed)="onRevoke(invitation)"
+                >
+                  {{ i18n.t('invitationsPage', 'revokeAction') }}
+                </app-button>
+              } @else {
+                <span class="text-text-muted">—</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="px-4 py-6 text-center text-text-muted">
+              @if (invitationsService.loading()) {
+                …
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

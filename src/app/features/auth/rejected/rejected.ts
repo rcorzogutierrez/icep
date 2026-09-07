@@ -1,12 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AuthService } from '../../../core/auth/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { Button } from '../../../shared/components/button/button';
 
-/**
- * Pantalla para usuarios cuyo status es "rejected". Es lo que ven cada vez
- * que vuelven a loguearse con Google (no hay un "registro" separado que
- * puedan reintentar): tienen que hablar con el admin del sistema.
- */
+/** Pantalla para usuarios a los que un admin les revocó el acceso. */
 @Component({
   selector: 'app-rejected',
   standalone: true,
@@ -17,13 +14,10 @@ import { Button } from '../../../shared/components/button/button';
       <div
         class="w-full max-w-sm rounded-lg border border-border bg-surface p-8 text-center shadow-sm"
       >
-        <h1 class="text-xl font-semibold text-status-expired">Solicitud rechazada</h1>
-        <p class="mt-2 text-sm text-text-muted">
-          Tu solicitud de acceso fue rechazada. Comunicate con el administrador del sistema si creés
-          que es un error.
-        </p>
+        <h1 class="text-xl font-semibold text-status-expired">{{ i18n.t('rejected', 'title') }}</h1>
+        <p class="mt-2 text-sm text-text-muted">{{ i18n.t('rejected', 'body') }}</p>
         <app-button class="mt-6 inline-block" variant="secondary" (pressed)="onSignOut()">
-          Cerrar sesión
+          {{ i18n.t('common', 'signOut') }}
         </app-button>
       </div>
     </main>
@@ -31,6 +25,7 @@ import { Button } from '../../../shared/components/button/button';
 })
 export class Rejected {
   private readonly auth = inject(AuthService);
+  protected readonly i18n = inject(I18nService);
 
   protected onSignOut(): void {
     void this.auth.signOut();

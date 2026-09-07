@@ -6,19 +6,49 @@
       }
       <div>
         <h1 class="text-lg font-semibold text-text">
-          Hola, {{ auth.user()?.displayName ?? auth.user()?.email }}
+          {{ i18n.t('dashboard', 'greeting') }},
+          {{ auth.user()?.displayName ?? auth.user()?.email }}
         </h1>
-        <p class="text-sm text-text-muted">icep dashboard</p>
+        <p class="text-sm text-text-muted">{{ i18n.t('dashboard', 'subtitle') }}</p>
       </div>
     </div>
 
     <div class="flex items-center gap-2">
-      @if (userProfileService.isAdmin()) {
-        <app-button variant="secondary" size="sm" (pressed)="goToAdmin()">
-          Panel de admin
+      <div class="flex gap-1 rounded-full border border-border p-0.5 text-xs font-medium">
+        <button
+          type="button"
+          class="rounded-full px-2.5 py-1 transition-colors"
+          [class.bg-brand-600]="i18n.locale() === 'es'"
+          [class.text-white]="i18n.locale() === 'es'"
+          [class.text-text-muted]="i18n.locale() !== 'es'"
+          (click)="i18n.setLocale('es')"
+        >
+          ES
+        </button>
+        <button
+          type="button"
+          class="rounded-full px-2.5 py-1 transition-colors"
+          [class.bg-brand-600]="i18n.locale() === 'en'"
+          [class.text-white]="i18n.locale() === 'en'"
+          [class.text-text-muted]="i18n.locale() !== 'en'"
+          (click)="i18n.setLocale('en')"
+        >
+          EN
+        </button>
+      </div>
+      @if (userProfileService.isAdmin() || userProfileService.isTeacher()) {
+        <app-button variant="secondary" size="sm" (pressed)="goToInvitations()">
+          {{ i18n.t('dashboard', 'invitations') }}
         </app-button>
       }
-      <app-button variant="ghost" size="sm" (pressed)="onSignOut()">Cerrar sesión</app-button>
+      @if (userProfileService.isAdmin()) {
+        <app-button variant="secondary" size="sm" (pressed)="goToAdmin()">
+          {{ i18n.t('dashboard', 'adminPanel') }}
+        </app-button>
+      }
+      <app-button variant="ghost" size="sm" (pressed)="onSignOut()">
+        {{ i18n.t('common', 'signOut') }}
+      </app-button>
     </div>
   </header>
 

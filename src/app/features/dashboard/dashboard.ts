@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { form, required, schema, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { Button, type ButtonVariant } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
@@ -30,6 +31,7 @@ const demoSchema = schema<DemoFormModel>((path) => {
 export class Dashboard {
   protected readonly auth = inject(AuthService);
   protected readonly userProfileService = inject(UserProfileService);
+  protected readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
 
   protected readonly buttonVariants: ButtonVariant[] = ['primary', 'secondary', 'danger', 'ghost'];
@@ -59,5 +61,9 @@ export class Dashboard {
 
   protected goToAdmin(): void {
     void this.router.navigateByUrl('/admin/users');
+  }
+
+  protected goToInvitations(): void {
+    void this.router.navigateByUrl('/invitations');
   }
 }

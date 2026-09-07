@@ -1,20 +1,23 @@
 <div class="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
   <header class="flex items-center justify-between gap-4">
     <div>
-      <h1 class="text-lg font-semibold text-text">Usuarios</h1>
-      <p class="text-sm text-text-muted">Aprobá o rechazá las solicitudes de acceso.</p>
+      <h1 class="text-lg font-semibold text-text">{{ i18n.t('adminUsers', 'title') }}</h1>
+      <p class="text-sm text-text-muted">{{ i18n.t('adminUsers', 'subtitle') }}</p>
     </div>
-    <app-button variant="ghost" size="sm" (pressed)="goToDashboard()">Volver</app-button>
+    <app-button variant="ghost" size="sm" (pressed)="goToDashboard()">
+      {{ i18n.t('adminUsers', 'back') }}
+    </app-button>
   </header>
 
   <div class="overflow-x-auto rounded-lg border border-border">
     <table class="w-full text-left text-sm">
       <thead class="border-b border-border bg-slate-50 text-text-muted">
         <tr>
-          <th class="px-4 py-2 font-medium">Usuario</th>
-          <th class="px-4 py-2 font-medium">Registrado</th>
-          <th class="px-4 py-2 font-medium">Estado</th>
-          <th class="px-4 py-2 font-medium">Acciones</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colUser') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colRegistered') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colRole') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colStatus') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colActions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -31,28 +34,28 @@
                 —
               }
             </td>
+            <td class="px-4 py-3 text-text-muted">{{ roleLabel(user.role) }}</td>
             <td class="px-4 py-3">
-              <span [class]="statusClass[user.status]">{{ statusLabel[user.status] }}</span>
+              <span [class]="statusClass[user.status]">{{ statusLabel(user.status) }}</span>
             </td>
             <td class="px-4 py-3">
-              @if (user.status === 'pending') {
-                <div class="flex gap-2">
-                  <app-button
-                    size="sm"
-                    [loading]="pendingActionUid() === user.uid"
-                    (pressed)="onApprove(user)"
-                  >
-                    Aprobar
-                  </app-button>
-                  <app-button
-                    variant="danger"
-                    size="sm"
-                    [loading]="pendingActionUid() === user.uid"
-                    (pressed)="onReject(user)"
-                  >
-                    Rechazar
-                  </app-button>
-                </div>
+              @if (user.status === 'approved') {
+                <app-button
+                  variant="danger"
+                  size="sm"
+                  [loading]="pendingActionUid() === user.uid"
+                  (pressed)="onRevoke(user)"
+                >
+                  {{ i18n.t('adminUsers', 'revoke') }}
+                </app-button>
+              } @else if (user.status === 'rejected') {
+                <app-button
+                  size="sm"
+                  [loading]="pendingActionUid() === user.uid"
+                  (pressed)="onReinstate(user)"
+                >
+                  {{ i18n.t('adminUsers', 'reinstate') }}
+                </app-button>
               } @else {
                 <span class="text-text-muted">—</span>
               }
@@ -60,11 +63,11 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="4" class="px-4 py-6 text-center text-text-muted">
+            <td colspan="5" class="px-4 py-6 text-center text-text-muted">
               @if (usersService.loading()) {
-                Cargando…
+                …
               } @else {
-                No hay usuarios todavía.
+                —
               }
             </td>
           </tr>

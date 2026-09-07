@@ -22,7 +22,12 @@ export const authGuard: CanActivateFn = () => {
   );
 };
 
-/** Requiere sesión aprobada (status "approved"); redirige a /pending, /rejected o /login según corresponda. */
+/**
+ * Requiere sesión aprobada (status "approved"). El registro es solo por
+ * invitación (ver InvitationsService.redeem): un usuario autenticado sin
+ * perfil nunca canjeó una invitación, así que va a /no-invitation en vez de
+ * quedar en una cola de "pending".
+ */
 export const approvedGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const userProfileService = inject(UserProfileService);
@@ -37,18 +42,32 @@ export const approvedGuard: CanActivateFn = () => {
       switch (userProfileService.status()) {
         case 'approved':
           return true;
-        case 'pending':
-          return router.parseUrl('/pending');
         case 'rejected':
           return router.parseUrl('/rejected');
         default:
-          return router.parseUrl('/login');
+          return router.parseUrl('/no-invitation');
       }
     }),
   );
 };
 
-/** Requiere ya haber pasado approvedGuard; además exige role "admin". */
+/** Admin o profesor (para /invitations, /admin/users). */
+export const staffGuard: CanActivateFn = () => {
+  const userProfileService = inject(UserProfileService);
+  const router = inject(Router);
+
+  return toObservable(userProfileService.loading).pipe(
+    filter((loading) => !loading),
+    map(
+      () =>
+        userProfileService.isAdmin() ||
+        userProfileService.isTeacher() ||
+        router.parseUrl('/dashboard'),
+    ),
+  );
+};
+
+/** Solo admin (para acciones administrativas dentro de /admin/users). */
 export const adminGuard: CanActivateFn = () => {
   const userProfileService = inject(UserProfileService);
   const router = inject(Router);

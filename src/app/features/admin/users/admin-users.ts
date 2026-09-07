@@ -1,15 +1,10 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import type { UserProfile, UserRole, UserStatus } from '../../../core/users/users.model';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
-import type { UserProfile, UserStatus } from '../../../core/users/users.model';
-
-const STATUS_LABEL: Record<UserStatus, string> = {
-  pending: 'Pendiente',
-  approved: 'Aprobado',
-  rejected: 'Rechazado',
-};
 
 const STATUS_CLASS: Record<UserStatus, string> = {
   pending: 'text-status-paused',
@@ -17,7 +12,7 @@ const STATUS_CLASS: Record<UserStatus, string> = {
   rejected: 'text-status-expired',
 };
 
-/** Panel de admin: lista todos los usuarios y permite aprobar/rechazar los pendientes. */
+/** Panel de admin: lista todos los usuarios y permite revocar/restaurar su acceso. */
 @Component({
   selector: 'app-admin-users',
   standalone: true,
@@ -27,26 +22,43 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 })
 export class AdminUsers {
   protected readonly usersService = inject(UsersService);
+  protected readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
 
-  protected readonly statusLabel = STATUS_LABEL;
   protected readonly statusClass = STATUS_CLASS;
 
   protected readonly pendingActionUid = signal<string | null>(null);
 
-  protected async onApprove(user: UserProfile): Promise<void> {
+  protected roleLabel(role: UserRole): string {
+    switch (role) {
+      case 'student':
+        return this.i18n.t('adminUsers', 'roleStudent');
+      case 'teacher':
+        return this.i18n.t('adminUsers', 'roleTeacher');
+      case 'admin':
+        return this.i18n.t('adminUsers', 'roleAdmin');
+    }
+  }
+
+  protected statusLabel(status: UserStatus): string {
+    return status === 'rejected'
+      ? this.i18n.t('adminUsers', 'statusRejected')
+      : this.i18n.t('adminUsers', 'statusApproved');
+  }
+
+  protected async onRevoke(user: UserProfile): Promise<void> {
     this.pendingActionUid.set(user.uid);
     try {
-      await this.usersService.approve(user.uid);
+      await this.usersService.reject(user.uid);
     } finally {
       this.pendingActionUid.set(null);
     }
   }
 
-  protected async onReject(user: UserProfile): Promise<void> {
+  protected async onReinstate(user: UserProfile): Promise<void> {
     this.pendingActionUid.set(user.uid);
     try {
-      await this.usersService.reject(user.uid);
+      await this.usersService.approve(user.uid);
     } finally {
       this.pendingActionUid.set(null);
     }

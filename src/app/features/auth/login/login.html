@@ -12,19 +12,16 @@
       aria-hidden="true"
     ></div>
 
-    <span class="text-xl font-semibold tracking-tight text-white">icep</span>
+    <span class="text-xl font-semibold tracking-tight text-white">ICEP Gradebook</span>
 
     <div class="relative flex flex-col gap-6">
       <h1 class="text-4xl leading-tight font-semibold text-white">
-        Acceso controlado, sin fricción.
+        {{ i18n.t('login', 'brandHeadline') }}
       </h1>
-      <p class="max-w-sm text-brand-100">
-        Un solo login con Google para entrar. Cada cuenta nueva queda a un clic de aprobación de un
-        administrador, sin contraseñas que gestionar.
-      </p>
+      <p class="max-w-sm text-brand-100">{{ i18n.t('login', 'brandSubtitle') }}</p>
 
       <ul class="flex flex-col gap-3">
-        @for (item of highlights; track item) {
+        @for (item of highlights(); track item) {
           <li class="flex items-center gap-3 text-sm text-white">
             <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-white/15">
               <svg lucideCheck [size]="14" aria-hidden="true"></svg>
@@ -41,12 +38,36 @@
   <!-- Panel de login -->
   <div class="flex flex-1 items-center justify-center bg-surface px-6 py-12">
     <div class="w-full max-w-sm">
-      <span class="text-xl font-semibold tracking-tight text-brand-700 lg:hidden">icep</span>
+      <div class="flex items-center justify-between">
+        <span class="text-xl font-semibold tracking-tight text-brand-700 lg:hidden">ICEP</span>
+        <span class="hidden lg:block"></span>
+        <div class="ml-auto flex gap-1 rounded-full border border-border p-0.5 text-xs font-medium">
+          <button
+            type="button"
+            class="rounded-full px-2.5 py-1 transition-colors"
+            [class.bg-brand-600]="i18n.locale() === 'es'"
+            [class.text-white]="i18n.locale() === 'es'"
+            [class.text-text-muted]="i18n.locale() !== 'es'"
+            (click)="i18n.setLocale('es')"
+          >
+            ES
+          </button>
+          <button
+            type="button"
+            class="rounded-full px-2.5 py-1 transition-colors"
+            [class.bg-brand-600]="i18n.locale() === 'en'"
+            [class.text-white]="i18n.locale() === 'en'"
+            [class.text-text-muted]="i18n.locale() !== 'en'"
+            (click)="i18n.setLocale('en')"
+          >
+            EN
+          </button>
+        </div>
+      </div>
 
-      <h2 class="mt-6 text-2xl font-semibold text-text lg:mt-0">Iniciá sesión</h2>
+      <h2 class="mt-6 text-2xl font-semibold text-text">{{ i18n.t('login', 'title') }}</h2>
       <p class="mt-2 text-sm text-text-muted">
-        Entrá con tu cuenta de Google. Si es tu primera vez, tu cuenta se crea automáticamente y
-        queda pendiente de aprobación.
+        {{ code() ? i18n.t('login', 'inviteSubtitle') : i18n.t('login', 'subtitle') }}
       </p>
 
       <app-button
@@ -77,9 +98,30 @@
               />
             </svg>
           }
-          Continuar con Google
+          {{ i18n.t('login', 'google') }}
         </span>
       </app-button>
+
+      @if (!code()) {
+        <div class="mt-4">
+          <button
+            type="button"
+            class="text-sm text-brand-700 hover:underline"
+            (click)="showManualCode.set(!showManualCode())"
+          >
+            {{ i18n.t('login', 'haveCode') }}
+          </button>
+          @if (showManualCode()) {
+            <input
+              type="text"
+              class="mt-2 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm uppercase text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              [placeholder]="i18n.t('login', 'codePlaceholder')"
+              [value]="manualCode()"
+              (input)="manualCode.set($any($event.target).value)"
+            />
+          }
+        </div>
+      }
 
       @if (errorMessage(); as message) {
         <p class="mt-4 text-sm text-status-expired">{{ message }}</p>

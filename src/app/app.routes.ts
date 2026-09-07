@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, approvedGuard, authGuard } from './core/auth/auth.guards';
+import { adminGuard, approvedGuard, authGuard, staffGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
   {
@@ -7,9 +7,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
-    path: 'pending',
+    path: 'invite/:code',
+    loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
+  },
+  {
+    path: 'no-invitation',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/auth/pending/pending').then((m) => m.Pending),
+    loadComponent: () =>
+      import('./features/auth/no-invitation/no-invitation').then((m) => m.NoInvitation),
   },
   {
     path: 'rejected',
@@ -20,6 +25,11 @@ export const routes: Routes = [
     path: 'dashboard',
     canActivate: [authGuard, approvedGuard],
     loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+  },
+  {
+    path: 'invitations',
+    canActivate: [authGuard, approvedGuard, staffGuard],
+    loadComponent: () => import('./features/invitations/invitations').then((m) => m.Invitations),
   },
   {
     path: 'admin/users',

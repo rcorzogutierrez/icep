@@ -8,24 +8,67 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // users/{uid}: perfil de aprobación de acceso. Se crea automáticamente
-    // en el primer login (status "pending", role "member"); un usuario
-    // nunca puede auto-asignarse "approved" ni "admin". Solo un admin
-    // puede tocar status/role de OTRO usuario.
+    function isTeacher() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    // users/{uid}: perfil de acceso. El registro es SOLO por invitación: el
+    // alta se crea recién al canjear una invitación (ver invitations/{code}
+    // más abajo), nunca libremente. Un usuario nunca puede auto-asignarse
+    // "admin"/"teacher" ni tocar su propio status; solo un admin puede
+    // cambiar status/role de OTRO usuario.
     match /users/{userId} {
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin() || isTeacher());
+
       allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.status == 'pending'
-        && request.resource.data.role == 'member';
+        && request.resource.data.status == 'approved'
+        && request.resource.data.role in ['student', 'teacher']
+        && request.resource.data.invitationCode is string
+        && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationCode)).data.usedByUid == request.auth.uid
+        && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationCode)).data.role == request.resource.data.role;
+
       allow update: if request.auth != null && isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'role', 'updatedAt']);
+
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locale', 'updatedAt']);
+
       allow delete: if false;
     }
 
-    // Deny-all por defecto para cualquier otra colección. Cuando se modele
-    // el próximo recurso de negocio, agregar reglas explícitas acá (evaluar
-    // si conviene modelarlo bajo una entidad "cuenta"/accountId según el
-    // caso de uso real, no copiar este patrón de users/{uid} sin pensarlo).
+    // invitations/{code}: el código es el propio id del doc. Un profesor
+    // solo puede invitar con rol "student"; el admin puede invitar
+    // "student" o "teacher".
+    match /invitations/{code} {
+      allow get: if request.auth != null;
+      allow list: if request.auth != null && (isAdmin() || isTeacher());
+
+      allow create: if request.auth != null
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdBy == request.auth.uid
+        && ((isAdmin() && request.resource.data.role in ['student', 'teacher'])
+            || (isTeacher() && request.resource.data.role == 'student'));
+
+      // Canjear: cualquier autenticado se marca a sí mismo como quien la usó.
+      allow update: if request.auth != null
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'used'
+        && request.resource.data.usedByUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'usedByUid', 'usedAt']);
+
+      // Revocar: quien la creó, o un admin.
+      allow update: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid)
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'revoked'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+
+      allow delete: if isAdmin();
+    }
+
+    // Deny-all por defecto para cualquier otra colección (materias, notas,
+    // etc. se agregan acá cuando se defina ese modelo).
     match /{document=**} {
       allow read, write: if false;
     }
