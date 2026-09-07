@@ -7,6 +7,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { InvitationsService } from '../../../core/invitations/invitations.service';
 import { UserProfileService } from '../../../core/users/user-profile.service';
 import { Button } from '../../../shared/components/button/button';
+import { IconLock, IconMail } from '../../../shared/icons/icons';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -26,7 +27,7 @@ const emailFormSchema = schema<EmailFormModel>((p) => {
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [Button],
+  imports: [Button, IconMail, IconLock],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
 })

@@ -1,7 +1,7 @@
 <main class="flex min-h-dvh">
   <!-- Panel de marca (oculto en mobile) -->
   <div
-    class="relative hidden overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-12"
+    class="relative hidden overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 lg:flex lg:w-1/2 lg:flex-col lg:p-12"
   >
     <div
       class="pointer-events-none absolute -top-24 -right-24 size-96 rounded-[3rem] bg-white/10 blur-2xl"
@@ -11,29 +11,41 @@
       class="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-[3rem] bg-brand-400/20 blur-3xl"
       aria-hidden="true"
     ></div>
+    <div
+      class="pointer-events-none absolute inset-0 opacity-[0.07]"
+      style="
+        background-image: radial-gradient(circle, white 1px, transparent 1px);
+        background-size: 24px 24px;
+      "
+      aria-hidden="true"
+    ></div>
 
-    <img src="logo.png" alt="ICEP Gradebook" class="relative size-20" />
-
-    <div class="relative flex flex-col gap-3 border-t border-white/20 pt-6">
-      <div>
-        <p class="text-sm font-semibold text-white">ICEP Gradebook</p>
-        <p class="text-sm text-brand-100">{{ i18n.t('login', 'footerDescription') }}</p>
-      </div>
-      <blockquote class="border-l-2 border-white/30 pl-3 text-sm text-brand-100 italic">
-        «{{ i18n.t('login', 'footerVerse') }}»
-        <footer class="mt-1 text-xs text-brand-200 not-italic">
-          — {{ i18n.t('login', 'footerVerseRef') }}
-        </footer>
-      </blockquote>
+    <div class="relative flex items-center gap-3">
+      <img src="logo.png" alt="" class="size-11" />
+      <span class="text-lg font-semibold tracking-tight text-white">ICEP Gradebook</span>
     </div>
+
+    <div class="relative flex flex-1 flex-col justify-center gap-5 py-12">
+      <span class="font-serif text-7xl leading-none text-white/25">&ldquo;</span>
+      <p class="-mt-8 max-w-md text-2xl leading-snug font-medium text-white">
+        {{ i18n.t('login', 'footerVerse') }}
+      </p>
+      <p class="text-sm font-semibold tracking-wide text-brand-200 uppercase">
+        {{ i18n.t('login', 'footerVerseRef') }}
+      </p>
+    </div>
+
+    <p class="relative max-w-sm text-sm text-brand-100">
+      {{ i18n.t('login', 'footerDescription') }}
+    </p>
   </div>
 
   <!-- Panel de login -->
-  <div class="flex flex-1 items-center justify-center bg-surface px-6 py-12">
-    <div class="w-full max-w-sm">
+  <div class="flex flex-1 items-center justify-center bg-slate-50 px-6 py-12">
+    <div class="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-sm">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 lg:hidden">
-          <img src="logo.png" alt="ICEP Gradebook" class="size-9" />
+          <img src="logo.png" alt="" class="size-9" />
           <span class="text-lg font-semibold tracking-tight text-brand-700">ICEP Gradebook</span>
         </div>
         <span class="hidden lg:block"></span>
@@ -67,12 +79,13 @@
       </p>
 
       @if (!code()) {
-        <div class="mt-6 flex gap-1 rounded-full border border-border p-0.5 text-sm font-medium">
+        <div class="mt-6 flex gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
           <button
             type="button"
-            class="flex-1 rounded-full py-1.5 transition-colors"
-            [class.bg-brand-600]="mode() === 'signIn'"
-            [class.text-white]="mode() === 'signIn'"
+            class="flex-1 rounded-full py-1.5 transition-all"
+            [class.bg-surface]="mode() === 'signIn'"
+            [class.text-text]="mode() === 'signIn'"
+            [class.shadow-sm]="mode() === 'signIn'"
             [class.text-text-muted]="mode() !== 'signIn'"
             (click)="setMode('signIn')"
           >
@@ -80,9 +93,10 @@
           </button>
           <button
             type="button"
-            class="flex-1 rounded-full py-1.5 transition-colors"
-            [class.bg-brand-600]="mode() === 'signUp'"
-            [class.text-white]="mode() === 'signUp'"
+            class="flex-1 rounded-full py-1.5 transition-all"
+            [class.bg-surface]="mode() === 'signUp'"
+            [class.text-text]="mode() === 'signUp'"
+            [class.shadow-sm]="mode() === 'signUp'"
             [class.text-text-muted]="mode() !== 'signUp'"
             (click)="setMode('signUp')"
           >
@@ -100,7 +114,7 @@
             <input
               id="invite-code"
               type="text"
-              class="h-10 rounded-md border border-border bg-surface px-3 text-sm uppercase text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              class="h-11 rounded-lg border border-border bg-surface px-3 text-sm uppercase text-text transition-shadow focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-500/20 focus-visible:outline-none"
               [value]="manualCode()"
               (input)="manualCode.set($any($event.target).value)"
             />
@@ -111,15 +125,25 @@
           <label for="email" class="text-sm font-medium text-text">{{
             i18n.t('login', 'emailLabel')
           }}</label>
-          <input
-            id="email"
-            type="email"
-            class="h-10 rounded-md border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            [class.border-border]="!emailFieldError()"
-            [class.border-status-expired]="emailFieldError()"
-            [value]="emailForm.email().value()"
-            (input)="emailForm.email().value.set($any($event.target).value)"
-          />
+          <div class="relative">
+            <svg
+              lucideMail
+              [size]="16"
+              class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+              aria-hidden="true"
+            ></svg>
+            <input
+              id="email"
+              type="email"
+              class="h-11 w-full rounded-lg border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
+              [class.border-border]="!emailFieldError()"
+              [class.focus-visible:border-brand-500]="!emailFieldError()"
+              [class.focus-visible:ring-brand-500/20]="!emailFieldError()"
+              [class.border-status-expired]="emailFieldError()"
+              [value]="emailForm.email().value()"
+              (input)="emailForm.email().value.set($any($event.target).value)"
+            />
+          </div>
           @if (emailFieldError(); as message) {
             <p class="text-sm text-status-expired">{{ message }}</p>
           }
@@ -129,15 +153,25 @@
           <label for="password" class="text-sm font-medium text-text">
             {{ i18n.t('login', 'passwordLabel') }}
           </label>
-          <input
-            id="password"
-            type="password"
-            class="h-10 rounded-md border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            [class.border-border]="!passwordFieldError()"
-            [class.border-status-expired]="passwordFieldError()"
-            [value]="emailForm.password().value()"
-            (input)="emailForm.password().value.set($any($event.target).value)"
-          />
+          <div class="relative">
+            <svg
+              lucideLock
+              [size]="16"
+              class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+              aria-hidden="true"
+            ></svg>
+            <input
+              id="password"
+              type="password"
+              class="h-11 w-full rounded-lg border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
+              [class.border-border]="!passwordFieldError()"
+              [class.focus-visible:border-brand-500]="!passwordFieldError()"
+              [class.focus-visible:ring-brand-500/20]="!passwordFieldError()"
+              [class.border-status-expired]="passwordFieldError()"
+              [value]="emailForm.password().value()"
+              (input)="emailForm.password().value.set($any($event.target).value)"
+            />
+          </div>
           @if (passwordFieldError(); as message) {
             <p class="text-sm text-status-expired">{{ message }}</p>
           }
@@ -150,7 +184,7 @@
         </app-button>
       </form>
 
-      <div class="my-4 flex items-center gap-3">
+      <div class="my-5 flex items-center gap-3">
         <div class="h-px flex-1 bg-border"></div>
         <span class="text-xs text-text-muted">{{ i18n.t('login', 'orContinueWith') }}</span>
         <div class="h-px flex-1 bg-border"></div>

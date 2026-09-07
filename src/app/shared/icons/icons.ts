@@ -13,6 +13,8 @@ export {
   LucideCheck as IconCheck,
   LucideChevronDown as IconChevronDown,
   LucideLoaderCircle as IconLoaderCircle,
+  LucideLock as IconLock,
+  LucideMail as IconMail,
   LucideX as IconX,
 } from '@lucide/angular';
 
