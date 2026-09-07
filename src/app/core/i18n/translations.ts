@@ -10,6 +10,8 @@ export const translations = {
       signOut: 'Cerrar sesión',
       copy: 'Copiar',
       copied: '¡Copiado!',
+      close: 'Cerrar',
+      notifications: 'Notificaciones',
     },
     login: {
       title: 'Iniciá sesión',
@@ -131,6 +133,12 @@ export const translations = {
       cancel: 'Cancelar',
       delete: 'Borrar',
       empty: 'No hay materias todavía.',
+      duplicateCode: 'Ya existe una materia con ese código.',
+      created: 'Materia creada.',
+      updated: 'Materia actualizada.',
+      teacherUpdated: 'Profesor actualizado.',
+      deleted: 'Materia eliminada.',
+      errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
     },
   },
   en: {
@@ -138,6 +146,8 @@ export const translations = {
       signOut: 'Sign out',
       copy: 'Copy',
       copied: 'Copied!',
+      close: 'Close',
+      notifications: 'Notifications',
     },
     login: {
       title: 'Sign in',
@@ -258,6 +268,12 @@ export const translations = {
       cancel: 'Cancel',
       delete: 'Delete',
       empty: 'No subjects yet.',
+      duplicateCode: 'A subject with that code already exists.',
+      created: 'Subject created.',
+      updated: 'Subject updated.',
+      teacherUpdated: 'Teacher updated.',
+      deleted: 'Subject deleted.',
+      errorGeneric: "We couldn't complete the action. Please try again.",
     },
   },
 };
