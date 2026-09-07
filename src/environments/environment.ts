@@ -13,7 +13,7 @@ export const environment: Environment = {
   production: true,
   useEmulators: false,
   firebase: {
-    apiKey: 'AIzaSyDCiMTf3VyT4LN8cjdQlW9W7zOXqYyi5_0',
+    apiKey: 'AIzaSyDCiMTf3VyT4lN8cjdQlW9W7zOXqYyi5_0',
     authDomain: 'icep-44c27.firebaseapp.com',
     projectId: 'icep-44c27',
     storageBucket: 'icep-44c27.firebasestorage.app',
