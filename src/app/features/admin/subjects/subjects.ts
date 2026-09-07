@@ -33,6 +33,11 @@ export class AdminSubjects {
   protected readonly removingId = signal<string | null>(null);
   protected readonly assigningId = signal<string | null>(null);
 
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly editName = signal('');
+  protected readonly editCode = signal('');
+  protected readonly savingEdit = signal(false);
+
   protected async onCreate(): Promise<void> {
     if (!this.name().trim() || !this.code().trim()) {
       return;
@@ -71,6 +76,33 @@ export class AdminSubjects {
       });
     } finally {
       this.assigningId.set(null);
+    }
+  }
+
+  protected startEdit(subject: Subject): void {
+    this.editingId.set(subject.id);
+    this.editName.set(subject.name);
+    this.editCode.set(subject.code);
+  }
+
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+  }
+
+  protected async saveEdit(subject: Subject): Promise<void> {
+    if (!this.editName().trim() || !this.editCode().trim()) {
+      return;
+    }
+
+    this.savingEdit.set(true);
+    try {
+      await this.subjectsService.update(subject.id, {
+        name: this.editName().trim(),
+        code: this.editCode().trim().toUpperCase(),
+      });
+      this.editingId.set(null);
+    } finally {
+      this.savingEdit.set(false);
     }
   }
 

@@ -66,28 +66,77 @@
       <tbody>
         @for (subject of subjectsService.subjects(); track subject.id) {
           <tr class="border-b border-border last:border-0">
-            <td class="px-4 py-3 font-medium text-text">{{ subject.name }}</td>
-            <td class="px-4 py-3 font-mono text-text-muted">{{ subject.code }}</td>
-            <td class="px-4 py-3">
-              <app-select
-                class="block max-w-56"
-                [placeholder]="i18n.t('adminSubjects', 'teacherPlaceholder')"
-                [options]="teacherOptions()"
-                [disabled]="assigningId() === subject.id"
-                [value]="subject.teacherId ?? undefined"
-                (valueChange)="onAssignTeacher(subject, $event)"
-              />
-            </td>
-            <td class="px-4 py-3">
-              <app-button
-                variant="danger"
-                size="sm"
-                [loading]="removingId() === subject.id"
-                (pressed)="onRemove(subject)"
-              >
-                {{ i18n.t('adminSubjects', 'delete') }}
-              </app-button>
-            </td>
+            @if (editingId() === subject.id) {
+              <td class="px-4 py-3">
+                <input
+                  type="text"
+                  class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  [value]="editName()"
+                  (input)="editName.set($any($event.target).value)"
+                />
+              </td>
+              <td class="px-4 py-3">
+                <input
+                  type="text"
+                  class="h-9 w-28 rounded-md border border-border bg-surface px-2 text-sm text-text uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  [value]="editCode()"
+                  (input)="editCode.set($any($event.target).value)"
+                />
+              </td>
+              <td class="px-4 py-3">
+                <app-select
+                  class="block max-w-56"
+                  [placeholder]="i18n.t('adminSubjects', 'teacherPlaceholder')"
+                  [options]="teacherOptions()"
+                  [disabled]="assigningId() === subject.id"
+                  [value]="subject.teacherId ?? undefined"
+                  (valueChange)="onAssignTeacher(subject, $event)"
+                />
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex gap-2">
+                  <app-button
+                    size="sm"
+                    [loading]="savingEdit()"
+                    [disabled]="!editName().trim() || !editCode().trim()"
+                    (pressed)="saveEdit(subject)"
+                  >
+                    {{ i18n.t('adminSubjects', 'save') }}
+                  </app-button>
+                  <app-button variant="secondary" size="sm" (pressed)="cancelEdit()">
+                    {{ i18n.t('adminSubjects', 'cancel') }}
+                  </app-button>
+                </div>
+              </td>
+            } @else {
+              <td class="px-4 py-3 font-medium text-text">{{ subject.name }}</td>
+              <td class="px-4 py-3 font-mono text-text-muted">{{ subject.code }}</td>
+              <td class="px-4 py-3">
+                <app-select
+                  class="block max-w-56"
+                  [placeholder]="i18n.t('adminSubjects', 'teacherPlaceholder')"
+                  [options]="teacherOptions()"
+                  [disabled]="assigningId() === subject.id"
+                  [value]="subject.teacherId ?? undefined"
+                  (valueChange)="onAssignTeacher(subject, $event)"
+                />
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex gap-2">
+                  <app-button variant="secondary" size="sm" (pressed)="startEdit(subject)">
+                    {{ i18n.t('adminSubjects', 'edit') }}
+                  </app-button>
+                  <app-button
+                    variant="danger"
+                    size="sm"
+                    [loading]="removingId() === subject.id"
+                    (pressed)="onRemove(subject)"
+                  >
+                    {{ i18n.t('adminSubjects', 'delete') }}
+                  </app-button>
+                </div>
+              </td>
+            }
           </tr>
         } @empty {
           <tr>

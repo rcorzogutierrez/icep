@@ -120,7 +120,10 @@ export class SubjectsService {
     return results;
   }
 
-  update(id: string, fields: Partial<Pick<Subject, 'name' | 'teacherId' | 'teacherName'>>) {
+  update(
+    id: string,
+    fields: Partial<Pick<Subject, 'name' | 'code' | 'teacherId' | 'teacherName'>>,
+  ) {
     return updateDoc(doc(this.firestore, 'subjects', id), fields as DocumentData);
   }
 
