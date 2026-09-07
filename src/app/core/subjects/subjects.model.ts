@@ -9,7 +9,8 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Subject {
   id: string;
   name: string;
-  teacherId: string;
-  teacherName: string;
+  code: string;
+  teacherId: string | null;
+  teacherName: string | null;
   createdAt: Timestamp;
 }

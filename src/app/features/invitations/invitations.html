@@ -43,6 +43,7 @@
                   [checked]="selectedSubjectIds().has(subject.id)"
                   (change)="toggleSubject(subject.id)"
                 />
+                <span class="font-mono text-text-muted">{{ subject.code }}</span>
                 {{ subject.name }}
               </label>
             }

@@ -27,31 +27,50 @@ export class AdminSubjects {
   );
 
   protected readonly name = signal('');
+  protected readonly code = signal('');
   protected readonly teacherId = signal<string | undefined>(undefined);
   protected readonly creating = signal(false);
   protected readonly removingId = signal<string | null>(null);
+  protected readonly assigningId = signal<string | null>(null);
 
   protected async onCreate(): Promise<void> {
+    if (!this.name().trim() || !this.code().trim()) {
+      return;
+    }
     const teacherId = this.teacherId();
-    if (!this.name().trim() || !teacherId) {
-      return;
-    }
-    const teacher = this.usersService.users().find((user) => user.uid === teacherId);
-    if (!teacher) {
-      return;
-    }
+    const teacher = teacherId
+      ? this.usersService.users().find((user) => user.uid === teacherId)
+      : undefined;
 
     this.creating.set(true);
     try {
       await this.subjectsService.create(
         this.name(),
-        teacherId,
-        teacher.displayName ?? teacher.email ?? teacherId,
+        this.code(),
+        teacherId ?? null,
+        teacher ? (teacher.displayName ?? teacher.email ?? teacherId!) : null,
       );
       this.name.set('');
+      this.code.set('');
       this.teacherId.set(undefined);
     } finally {
       this.creating.set(false);
+    }
+  }
+
+  protected async onAssignTeacher(subject: Subject, teacherId: string | undefined): Promise<void> {
+    const teacher = teacherId
+      ? this.usersService.users().find((user) => user.uid === teacherId)
+      : undefined;
+
+    this.assigningId.set(subject.id);
+    try {
+      await this.subjectsService.update(subject.id, {
+        teacherId: teacherId ?? null,
+        teacherName: teacher ? (teacher.displayName ?? teacher.email ?? teacherId!) : null,
+      });
+    } finally {
+      this.assigningId.set(null);
     }
   }
 

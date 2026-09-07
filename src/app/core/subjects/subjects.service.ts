@@ -86,10 +86,16 @@ export class SubjectsService {
     });
   }
 
-  async create(name: string, teacherId: string, teacherName: string): Promise<string> {
+  async create(
+    name: string,
+    code: string,
+    teacherId: string | null,
+    teacherName: string | null,
+  ): Promise<string> {
     const ref = doc(collection(this.firestore, 'subjects'));
     await setDoc(ref, {
       name: name.trim(),
+      code: code.trim().toUpperCase(),
       teacherId,
       teacherName,
       createdAt: serverTimestamp(),
