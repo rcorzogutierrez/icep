@@ -15,17 +15,21 @@ import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
+import { IconBookOpen, IconGraduationCap, IconUserPlus, IconUsers } from '../../shared/icons/icons';
+
+type StatIcon = 'users' | 'book' | 'mail' | 'graduation';
 
 interface StatCard {
   label: string;
   value: number;
+  icon: StatIcon;
 }
 
 /** Área logueada de la app (solo alcanzable con status "approved", ver approvedGuard). */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [Button],
+  imports: [Button, IconUsers, IconBookOpen, IconUserPlus, IconGraduationCap],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',
 })
@@ -63,14 +67,20 @@ export class Dashboard {
   protected readonly statCards = computed<StatCard[]>(() => {
     if (this.userProfileService.isAdmin()) {
       return [
-        { label: this.i18n.t('dashboard', 'adminPanel'), value: this.usersService.users().length },
+        {
+          label: this.i18n.t('dashboard', 'adminPanel'),
+          value: this.usersService.users().length,
+          icon: 'users',
+        },
         {
           label: this.i18n.t('dashboard', 'subjectsLink'),
           value: this.subjectsService.subjects().length,
+          icon: 'book',
         },
         {
           label: this.i18n.t('dashboard', 'statPendingInvitations'),
           value: this.pendingInvitationsCount(),
+          icon: 'mail',
         },
       ];
     }
@@ -79,14 +89,22 @@ export class Dashboard {
         {
           label: this.i18n.t('dashboard', 'mySubjects'),
           value: this.subjectsService.mySubjects().length,
+          icon: 'book',
         },
         {
           label: this.i18n.t('dashboard', 'statPendingInvitations'),
           value: this.pendingInvitationsCount(),
+          icon: 'mail',
         },
       ];
     }
-    return [{ label: this.i18n.t('dashboard', 'mySubjects'), value: this.mySubjects().length }];
+    return [
+      {
+        label: this.i18n.t('dashboard', 'mySubjects'),
+        value: this.mySubjects().length,
+        icon: 'graduation',
+      },
+    ];
   });
 
   constructor() {

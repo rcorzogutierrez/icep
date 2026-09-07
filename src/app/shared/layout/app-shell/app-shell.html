@@ -5,40 +5,44 @@
       <span class="font-semibold text-text">ICEP Gradebook</span>
     </div>
 
-    <nav class="flex flex-col gap-1">
+    <nav class="flex flex-col gap-0.5">
       <a
         routerLink="/dashboard"
         routerLinkActive="bg-brand-50 text-brand-700"
         [routerLinkActiveOptions]="{ exact: true }"
-        class="rounded-md px-3 py-2 text-sm font-medium text-text hover:bg-slate-100"
+        class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
       >
+        <svg lucideLayoutDashboard [size]="18" aria-hidden="true"></svg>
         {{ i18n.t('shell', 'summary') }}
       </a>
 
       @if (userProfileService.isAdmin() || userProfileService.isTeacher()) {
-        <p class="mt-4 px-3 text-xs font-semibold tracking-wide text-text-muted uppercase">
+        <p class="mt-4 mb-1 px-3 text-xs font-semibold tracking-wide text-text-muted uppercase">
           {{ i18n.t('shell', 'manageSection') }}
         </p>
         <a
           routerLink="/invitations"
           routerLinkActive="bg-brand-50 text-brand-700"
-          class="rounded-md px-3 py-2 text-sm font-medium text-text hover:bg-slate-100"
+          class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
         >
+          <svg lucideUserPlus [size]="18" aria-hidden="true"></svg>
           {{ i18n.t('dashboard', 'invitations') }}
         </a>
         @if (userProfileService.isAdmin()) {
           <a
             routerLink="/admin/subjects"
             routerLinkActive="bg-brand-50 text-brand-700"
-            class="rounded-md px-3 py-2 text-sm font-medium text-text hover:bg-slate-100"
+            class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
           >
+            <svg lucideBookOpen [size]="18" aria-hidden="true"></svg>
             {{ i18n.t('dashboard', 'subjectsLink') }}
           </a>
           <a
             routerLink="/admin/users"
             routerLinkActive="bg-brand-50 text-brand-700"
-            class="rounded-md px-3 py-2 text-sm font-medium text-text hover:bg-slate-100"
+            class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
           >
+            <svg lucideUsers [size]="18" aria-hidden="true"></svg>
             {{ i18n.t('dashboard', 'adminPanel') }}
           </a>
         }

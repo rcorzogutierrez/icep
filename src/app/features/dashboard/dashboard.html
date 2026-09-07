@@ -9,9 +9,29 @@
 
   <div class="grid gap-4 sm:grid-cols-3">
     @for (stat of statCards(); track stat.label) {
-      <div class="rounded-lg border border-border bg-surface p-4">
-        <p class="text-2xl font-semibold text-text">{{ stat.value }}</p>
-        <p class="text-sm text-text-muted">{{ stat.label }}</p>
+      <div class="flex items-center gap-4 rounded-lg border border-border bg-surface p-4">
+        <span
+          class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600"
+        >
+          @switch (stat.icon) {
+            @case ('users') {
+              <svg lucideUsers [size]="20" aria-hidden="true"></svg>
+            }
+            @case ('book') {
+              <svg lucideBookOpen [size]="20" aria-hidden="true"></svg>
+            }
+            @case ('mail') {
+              <svg lucideUserPlus [size]="20" aria-hidden="true"></svg>
+            }
+            @case ('graduation') {
+              <svg lucideGraduationCap [size]="20" aria-hidden="true"></svg>
+            }
+          }
+        </span>
+        <div>
+          <p class="text-2xl font-semibold text-text">{{ stat.value }}</p>
+          <p class="text-sm text-text-muted">{{ stat.label }}</p>
+        </div>
       </div>
     }
   </div>
@@ -44,15 +64,24 @@
         {{ i18n.t('dashboard', 'quickActionsTitle') }}
       </h2>
       <div class="flex flex-col gap-2 sm:max-w-xs">
-        <app-button (pressed)="goToInvitations()">{{
-          i18n.t('dashboard', 'newInvitation')
-        }}</app-button>
+        <app-button (pressed)="goToInvitations()">
+          <span class="flex w-full items-center gap-2">
+            <svg lucideUserPlus [size]="16" aria-hidden="true"></svg>
+            {{ i18n.t('dashboard', 'newInvitation') }}
+          </span>
+        </app-button>
         @if (userProfileService.isAdmin()) {
           <app-button variant="secondary" (pressed)="goToSubjects()">
-            {{ i18n.t('dashboard', 'newSubject') }}
+            <span class="flex w-full items-center gap-2">
+              <svg lucideBookOpen [size]="16" aria-hidden="true"></svg>
+              {{ i18n.t('dashboard', 'newSubject') }}
+            </span>
           </app-button>
           <app-button variant="secondary" (pressed)="goToAdmin()">
-            {{ i18n.t('dashboard', 'viewUsers') }}
+            <span class="flex w-full items-center gap-2">
+              <svg lucideUsers [size]="16" aria-hidden="true"></svg>
+              {{ i18n.t('dashboard', 'viewUsers') }}
+            </span>
           </app-button>
         }
       </div>

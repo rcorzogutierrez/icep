@@ -10,11 +10,16 @@ import { provideLucideConfig } from '@lucide/angular';
  * bundle lo que efectivamente se importa desde este archivo.
  */
 export {
+  LucideBookOpen as IconBookOpen,
   LucideCheck as IconCheck,
   LucideChevronDown as IconChevronDown,
+  LucideGraduationCap as IconGraduationCap,
+  LucideLayoutDashboard as IconLayoutDashboard,
   LucideLoaderCircle as IconLoaderCircle,
   LucideLock as IconLock,
   LucideMail as IconMail,
+  LucideUserPlus as IconUserPlus,
+  LucideUsers as IconUsers,
   LucideX as IconX,
 } from '@lucide/angular';
 
