@@ -1,7 +1,7 @@
 <main class="flex min-h-dvh">
   <!-- Panel de marca (oculto en mobile) -->
   <div
-    class="relative hidden overflow-hidden bg-gradient-to-br from-brand-600 to-brand-900 lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-12"
+    class="relative hidden overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-12"
   >
     <div
       class="pointer-events-none absolute -top-24 -right-24 size-96 rounded-[3rem] bg-white/10 blur-2xl"
@@ -32,7 +32,18 @@
       </ul>
     </div>
 
-    <p class="relative text-xs text-brand-200">Angular 22 · Tailwind 4 · Firebase</p>
+    <div class="relative flex flex-col gap-3 border-t border-white/20 pt-6">
+      <div>
+        <p class="text-sm font-semibold text-white">ICEP Gradebook</p>
+        <p class="text-sm text-brand-100">{{ i18n.t('login', 'footerDescription') }}</p>
+      </div>
+      <blockquote class="border-l-2 border-white/30 pl-3 text-sm text-brand-100 italic">
+        «{{ i18n.t('login', 'footerVerse') }}»
+        <footer class="mt-1 text-xs text-brand-200 not-italic">
+          — {{ i18n.t('login', 'footerVerseRef') }}
+        </footer>
+      </blockquote>
+    </div>
   </div>
 
   <!-- Panel de login -->

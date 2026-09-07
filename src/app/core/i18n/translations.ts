@@ -39,6 +39,11 @@ export const translations = {
       errorEmailInUse: 'Ese email ya tiene una cuenta. Iniciá sesión en vez de registrarte.',
       errorInvalidCredential: 'Email o contraseña incorrectos.',
       errorWeakPassword: 'La contraseña es muy débil (mínimo 6 caracteres).',
+      footerDescription:
+        'Sistema de calificaciones para estudiantes y profesores del Instituto Centro Evangélico Pentecostal.',
+      footerVerse:
+        'Procura con diligencia presentarte a Dios aprobado, como obrero que no tiene de qué avergonzarse, que usa bien la palabra de verdad.',
+      footerVerseRef: '2 Timoteo 2:15',
     },
     noInvitation: {
       title: 'Necesitás una invitación',
@@ -130,6 +135,11 @@ export const translations = {
       errorEmailInUse: 'That email already has an account. Sign in instead of signing up.',
       errorInvalidCredential: 'Incorrect email or password.',
       errorWeakPassword: 'Password is too weak (minimum 6 characters).',
+      footerDescription:
+        'A gradebook for students and teachers of the Instituto Centro Evangélico Pentecostal.',
+      footerVerse:
+        'Study to shew thyself approved unto God, a workman that needeth not to be ashamed, rightly dividing the word of truth.',
+      footerVerseRef: '2 Timothy 2:15',
     },
     noInvitation: {
       title: 'You need an invitation',
