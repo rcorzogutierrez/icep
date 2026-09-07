@@ -15,6 +15,8 @@ export interface UserProfile {
   status: UserStatus;
   /** Código de la invitación canjeada para crear esta cuenta. */
   invitationCode: string;
+  /** ids de subjects/{id} asignados al canjear la invitación (solo aplica a role "student"). */
+  enrolledSubjectIds: string[];
   locale: Locale;
   createdAt: Timestamp;
   updatedAt: Timestamp;

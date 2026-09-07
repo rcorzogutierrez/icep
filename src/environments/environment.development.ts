@@ -9,9 +9,12 @@ import type { Environment } from './environment.model';
  * Auth, Firestore y Storage al Firebase Emulator Suite local en vez de
  * pegarle a un proyecto real — nunca desarrollar contra producción.
  *
- * El `projectId` puede ser cualquier identificador estable: con los
- * emuladores no hace falta que exista un proyecto real de Firebase para
- * desarrollar en local.
+ * El `projectId` coincide a propósito con el proyecto real (ver
+ * environment.ts / .firebaserc): `firebase.json` tiene `singleProjectMode`
+ * en los emuladores, que unifica todo bajo un solo proyecto igual —
+ * usar un id distinto acá solo genera warnings de "multiple projectIds"
+ * sin ningún beneficio real, ya que no hace falta que exista un proyecto
+ * real para desarrollar contra los emuladores.
  */
 export const environment: Environment = {
   production: false,
@@ -19,8 +22,8 @@ export const environment: Environment = {
   firebase: {
     apiKey: 'demo-api-key',
     authDomain: 'localhost',
-    projectId: 'icep-dev',
-    storageBucket: 'icep-dev.appspot.com',
+    projectId: 'icep-44c27',
+    storageBucket: 'icep-44c27.appspot.com',
     messagingSenderId: '000000000000',
     appId: '1:000000000000:web:0000000000000000000000',
   },

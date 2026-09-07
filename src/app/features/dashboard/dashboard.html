@@ -43,6 +43,9 @@
         </app-button>
       }
       @if (userProfileService.isAdmin()) {
+        <app-button variant="secondary" size="sm" (pressed)="goToSubjects()">
+          {{ i18n.t('dashboard', 'subjectsLink') }}
+        </app-button>
         <app-button variant="secondary" size="sm" (pressed)="goToAdmin()">
           {{ i18n.t('dashboard', 'adminPanel') }}
         </app-button>
@@ -52,6 +55,28 @@
       </app-button>
     </div>
   </header>
+
+  @if (userProfileService.isStudent()) {
+    <section class="flex flex-col gap-3">
+      <h2 class="text-sm font-semibold text-text">{{ i18n.t('dashboard', 'mySubjects') }}</h2>
+      @if (loadingMySubjects()) {
+        <p class="text-sm text-text-muted">…</p>
+      } @else if (mySubjects().length > 0) {
+        <div class="grid gap-3 sm:grid-cols-2">
+          @for (subject of mySubjects(); track subject.id) {
+            <div class="rounded-lg border border-border bg-surface p-4">
+              <p class="font-medium text-text">{{ subject.name }}</p>
+              <p class="text-sm text-text-muted">
+                {{ i18n.t('dashboard', 'taughtBy') }}: {{ subject.teacherName }}
+              </p>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-sm text-text-muted">{{ i18n.t('dashboard', 'noSubjects') }}</p>
+      }
+    </section>
+  }
 
   <section class="flex flex-col gap-3">
     <h2 class="text-sm font-semibold text-text">Button</h2>

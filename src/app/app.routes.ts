@@ -36,6 +36,11 @@ export const routes: Routes = [
     canActivate: [authGuard, approvedGuard, adminGuard],
     loadComponent: () => import('./features/admin/users/admin-users').then((m) => m.AdminUsers),
   },
+  {
+    path: 'admin/subjects',
+    canActivate: [authGuard, approvedGuard, adminGuard],
+    loadComponent: () => import('./features/admin/subjects/subjects').then((m) => m.AdminSubjects),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

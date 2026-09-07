@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { form, required, schema, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import type { Subject } from '../../core/subjects/subjects.model';
+import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { Button, type ButtonVariant } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
@@ -32,7 +34,29 @@ export class Dashboard {
   protected readonly auth = inject(AuthService);
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
+  private readonly subjectsService = inject(SubjectsService);
   private readonly router = inject(Router);
+
+  protected readonly mySubjects = signal<Subject[]>([]);
+  protected readonly loadingMySubjects = signal(false);
+
+  constructor() {
+    effect(() => {
+      const profile = this.userProfileService.profile();
+      if (profile?.role !== 'student' || profile.enrolledSubjectIds.length === 0) {
+        this.mySubjects.set([]);
+        this.loadingMySubjects.set(false);
+        return;
+      }
+
+      this.loadingMySubjects.set(true);
+      this.subjectsService
+        .fetchByIds(profile.enrolledSubjectIds)
+        .then((subjects) => this.mySubjects.set(subjects))
+        .catch(() => this.mySubjects.set([]))
+        .finally(() => this.loadingMySubjects.set(false));
+    });
+  }
 
   protected readonly buttonVariants: ButtonVariant[] = ['primary', 'secondary', 'danger', 'ghost'];
 
@@ -65,5 +89,9 @@ export class Dashboard {
 
   protected goToInvitations(): void {
     void this.router.navigateByUrl('/invitations');
+  }
+
+  protected goToSubjects(): void {
+    void this.router.navigateByUrl('/admin/subjects');
   }
 }

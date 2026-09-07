@@ -44,6 +44,13 @@ export class InvitationsService {
 
   constructor() {
     effect((onCleanup) => {
+      // Esperar a que resuelva la sesión Y el perfil antes de decidir la
+      // query: si no, se puede armar la query de "no admin" con un perfil
+      // todavía sin cargar (mismo tipo de carrera que en UserProfileService).
+      if (this.authService.initializing() || this.userProfileService.loading()) {
+        return;
+      }
+
       const user = this.authService.user();
       const isAdmin = this.userProfileService.isAdmin();
 
@@ -78,8 +85,8 @@ export class InvitationsService {
     });
   }
 
-  /** Crea una invitación. El caller debe validar antes que el rol elegido esté permitido para su propio rol. */
-  async create(email: string, role: InvitableRole): Promise<string> {
+  /** Crea una invitación. El caller debe validar antes que el rol y las materias elegidas estén permitidos para su propio rol. */
+  async create(email: string, role: InvitableRole, subjectIds: string[]): Promise<string> {
     const user = this.authService.user();
     if (!user) {
       throw new Error('No hay sesión activa.');
@@ -90,6 +97,7 @@ export class InvitationsService {
       code,
       email: email.trim().toLowerCase(),
       role,
+      subjectIds: role === 'student' ? subjectIds : [],
       status: 'pending',
       createdBy: user.uid,
       createdAt: serverTimestamp(),
@@ -101,11 +109,15 @@ export class InvitationsService {
 
   /**
    * Canjea un código para el uid dado: marca la invitación como usada y
-   * devuelve su rol, o null si el código no existe / ya fue usado. El orden
-   * (canjear primero, crear el perfil después) importa: firestore.rules
-   * valida la creación de users/{uid} contra la invitación ya comprometida.
+   * devuelve su rol y materias asignadas, o null si el código no existe / ya
+   * fue usado. El orden (canjear primero, crear el perfil después) importa:
+   * firestore.rules valida la creación de users/{uid} contra la invitación
+   * ya comprometida.
    */
-  async redeem(code: string, uid: string): Promise<InvitableRole | null> {
+  async redeem(
+    code: string,
+    uid: string,
+  ): Promise<{ role: InvitableRole; subjectIds: string[] } | null> {
     const ref = doc(this.firestore, 'invitations', code);
     const snapshot = await getDoc(ref);
     if (!snapshot.exists() || snapshot.data()['status'] !== 'pending') {
@@ -113,12 +125,13 @@ export class InvitationsService {
     }
 
     const role = snapshot.data()['role'] as InvitableRole;
+    const subjectIds = (snapshot.data()['subjectIds'] as string[] | undefined) ?? [];
     try {
       await updateDoc(ref, { status: 'used', usedByUid: uid, usedAt: serverTimestamp() });
     } catch {
       return null;
     }
-    return role;
+    return { role, subjectIds };
   }
 
   revoke(code: string) {
@@ -127,11 +140,17 @@ export class InvitationsService {
 
   /** Canjea el código y crea el perfil del usuario en un solo paso. true si funcionó. */
   async redeemAndCreateProfile(code: string, user: User, locale: Locale): Promise<boolean> {
-    const role = await this.redeem(code, user.uid);
-    if (!role) {
+    const redeemed = await this.redeem(code, user.uid);
+    if (!redeemed) {
       return false;
     }
-    await this.userProfileService.createFromInvitation(user, role, code, locale);
+    await this.userProfileService.createFromInvitation(
+      user,
+      redeemed.role,
+      redeemed.subjectIds,
+      code,
+      locale,
+    );
     return true;
   }
 }

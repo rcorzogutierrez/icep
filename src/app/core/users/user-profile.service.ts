@@ -33,6 +33,15 @@ export class UserProfileService {
 
   constructor() {
     effect((onCleanup) => {
+      // Esperar a que AuthService resuelva la sesión restaurada antes de
+      // decidir "sin perfil": si no, en una recarga de página `user()`
+      // todavía lee null durante ese instante y esto concluiría
+      // prematuramente "no hay perfil", carrera que puede tirar a un
+      // usuario válido a /no-invitation o /login.
+      if (this.authService.initializing()) {
+        return;
+      }
+
       const user = this.authService.user();
 
       if (!user) {
@@ -58,7 +67,13 @@ export class UserProfileService {
   }
 
   /** Crea el perfil tras canjear una invitación (ver InvitationsService.redeem). */
-  createFromInvitation(user: User, role: InvitableRole, invitationCode: string, locale: Locale) {
+  createFromInvitation(
+    user: User,
+    role: InvitableRole,
+    subjectIds: string[],
+    invitationCode: string,
+    locale: Locale,
+  ) {
     return setDoc(doc(this.firestore, 'users', user.uid), {
       uid: user.uid,
       email: user.email,
@@ -67,6 +82,7 @@ export class UserProfileService {
       role,
       status: 'approved',
       invitationCode,
+      enrolledSubjectIds: subjectIds,
       locale,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

@@ -1,0 +1,89 @@
+<div class="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
+  <header class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-lg font-semibold text-text">{{ i18n.t('adminSubjects', 'title') }}</h1>
+      <p class="text-sm text-text-muted">{{ i18n.t('adminSubjects', 'subtitle') }}</p>
+    </div>
+    <app-button variant="ghost" size="sm" (pressed)="goToDashboard()">
+      {{ i18n.t('adminSubjects', 'back') }}
+    </app-button>
+  </header>
+
+  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+    <div class="grid gap-4 sm:grid-cols-[1fr_1fr]">
+      <div class="flex flex-col gap-1">
+        <label for="subject-name" class="text-sm font-medium text-text">
+          {{ i18n.t('adminSubjects', 'nameLabel') }}
+        </label>
+        <input
+          id="subject-name"
+          type="text"
+          class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [value]="name()"
+          (input)="name.set($any($event.target).value)"
+        />
+      </div>
+
+      @if (teacherOptions().length > 0) {
+        <app-select
+          [label]="i18n.t('adminSubjects', 'teacherLabel')"
+          [options]="teacherOptions()"
+          [value]="teacherId()"
+          (valueChange)="teacherId.set($event)"
+        />
+      } @else {
+        <p class="self-end text-sm text-text-muted">{{ i18n.t('adminSubjects', 'noTeachers') }}</p>
+      }
+    </div>
+
+    <div>
+      <app-button
+        [loading]="creating()"
+        [disabled]="!name().trim() || !teacherId()"
+        (pressed)="onCreate()"
+      >
+        {{ i18n.t('adminSubjects', 'create') }}
+      </app-button>
+    </div>
+  </section>
+
+  <div class="overflow-x-auto rounded-lg border border-border">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-border bg-slate-50 text-text-muted">
+        <tr>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colName') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colTeacher') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colActions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (subject of subjectsService.subjects(); track subject.id) {
+          <tr class="border-b border-border last:border-0">
+            <td class="px-4 py-3 font-medium text-text">{{ subject.name }}</td>
+            <td class="px-4 py-3 text-text-muted">{{ subject.teacherName }}</td>
+            <td class="px-4 py-3">
+              <app-button
+                variant="danger"
+                size="sm"
+                [loading]="removingId() === subject.id"
+                (pressed)="onRemove(subject)"
+              >
+                {{ i18n.t('adminSubjects', 'delete') }}
+              </app-button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="px-4 py-6 text-center text-text-muted">
+              @if (subjectsService.loading()) {
+                …
+              } @else {
+                {{ i18n.t('adminSubjects', 'empty') }}
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

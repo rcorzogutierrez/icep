@@ -9,6 +9,8 @@ export interface Invitation {
   code: string;
   email: string;
   role: InvitableRole;
+  /** ids de subjects/{id} a asignar al canjear (vacío para invitaciones de rol "teacher"). */
+  subjectIds: string[];
   status: InvitationStatus;
   createdBy: string;
   createdAt: Timestamp;

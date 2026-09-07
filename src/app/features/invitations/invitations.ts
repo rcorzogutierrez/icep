@@ -8,6 +8,7 @@ import type {
   InvitationStatus,
 } from '../../core/invitations/invitations.model';
 import { InvitationsService } from '../../core/invitations/invitations.service';
+import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { Button } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
@@ -28,9 +29,16 @@ const STATUS_CLASS: Record<InvitationStatus, string> = {
 })
 export class Invitations {
   protected readonly invitationsService = inject(InvitationsService);
+  protected readonly subjectsService = inject(SubjectsService);
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
+
+  protected readonly availableSubjects = computed(() =>
+    this.userProfileService.isAdmin()
+      ? this.subjectsService.subjects()
+      : this.subjectsService.mySubjects(),
+  );
 
   protected readonly statusClass = STATUS_CLASS;
 
@@ -45,6 +53,7 @@ export class Invitations {
 
   protected readonly email = signal('');
   protected readonly role = signal<InvitableRole>('student');
+  protected readonly selectedSubjectIds = signal<Set<string>>(new Set());
   protected readonly creating = signal(false);
   protected readonly createdCode = signal<string | null>(null);
   protected readonly copied = signal(false);
@@ -65,6 +74,16 @@ export class Invitations {
     return `${location.origin}/invite/${code}`;
   }
 
+  protected toggleSubject(subjectId: string): void {
+    const next = new Set(this.selectedSubjectIds());
+    if (next.has(subjectId)) {
+      next.delete(subjectId);
+    } else {
+      next.add(subjectId);
+    }
+    this.selectedSubjectIds.set(next);
+  }
+
   protected async onCreate(): Promise<void> {
     if (!this.email().trim()) {
       return;
@@ -72,9 +91,14 @@ export class Invitations {
     this.creating.set(true);
     this.copied.set(false);
     try {
-      const code = await this.invitationsService.create(this.email(), this.role());
+      const code = await this.invitationsService.create(
+        this.email(),
+        this.role(),
+        Array.from(this.selectedSubjectIds()),
+      );
       this.createdCode.set(code);
       this.email.set('');
+      this.selectedSubjectIds.set(new Set());
     } finally {
       this.creating.set(false);
     }
