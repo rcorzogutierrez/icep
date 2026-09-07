@@ -52,6 +52,34 @@
               <p class="text-sm text-text-muted">
                 {{ i18n.t('dashboard', 'taughtBy') }}: {{ teacherNamesFor(subject.id) }}
               </p>
+              <p class="text-sm font-medium text-text">
+                {{ i18n.t('dashboard', 'finalGrade') }}: {{ finalGradeLabelFor(subject.id) }}
+              </p>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-sm text-text-muted">{{ i18n.t('dashboard', 'noSubjects') }}</p>
+      }
+    </section>
+  }
+
+  @if (userProfileService.isTeacher()) {
+    <section class="flex flex-col gap-3">
+      <h2 class="text-sm font-semibold text-text">{{ i18n.t('dashboard', 'mySubjects') }}</h2>
+      @if (subjectsService.mySubjects().length > 0) {
+        <div class="grid gap-3 sm:grid-cols-2">
+          @for (subject of subjectsService.mySubjects(); track subject.id) {
+            <div
+              class="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4"
+            >
+              <p class="font-medium text-text">
+                <span class="font-mono text-text-muted">{{ subject.code }}</span>
+                · {{ subject.name }}
+              </p>
+              <app-button variant="secondary" size="sm" (pressed)="goToGradebook(subject.id)">
+                {{ i18n.t('dashboard', 'grade') }}
+              </app-button>
             </div>
           }
         </div>

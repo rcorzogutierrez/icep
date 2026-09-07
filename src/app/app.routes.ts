@@ -1,5 +1,11 @@
 import { Routes } from '@angular/router';
-import { adminGuard, approvedGuard, authGuard, staffGuard } from './core/auth/auth.guards';
+import {
+  adminGuard,
+  approvedGuard,
+  authGuard,
+  staffGuard,
+  subjectAccessGuard,
+} from './core/auth/auth.guards';
 
 export const routes: Routes = [
   {
@@ -46,6 +52,11 @@ export const routes: Routes = [
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/admin/subjects/subjects').then((m) => m.AdminSubjects),
+      },
+      {
+        path: 'subjects/:subjectId/gradebook',
+        canActivate: [staffGuard, subjectAccessGuard],
+        loadComponent: () => import('./features/gradebook/gradebook').then((m) => m.Gradebook),
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],

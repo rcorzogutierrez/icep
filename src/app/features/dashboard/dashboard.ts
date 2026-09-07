@@ -8,6 +8,9 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
+import { GradesService } from '../../core/grades/grades.service';
+import { computeFinalGrade } from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { InvitationsService } from '../../core/invitations/invitations.service';
 import { SubjectAssignmentsService } from '../../core/subjects/subject-assignments.service';
@@ -38,14 +41,17 @@ export class Dashboard {
   protected readonly auth = inject(AuthService);
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
-  private readonly subjectsService = inject(SubjectsService);
+  protected readonly subjectsService = inject(SubjectsService);
   private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
+  private readonly gradeCategoriesService = inject(GradeCategoriesService);
+  private readonly gradesService = inject(GradesService);
   private readonly usersService = inject(UsersService);
   private readonly invitationsService = inject(InvitationsService);
   private readonly router = inject(Router);
 
   protected readonly mySubjects = signal<Subject[]>([]);
   protected readonly mySubjectTeachers = signal<Map<string, string[]>>(new Map());
+  protected readonly mySubjectFinalGrades = signal<Map<string, number | null>>(new Map());
   protected readonly loadingMySubjects = signal(false);
 
   /** Nombres de los profesores de una materia, unidos con coma (o el fallback si no tiene ninguno). */
@@ -54,6 +60,18 @@ export class Dashboard {
     return names && names.length > 0
       ? names.join(', ')
       : this.i18n.t('dashboard', 'noTeacherAssigned');
+  }
+
+  /** Nota final de una materia (como estudiante), formateada, o el fallback si todavía no hay nada cargado. */
+  protected finalGradeLabelFor(subjectId: string): string {
+    const grade = this.mySubjectFinalGrades().get(subjectId);
+    return grade != null
+      ? `${Math.round(grade * 10) / 10}%`
+      : this.i18n.t('dashboard', 'noGradeYet');
+  }
+
+  protected goToGradebook(subjectId: string): void {
+    void this.router.navigateByUrl(`/subjects/${subjectId}/gradebook`);
   }
 
   protected readonly roleLabel = computed(() => {
@@ -124,17 +142,24 @@ export class Dashboard {
       if (profile?.role !== 'student' || profile.enrolledSubjectIds.length === 0) {
         this.mySubjects.set([]);
         this.mySubjectTeachers.set(new Map());
+        this.mySubjectFinalGrades.set(new Map());
         this.loadingMySubjects.set(false);
         return;
       }
 
+      const uid = this.auth.user()?.uid;
+      const subjectIds = profile.enrolledSubjectIds;
+
       this.loadingMySubjects.set(true);
       Promise.all([
-        this.subjectsService.fetchByIds(profile.enrolledSubjectIds),
-        this.subjectAssignmentsService.fetchBySubjectIds(profile.enrolledSubjectIds),
+        this.subjectsService.fetchByIds(subjectIds),
+        this.subjectAssignmentsService.fetchBySubjectIds(subjectIds),
+        this.gradeCategoriesService.fetchForSubjectIds(subjectIds),
+        uid ? Promise.all(subjectIds.map((id) => this.gradesService.fetchOwn(id, uid))) : [],
       ])
-        .then(([subjects, assignments]) => {
+        .then(([subjects, assignments, categories, grades]) => {
           this.mySubjects.set(subjects);
+
           const byTeacher = new Map<string, string[]>();
           for (const assignment of assignments) {
             byTeacher.set(assignment.subjectId, [
@@ -143,10 +168,19 @@ export class Dashboard {
             ]);
           }
           this.mySubjectTeachers.set(byTeacher);
+
+          const finalGrades = new Map<string, number | null>();
+          for (const subjectId of subjectIds) {
+            const grade = grades.find((g) => g?.subjectId === subjectId);
+            const subjectCategories = categories.filter((c) => c.subjectId === subjectId);
+            finalGrades.set(subjectId, computeFinalGrade(subjectCategories, grade?.scores));
+          }
+          this.mySubjectFinalGrades.set(finalGrades);
         })
         .catch(() => {
           this.mySubjects.set([]);
           this.mySubjectTeachers.set(new Map());
+          this.mySubjectFinalGrades.set(new Map());
         })
         .finally(() => this.loadingMySubjects.set(false));
     });

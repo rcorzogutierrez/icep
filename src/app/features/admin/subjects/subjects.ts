@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import type { SubjectAssignment } from '../../../core/subjects/subject-assignments.model';
 import { SubjectAssignmentsService } from '../../../core/subjects/subject-assignments.service';
@@ -24,6 +25,7 @@ export class AdminSubjects {
   protected readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   private readonly teachers = computed(() =>
     this.usersService.users().filter((user) => user.role === 'teacher' || user.role === 'admin'),
@@ -157,6 +159,10 @@ export class AdminSubjects {
     } finally {
       this.savingEdit.set(false);
     }
+  }
+
+  protected goToGradebook(subject: Subject): void {
+    void this.router.navigateByUrl(`/subjects/${subject.id}/gradebook`);
   }
 
   protected async onRemove(subject: Subject): Promise<void> {

@@ -101,8 +101,13 @@ export class SubjectAssignmentsService {
     return results;
   }
 
+  /**
+   * El id ES `${subjectId}_${teacherId}` (no random): así las reglas de
+   * `grades`/`gradeCategories` pueden verificar con un simple `exists()`
+   * si esta persona está realmente asignada a esta materia, sin queries.
+   */
   async assign(subjectId: string, teacherId: string, teacherName: string): Promise<void> {
-    const ref = doc(collection(this.firestore, 'subjectAssignments'));
+    const ref = doc(this.firestore, 'subjectAssignments', `${subjectId}_${teacherId}`);
     await setDoc(ref, { subjectId, teacherId, teacherName, createdAt: serverTimestamp() });
   }
 

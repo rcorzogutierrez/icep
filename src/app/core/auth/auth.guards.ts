@@ -1,7 +1,9 @@
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { type CanActivateFn, Router } from '@angular/router';
-import { filter, map } from 'rxjs';
+import { doc, getDoc } from 'firebase/firestore';
+import { filter, firstValueFrom, map } from 'rxjs';
+import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
 import { AuthService } from './auth.service';
 
@@ -76,4 +78,37 @@ export const adminGuard: CanActivateFn = () => {
     filter((loading) => !loading),
     map(() => userProfileService.isAdmin() || router.parseUrl('/dashboard')),
   );
+};
+
+/**
+ * Admin, o el profesor realmente asignado a `:subjectId` (para
+ * /subjects/:subjectId/gradebook) — mismo chequeo que hacen las reglas de
+ * Firestore para escribir notas, así la navegación no deja entrar a un
+ * profesor a calificar una materia que no le corresponde.
+ */
+export const subjectAccessGuard: CanActivateFn = async (route) => {
+  const userProfileService = inject(UserProfileService);
+  const authService = inject(AuthService);
+  const firestore = inject(FIREBASE_FIRESTORE);
+  const router = inject(Router);
+
+  await firstValueFrom(
+    toObservable(userProfileService.loading).pipe(filter((loading) => !loading)),
+  );
+
+  if (userProfileService.isAdmin()) {
+    return true;
+  }
+  if (!userProfileService.isTeacher()) {
+    return router.parseUrl('/dashboard');
+  }
+
+  const subjectId = route.paramMap.get('subjectId');
+  const uid = authService.user()?.uid;
+  if (!subjectId || !uid) {
+    return router.parseUrl('/dashboard');
+  }
+
+  const assignment = await getDoc(doc(firestore, 'subjectAssignments', `${subjectId}_${uid}`));
+  return assignment.exists() || router.parseUrl('/dashboard');
 };

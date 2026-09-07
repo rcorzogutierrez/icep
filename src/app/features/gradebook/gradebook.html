@@ -1,0 +1,216 @@
+<div class="mx-auto flex max-w-5xl flex-col gap-6">
+  <header class="flex flex-col gap-1">
+    <button
+      type="button"
+      class="self-start text-sm text-brand-700 hover:underline"
+      (click)="goBack()"
+    >
+      ← {{ i18n.t('gradebook', 'back') }}
+    </button>
+    <h1 class="text-lg font-semibold text-text">
+      {{ i18n.t('gradebook', 'title') }}
+      @if (subject(); as subject) {
+        <span class="font-mono text-text-muted">{{ subject.code }}</span>
+        · {{ subject.name }}
+      }
+    </h1>
+    <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'subtitle') }}</p>
+  </header>
+
+  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'rubricTitle') }}</h2>
+      <span
+        class="text-sm"
+        [class.text-status-active]="totalWeight() === 100"
+        [class.text-status-expired]="totalWeight() > 100"
+        [class.text-text-muted]="totalWeight() < 100"
+      >
+        {{ i18n.t('gradebook', 'weightTotal') }}: {{ totalWeight() }}/100
+      </span>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg border border-border">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-border bg-slate-50 text-text-muted">
+          <tr>
+            <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colCategoryName') }}</th>
+            <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colCategoryWeight') }}</th>
+            <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colActions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (category of categories(); track category.id) {
+            <tr class="border-b border-border last:border-0">
+              @if (editingCategoryId() === category.id) {
+                <td class="px-4 py-3">
+                  <input
+                    type="text"
+                    class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                    [value]="editCategoryName()"
+                    (input)="editCategoryName.set($any($event.target).value)"
+                  />
+                </td>
+                <td class="px-4 py-3">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    class="h-9 w-20 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                    [value]="editCategoryWeight() ?? ''"
+                    (input)="editCategoryWeight.set($any($event.target).valueAsNumber || null)"
+                  />
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex gap-2">
+                    <app-button
+                      size="sm"
+                      [loading]="savingCategory()"
+                      [disabled]="!editCategoryName().trim() || !editCategoryWeight()"
+                      (pressed)="saveEditCategory(category)"
+                    >
+                      {{ i18n.t('gradebook', 'save') }}
+                    </app-button>
+                    <app-button variant="secondary" size="sm" (pressed)="cancelEditCategory()">
+                      {{ i18n.t('gradebook', 'cancel') }}
+                    </app-button>
+                  </div>
+                </td>
+              } @else {
+                <td class="px-4 py-3 font-medium text-text">{{ category.name }}</td>
+                <td class="px-4 py-3 text-text-muted">{{ category.weight }}%</td>
+                <td class="px-4 py-3">
+                  <div class="flex gap-2">
+                    <app-button
+                      variant="secondary"
+                      size="sm"
+                      (pressed)="startEditCategory(category)"
+                    >
+                      {{ i18n.t('gradebook', 'edit') }}
+                    </app-button>
+                    <app-button
+                      variant="danger"
+                      size="sm"
+                      [loading]="removingCategoryId() === category.id"
+                      (pressed)="onRemoveCategory(category)"
+                    >
+                      {{ i18n.t('gradebook', 'delete') }}
+                    </app-button>
+                  </div>
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="px-4 py-6 text-center text-text-muted">
+                @if (categoriesService.loading()) {
+                  …
+                } @else {
+                  {{ i18n.t('gradebook', 'noCategories') }}
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
+      <div class="flex flex-col gap-1">
+        <label for="category-name" class="text-sm font-medium text-text">
+          {{ i18n.t('gradebook', 'categoryNameLabel') }}
+        </label>
+        <input
+          id="category-name"
+          type="text"
+          class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [value]="categoryName()"
+          (input)="categoryName.set($any($event.target).value)"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="category-weight" class="text-sm font-medium text-text">
+          {{ i18n.t('gradebook', 'categoryWeightLabel') }}
+        </label>
+        <input
+          id="category-weight"
+          type="number"
+          min="1"
+          max="100"
+          class="h-10 w-24 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [value]="categoryWeight() ?? ''"
+          (input)="categoryWeight.set($any($event.target).valueAsNumber || null)"
+        />
+      </div>
+      <div class="flex items-end">
+        <app-button
+          [loading]="creatingCategory()"
+          [disabled]="!categoryName().trim() || !categoryWeight()"
+          (pressed)="onCreateCategory()"
+        >
+          {{ i18n.t('gradebook', 'addCategory') }}
+        </app-button>
+      </div>
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'gradesTitle') }}</h2>
+    <div class="overflow-x-auto rounded-lg border border-border">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-border bg-slate-50 text-text-muted">
+          <tr>
+            <th class="sticky left-0 bg-slate-50 px-4 py-2 font-medium">
+              {{ i18n.t('gradebook', 'colStudent') }}
+            </th>
+            @for (category of categories(); track category.id) {
+              <th class="px-4 py-2 font-medium whitespace-nowrap">
+                {{ category.name }} ({{ category.weight }}%)
+              </th>
+            }
+            <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colFinalGrade') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (student of students(); track student.uid) {
+            <tr class="border-b border-border last:border-0">
+              <td class="sticky left-0 bg-surface px-4 py-3 font-medium text-text">
+                {{ student.displayName ?? student.email }}
+              </td>
+              @for (category of categories(); track category.id) {
+                <td class="px-4 py-3">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    class="h-9 w-20 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                    [value]="scoreFor(student.uid, category.id) ?? ''"
+                    (change)="onSetScore(student.uid, category.id, $any($event.target).value)"
+                  />
+                </td>
+              }
+              <td class="px-4 py-3 font-semibold text-text">
+                @if (finalGradeFor(student.uid) !== null) {
+                  {{ finalGradeFor(student.uid) | number: '1.0-1' }}%
+                } @else {
+                  <span class="font-normal text-text-muted">{{
+                    i18n.t('gradebook', 'noGradeYet')
+                  }}</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td
+                [attr.colspan]="categories().length + 2"
+                class="px-4 py-6 text-center text-text-muted"
+              >
+                {{ i18n.t('gradebook', 'noStudents') }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
