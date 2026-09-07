@@ -2,19 +2,30 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Deny-all por defecto. Nada de "allow read, write: if true" ni siquiera
-    // en desarrollo: se trabaja contra el Emulator Suite, no contra el
-    // proyecto real, así que no hay excusa para dejarlo abierto.
-    //
-    // Cuando se modele el primer recurso de negocio, reemplazar este bloque
-    // por reglas explícitas por colección. Si el dominio amerita
-    // multi-usuario por recurso, modelar bajo una entidad "cuenta"
-    // (accountId) en vez de uid directo, por ejemplo:
-    //
-    // match /accounts/{accountId}/{document=**} {
-    //   allow read, write: if request.auth != null
-    //     && request.auth.token.accountId == accountId;
-    // }
+    function isAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // users/{uid}: perfil de aprobación de acceso. Se crea automáticamente
+    // en el primer login (status "pending", role "member"); un usuario
+    // nunca puede auto-asignarse "approved" ni "admin". Solo un admin
+    // puede tocar status/role de OTRO usuario.
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.status == 'pending'
+        && request.resource.data.role == 'member';
+      allow update: if request.auth != null && isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'role', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // Deny-all por defecto para cualquier otra colección. Cuando se modele
+    // el próximo recurso de negocio, agregar reglas explícitas acá (evaluar
+    // si conviene modelarlo bajo una entidad "cuenta"/accountId según el
+    // caso de uso real, no copiar este patrón de users/{uid} sin pensarlo).
     match /{document=**} {
       allow read, write: if false;
     }

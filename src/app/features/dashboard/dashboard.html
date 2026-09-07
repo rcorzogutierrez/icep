@@ -1,32 +1,26 @@
-<main class="mx-auto flex max-w-2xl flex-col gap-10 px-6 py-12">
-  <header class="flex flex-col gap-2">
-    <h1 class="text-2xl font-semibold text-brand-700">icep</h1>
-    <p class="text-text-muted">
-      Angular 22 (standalone, zoneless) + Tailwind 4 + Angular Aria + Firebase, sin Angular
-      Material.
-    </p>
-  </header>
+<div class="mx-auto flex max-w-2xl flex-col gap-10 px-6 py-12">
+  <header class="flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      @if (auth.user()?.photoURL; as photo) {
+        <img [src]="photo" alt="" class="size-10 rounded-full" />
+      }
+      <div>
+        <h1 class="text-lg font-semibold text-text">
+          Hola, {{ auth.user()?.displayName ?? auth.user()?.email }}
+        </h1>
+        <p class="text-sm text-text-muted">icep dashboard</p>
+      </div>
+    </div>
 
-  <section class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
-    <h2 class="text-sm font-semibold text-text">Estado de Firebase Auth (Google)</h2>
-    @if (auth.initializing()) {
-      <p class="text-sm text-text-muted">Resolviendo sesión…</p>
-    } @else if (auth.isAuthenticated()) {
-      <div class="flex items-center justify-between gap-3">
-        <p class="text-sm text-status-active">
-          Sesión activa: {{ auth.user()?.displayName ?? auth.user()?.email }}
-        </p>
-        <app-button variant="secondary" size="sm" (pressed)="onSignOut()">Cerrar sesión</app-button>
-      </div>
-    } @else {
-      <div class="flex items-center justify-between gap-3">
-        <p class="text-sm text-text-muted">Sin sesión.</p>
-        <app-button size="sm" [loading]="signingIn()" (pressed)="onSignIn()">
-          Iniciar sesión con Google
+    <div class="flex items-center gap-2">
+      @if (userProfileService.isAdmin()) {
+        <app-button variant="secondary" size="sm" (pressed)="goToAdmin()">
+          Panel de admin
         </app-button>
-      </div>
-    }
-  </section>
+      }
+      <app-button variant="ghost" size="sm" (pressed)="onSignOut()">Cerrar sesión</app-button>
+    </div>
+  </header>
 
   <section class="flex flex-col gap-3">
     <h2 class="text-sm font-semibold text-text">Button</h2>
@@ -66,4 +60,4 @@
       }
     </form>
   </section>
-</main>
+</div>

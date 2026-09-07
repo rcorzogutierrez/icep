@@ -1,0 +1,75 @@
+<div class="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
+  <header class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-lg font-semibold text-text">Usuarios</h1>
+      <p class="text-sm text-text-muted">Aprobá o rechazá las solicitudes de acceso.</p>
+    </div>
+    <app-button variant="ghost" size="sm" (pressed)="goToDashboard()">Volver</app-button>
+  </header>
+
+  <div class="overflow-x-auto rounded-lg border border-border">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-border bg-slate-50 text-text-muted">
+        <tr>
+          <th class="px-4 py-2 font-medium">Usuario</th>
+          <th class="px-4 py-2 font-medium">Registrado</th>
+          <th class="px-4 py-2 font-medium">Estado</th>
+          <th class="px-4 py-2 font-medium">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of usersService.users(); track user.uid) {
+          <tr class="border-b border-border last:border-0">
+            <td class="px-4 py-3">
+              <div class="font-medium text-text">{{ user.displayName ?? '—' }}</div>
+              <div class="text-text-muted">{{ user.email ?? '—' }}</div>
+            </td>
+            <td class="px-4 py-3 text-text-muted">
+              @if (user.createdAt) {
+                {{ user.createdAt.toDate() | date: 'short' }}
+              } @else {
+                —
+              }
+            </td>
+            <td class="px-4 py-3">
+              <span [class]="statusClass[user.status]">{{ statusLabel[user.status] }}</span>
+            </td>
+            <td class="px-4 py-3">
+              @if (user.status === 'pending') {
+                <div class="flex gap-2">
+                  <app-button
+                    size="sm"
+                    [loading]="pendingActionUid() === user.uid"
+                    (pressed)="onApprove(user)"
+                  >
+                    Aprobar
+                  </app-button>
+                  <app-button
+                    variant="danger"
+                    size="sm"
+                    [loading]="pendingActionUid() === user.uid"
+                    (pressed)="onReject(user)"
+                  >
+                    Rechazar
+                  </app-button>
+                </div>
+              } @else {
+                <span class="text-text-muted">—</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="px-4 py-6 text-center text-text-muted">
+              @if (usersService.loading()) {
+                Cargando…
+              } @else {
+                No hay usuarios todavía.
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
