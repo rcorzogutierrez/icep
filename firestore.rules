@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deny-all por defecto. Nada de "allow read, write: if true" ni siquiera
+    // en desarrollo: se trabaja contra el Emulator Suite, no contra el
+    // proyecto real, así que no hay excusa para dejarlo abierto.
+    //
+    // Cuando se modele el primer recurso de negocio, reemplazar este bloque
+    // por reglas explícitas por colección. Si el dominio amerita
+    // multi-usuario por recurso, modelar bajo una entidad "cuenta"
+    // (accountId) en vez de uid directo, por ejemplo:
+    //
+    // match /accounts/{accountId}/{document=**} {
+    //   allow read, write: if request.auth != null
+    //     && request.auth.token.accountId == accountId;
+    // }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

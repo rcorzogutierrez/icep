@@ -1,0 +1,64 @@
+<main class="mx-auto flex max-w-2xl flex-col gap-10 px-6 py-12">
+  <header class="flex flex-col gap-2">
+    <h1 class="text-2xl font-semibold text-brand-700">icep</h1>
+    <p class="text-text-muted">
+      Angular 22 (standalone, zoneless) + Tailwind 4 + Angular Aria + Firebase, sin Angular
+      Material.
+    </p>
+  </header>
+
+  <section class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4">
+    <h2 class="text-sm font-semibold text-text">Estado de Firebase Auth</h2>
+    @if (auth.initializing()) {
+      <p class="text-sm text-text-muted">Resolviendo sesión…</p>
+    } @else if (auth.isAuthenticated()) {
+      <p class="text-sm text-status-active">
+        Sesión activa: {{ auth.user()?.email ?? auth.user()?.uid }}
+      </p>
+    } @else {
+      <p class="text-sm text-text-muted">
+        Sin sesión (esperado: no hay UI de login todavía; corré los emuladores para probar
+        AuthService).
+      </p>
+    }
+  </section>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-sm font-semibold text-text">Button</h2>
+    <div class="flex flex-wrap items-center gap-3">
+      @for (variant of buttonVariants; track variant) {
+        <app-button [variant]="variant">{{ variant }}</app-button>
+      }
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <app-button size="sm">sm</app-button>
+      <app-button size="md">md</app-button>
+      <app-button size="lg">lg</app-button>
+      <app-button [loading]="true">Guardando…</app-button>
+      <app-button [disabled]="true">Deshabilitado</app-button>
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-sm font-semibold text-text">Select (Angular Aria) + Signal Forms</h2>
+    <form class="flex max-w-xs flex-col gap-4" (submit)="$event.preventDefault(); onSubmit()">
+      <app-select
+        label="Framework"
+        placeholder="Elegí un framework"
+        [options]="frameworkOptions"
+        [value]="demoForm.framework().value()"
+        (valueChange)="demoForm.framework().value.set($event ?? '')"
+        [invalid]="demoForm.framework().invalid() && demoForm.framework().touched()"
+        [errorMessage]="demoForm.framework().errors()[0]?.message"
+      />
+
+      <app-button type="submit" [loading]="loadingDemo()">Guardar</app-button>
+
+      @if (submittedOk()) {
+        <p class="text-sm text-status-active">
+          Formulario válido: {{ demoForm.framework().value() }}
+        </p>
+      }
+    </form>
+  </section>
+</main>

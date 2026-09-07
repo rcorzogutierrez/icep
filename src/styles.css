@@ -1,3 +1,57 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+/* CSS estructural (posicionamiento, no visual) que requiere @angular/cdk/overlay,
+   usado por app-select (peer dependency de @angular/aria). */
+@import '@angular/cdk/overlay-prebuilt.css';
+
+@theme {
+  /* Brand (azul), escala completa 50-900. */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+
+  /* Estados semánticos: colores puntuales, no una escala (no reescalar). */
+  --color-status-active: #16a34a;
+  --color-status-paused: #d97706;
+  --color-status-expired: #dc2626;
+
+  /*
+   * Tokens semánticos de superficie/texto/borde. Referencian la escala
+   * neutral "slate" que Tailwind v4 ya trae por defecto
+   * (--color-slate-50 ... --color-slate-900) en vez de redefinirla.
+   */
+  --color-surface: var(--color-white);
+  --color-text: var(--color-slate-900);
+  --color-text-muted: var(--color-slate-500);
+  --color-border: var(--color-slate-200);
+}
+
+/*
+ * Hook de dark mode (estrategia por clase `.dark` en <html>), preparado
+ * pero NO activado todavía: no hay toggle ni persistencia de preferencia en
+ * esta etapa del scaffold. Al implementarlo, alcanza con alternar la clase
+ * `dark` en el elemento raíz; solo se redefinen los tokens semánticos acá
+ * abajo, nunca la escala brand/status.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  .dark {
+    --color-surface: var(--color-slate-900);
+    --color-text: var(--color-slate-50);
+    --color-text-muted: var(--color-slate-400);
+    --color-border: var(--color-slate-700);
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-text;
+  }
+}

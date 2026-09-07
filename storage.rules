@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Deny-all por defecto, mismo criterio que firestore.rules: reemplazar
+    // por reglas explícitas por path cuando exista un caso de uso real de
+    // subida de archivos (ej. scoping por accountId).
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
