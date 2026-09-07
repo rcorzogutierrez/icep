@@ -9,6 +9,7 @@ import type {
 import { InvitationsService } from '../../core/invitations/invitations.service';
 import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
+import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { ToastService } from '../../shared/toast/toast.service';
@@ -32,6 +33,7 @@ export class Invitations {
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
+  private readonly usersService = inject(UsersService);
   private readonly toast = inject(ToastService);
 
   protected readonly availableSubjects = computed(() =>
@@ -96,6 +98,12 @@ export class Invitations {
     this.selectedSubjectIds.set(next);
   }
 
+  /** Ya existe una cuenta con ese email (comparación case-insensitive). */
+  private isEmailRegistered(email: string): boolean {
+    const normalized = email.trim().toLowerCase();
+    return this.usersService.users().some((user) => user.email?.toLowerCase() === normalized);
+  }
+
   protected toggleAllSubjects(): void {
     this.selectedSubjectIds.set(
       this.allSubjectsSelected()
@@ -106,6 +114,10 @@ export class Invitations {
 
   protected async onCreate(): Promise<void> {
     if (!this.email().trim()) {
+      return;
+    }
+    if (this.isEmailRegistered(this.email())) {
+      this.toast.error(this.i18n.t('invitationsPage', 'emailAlreadyRegistered'));
       return;
     }
     this.creating.set(true);
@@ -180,6 +192,10 @@ export class Invitations {
 
   protected async saveEdit(invitation: Invitation): Promise<void> {
     if (!this.editEmail().trim()) {
+      return;
+    }
+    if (this.isEmailRegistered(this.editEmail())) {
+      this.toast.error(this.i18n.t('invitationsPage', 'emailAlreadyRegistered'));
       return;
     }
     this.savingEdit.set(true);

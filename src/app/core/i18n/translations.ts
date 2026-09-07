@@ -125,6 +125,7 @@ export const translations = {
       resent: 'Invitación reenviada. Compartí el link.',
       updated: 'Email actualizado.',
       deleted: 'Invitación eliminada.',
+      emailAlreadyRegistered: 'Ese email ya tiene una cuenta en el sistema.',
       errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
     },
     adminSubjects: {
@@ -273,6 +274,7 @@ export const translations = {
       resent: 'Invitation resent. Share the link.',
       updated: 'Email updated.',
       deleted: 'Invitation deleted.',
+      emailAlreadyRegistered: 'That email already has an account in the system.',
       errorGeneric: "We couldn't complete the action. Please try again.",
     },
     adminSubjects: {
