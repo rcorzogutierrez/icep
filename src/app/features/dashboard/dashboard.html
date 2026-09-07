@@ -1,85 +1,20 @@
-<div class="mx-auto flex max-w-2xl flex-col gap-8 px-6 py-12">
-  <header class="flex flex-wrap items-center justify-between gap-4">
-    <div class="flex items-center gap-3">
-      <img src="logo.png" alt="ICEP Gradebook" class="size-10" />
-      @if (auth.user()?.photoURL; as photo) {
-        <img [src]="photo" alt="" class="size-10 rounded-full" />
-      }
-      <div>
-        <h1 class="text-lg font-semibold text-text">
-          {{ i18n.t('dashboard', 'greeting') }},
-          {{ auth.user()?.displayName ?? auth.user()?.email }}
-        </h1>
-        <p class="text-sm text-text-muted">{{ i18n.t('dashboard', 'subtitle') }}</p>
+<div class="flex flex-col gap-8">
+  <div>
+    <h1 class="text-2xl font-semibold text-text">
+      {{ i18n.t('dashboard', 'greeting') }},
+      {{ auth.user()?.displayName ?? auth.user()?.email }}
+    </h1>
+    <p class="text-sm text-text-muted">{{ roleLabel() }} · {{ i18n.t('dashboard', 'subtitle') }}</p>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    @for (stat of statCards(); track stat.label) {
+      <div class="rounded-lg border border-border bg-surface p-4">
+        <p class="text-2xl font-semibold text-text">{{ stat.value }}</p>
+        <p class="text-sm text-text-muted">{{ stat.label }}</p>
       </div>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <div class="flex gap-1 rounded-full border border-border p-0.5 text-xs font-medium">
-        <button
-          type="button"
-          class="rounded-full px-2.5 py-1 transition-colors"
-          [class.bg-brand-600]="i18n.locale() === 'es'"
-          [class.text-white]="i18n.locale() === 'es'"
-          [class.text-text-muted]="i18n.locale() !== 'es'"
-          (click)="i18n.setLocale('es')"
-        >
-          ES
-        </button>
-        <button
-          type="button"
-          class="rounded-full px-2.5 py-1 transition-colors"
-          [class.bg-brand-600]="i18n.locale() === 'en'"
-          [class.text-white]="i18n.locale() === 'en'"
-          [class.text-text-muted]="i18n.locale() !== 'en'"
-          (click)="i18n.setLocale('en')"
-        >
-          EN
-        </button>
-      </div>
-      <app-button variant="ghost" size="sm" (pressed)="onSignOut()">
-        {{ i18n.t('common', 'signOut') }}
-      </app-button>
-    </div>
-  </header>
-
-  @if (userProfileService.isAdmin() || userProfileService.isTeacher()) {
-    <section class="flex flex-col gap-3">
-      <h2 class="text-sm font-semibold text-text">{{ i18n.t('dashboard', 'toolsTitle') }}</h2>
-      <div class="grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          class="flex flex-col items-start gap-1 rounded-lg border border-border bg-surface p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
-          (click)="goToInvitations()"
-        >
-          <span class="font-medium text-text">{{ i18n.t('dashboard', 'invitations') }}</span>
-          <span class="text-sm text-text-muted">{{ i18n.t('dashboard', 'invitationsDesc') }}</span>
-        </button>
-
-        @if (userProfileService.isAdmin()) {
-          <button
-            type="button"
-            class="flex flex-col items-start gap-1 rounded-lg border border-border bg-surface p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
-            (click)="goToSubjects()"
-          >
-            <span class="font-medium text-text">{{ i18n.t('dashboard', 'subjectsLink') }}</span>
-            <span class="text-sm text-text-muted">{{
-              i18n.t('dashboard', 'subjectsLinkDesc')
-            }}</span>
-          </button>
-
-          <button
-            type="button"
-            class="flex flex-col items-start gap-1 rounded-lg border border-border bg-surface p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
-            (click)="goToAdmin()"
-          >
-            <span class="font-medium text-text">{{ i18n.t('dashboard', 'adminPanel') }}</span>
-            <span class="text-sm text-text-muted">{{ i18n.t('dashboard', 'adminPanelDesc') }}</span>
-          </button>
-        }
-      </div>
-    </section>
-  }
+    }
+  </div>
 
   @if (userProfileService.isStudent()) {
     <section class="flex flex-col gap-3">
@@ -100,6 +35,27 @@
       } @else {
         <p class="text-sm text-text-muted">{{ i18n.t('dashboard', 'noSubjects') }}</p>
       }
+    </section>
+  }
+
+  @if (userProfileService.isAdmin() || userProfileService.isTeacher()) {
+    <section class="flex flex-col gap-3">
+      <h2 class="text-sm font-semibold text-text">
+        {{ i18n.t('dashboard', 'quickActionsTitle') }}
+      </h2>
+      <div class="flex flex-col gap-2 sm:max-w-xs">
+        <app-button (pressed)="goToInvitations()">{{
+          i18n.t('dashboard', 'newInvitation')
+        }}</app-button>
+        @if (userProfileService.isAdmin()) {
+          <app-button variant="secondary" (pressed)="goToSubjects()">
+            {{ i18n.t('dashboard', 'newSubject') }}
+          </app-button>
+          <app-button variant="secondary" (pressed)="goToAdmin()">
+            {{ i18n.t('dashboard', 'viewUsers') }}
+          </app-button>
+        }
+      </div>
     </section>
   }
 </div>

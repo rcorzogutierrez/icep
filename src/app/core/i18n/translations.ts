@@ -65,11 +65,19 @@ export const translations = {
       mySubjects: 'Mis materias',
       noSubjects: 'Todavía no tenés materias asignadas.',
       taughtBy: 'Profesor',
+      statPendingInvitations: 'Invitaciones pendientes',
+      quickActionsTitle: 'Acciones rápidas',
+      newInvitation: 'Nueva invitación',
+      newSubject: 'Nueva materia',
+      viewUsers: 'Ver usuarios',
+    },
+    shell: {
+      summary: 'Resumen',
+      manageSection: 'Gestionar',
     },
     adminUsers: {
       title: 'Usuarios',
       subtitle: 'Gestioná el acceso de estudiantes y profesores.',
-      back: 'Volver',
       colUser: 'Usuario',
       colRegistered: 'Registrado',
       colRole: 'Rol',
@@ -86,7 +94,6 @@ export const translations = {
     invitationsPage: {
       title: 'Invitaciones',
       subtitle: 'Generá un código para que un estudiante o profesor se registre.',
-      back: 'Volver',
       emailLabel: 'Email',
       roleLabel: 'Rol',
       roleStudent: 'Estudiante',
@@ -108,7 +115,6 @@ export const translations = {
     adminSubjects: {
       title: 'Materias',
       subtitle: 'Creá las materias y asignales un profesor.',
-      back: 'Volver',
       nameLabel: 'Nombre de la materia',
       teacherLabel: 'Profesor a cargo',
       create: 'Crear materia',
@@ -180,11 +186,19 @@ export const translations = {
       mySubjects: 'My subjects',
       noSubjects: "You don't have any subjects assigned yet.",
       taughtBy: 'Teacher',
+      statPendingInvitations: 'Pending invitations',
+      quickActionsTitle: 'Quick actions',
+      newInvitation: 'New invitation',
+      newSubject: 'New subject',
+      viewUsers: 'View users',
+    },
+    shell: {
+      summary: 'Summary',
+      manageSection: 'Manage',
     },
     adminUsers: {
       title: 'Users',
       subtitle: "Manage students' and teachers' access.",
-      back: 'Back',
       colUser: 'User',
       colRegistered: 'Registered',
       colRole: 'Role',
@@ -201,7 +215,6 @@ export const translations = {
     invitationsPage: {
       title: 'Invitations',
       subtitle: 'Generate a code so a student or teacher can register.',
-      back: 'Back',
       emailLabel: 'Email',
       roleLabel: 'Role',
       roleStudent: 'Student',
@@ -223,7 +236,6 @@ export const translations = {
     adminSubjects: {
       title: 'Subjects',
       subtitle: 'Create subjects and assign a teacher.',
-      back: 'Back',
       nameLabel: 'Subject name',
       teacherLabel: 'Teacher in charge',
       create: 'Create subject',

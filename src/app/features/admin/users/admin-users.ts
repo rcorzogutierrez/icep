@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import type { UserProfile, UserRole, UserStatus } from '../../../core/users/users.model';
 import { UsersService } from '../../../core/users/users.service';
@@ -23,7 +22,6 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 export class AdminUsers {
   protected readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
-  private readonly router = inject(Router);
 
   protected readonly statusClass = STATUS_CLASS;
 
@@ -62,9 +60,5 @@ export class AdminUsers {
     } finally {
       this.pendingActionUid.set(null);
     }
-  }
-
-  protected goToDashboard(): void {
-    void this.router.navigateByUrl('/dashboard');
   }
 }

@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { I18nService } from '../../core/i18n/i18n.service';
 import type {
   InvitableRole,
@@ -32,7 +31,6 @@ export class Invitations {
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
-  private readonly router = inject(Router);
 
   protected readonly availableSubjects = computed(() =>
     this.userProfileService.isAdmin()
@@ -117,9 +115,5 @@ export class Invitations {
     } finally {
       this.revokingCode.set(null);
     }
-  }
-
-  protected goToDashboard(): void {
-    void this.router.navigateByUrl('/dashboard');
   }
 }

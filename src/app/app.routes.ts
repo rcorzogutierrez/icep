@@ -22,25 +22,33 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/rejected/rejected').then((m) => m.Rejected),
   },
   {
-    path: 'dashboard',
+    path: '',
     canActivate: [authGuard, approvedGuard],
-    loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+    loadComponent: () => import('./shared/layout/app-shell/app-shell').then((m) => m.AppShell),
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'invitations',
+        canActivate: [staffGuard],
+        loadComponent: () =>
+          import('./features/invitations/invitations').then((m) => m.Invitations),
+      },
+      {
+        path: 'admin/users',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/users/admin-users').then((m) => m.AdminUsers),
+      },
+      {
+        path: 'admin/subjects',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/admin/subjects/subjects').then((m) => m.AdminSubjects),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+    ],
   },
-  {
-    path: 'invitations',
-    canActivate: [authGuard, approvedGuard, staffGuard],
-    loadComponent: () => import('./features/invitations/invitations').then((m) => m.Invitations),
-  },
-  {
-    path: 'admin/users',
-    canActivate: [authGuard, approvedGuard, adminGuard],
-    loadComponent: () => import('./features/admin/users/admin-users').then((m) => m.AdminUsers),
-  },
-  {
-    path: 'admin/subjects',
-    canActivate: [authGuard, approvedGuard, adminGuard],
-    loadComponent: () => import('./features/admin/subjects/subjects').then((m) => m.AdminSubjects),
-  },
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

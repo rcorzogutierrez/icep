@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import type { Subject } from '../../../core/subjects/subjects.model';
@@ -19,7 +18,6 @@ export class AdminSubjects {
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
-  private readonly router = inject(Router);
 
   protected readonly teacherOptions = computed<SelectOption<string>[]>(() =>
     this.usersService
@@ -64,9 +62,5 @@ export class AdminSubjects {
     } finally {
       this.removingId.set(null);
     }
-  }
-
-  protected goToDashboard(): void {
-    void this.router.navigateByUrl('/dashboard');
   }
 }
