@@ -14,24 +14,6 @@
 
     <img src="logo.png" alt="ICEP Gradebook" class="relative size-20" />
 
-    <div class="relative flex flex-col gap-6">
-      <h1 class="text-4xl leading-tight font-semibold text-white">
-        {{ i18n.t('login', 'brandHeadline') }}
-      </h1>
-      <p class="max-w-sm text-brand-100">{{ i18n.t('login', 'brandSubtitle') }}</p>
-
-      <ul class="flex flex-col gap-3">
-        @for (item of highlights(); track item) {
-          <li class="flex items-center gap-3 text-sm text-white">
-            <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-white/15">
-              <svg lucideCheck [size]="14" aria-hidden="true"></svg>
-            </span>
-            {{ item }}
-          </li>
-        }
-      </ul>
-    </div>
-
     <div class="relative flex flex-col gap-3 border-t border-white/20 pt-6">
       <div>
         <p class="text-sm font-semibold text-white">ICEP Gradebook</p>

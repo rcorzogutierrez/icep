@@ -7,7 +7,6 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { InvitationsService } from '../../../core/invitations/invitations.service';
 import { UserProfileService } from '../../../core/users/user-profile.service';
 import { Button } from '../../../shared/components/button/button';
-import { IconCheck } from '../../../shared/icons/icons';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -27,7 +26,7 @@ const emailFormSchema = schema<EmailFormModel>((p) => {
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [Button, IconCheck],
+  imports: [Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
 })
@@ -50,12 +49,6 @@ export class Login {
 
   private readonly emailModel = signal<EmailFormModel>({ email: '', password: '' });
   protected readonly emailForm = form(this.emailModel, emailFormSchema);
-
-  protected readonly highlights = computed(() => [
-    this.i18n.t('login', 'highlight1'),
-    this.i18n.t('login', 'highlight2'),
-    this.i18n.t('login', 'highlight3'),
-  ]);
 
   protected readonly signingInGoogle = signal(false);
   protected readonly submittingEmail = signal(false);
