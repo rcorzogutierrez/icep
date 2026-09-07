@@ -1,12 +1,14 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import {
-  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithEmailAndPassword,
+  signInWithPopup,
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
 import { FIREBASE_AUTH } from '../firebase/firebase.tokens';
+
+const googleProvider = new GoogleAuthProvider();
 
 /**
  * Envuelve el Auth del SDK modular de Firebase (basado en callbacks) y lo
@@ -37,12 +39,8 @@ export class AuthService {
     });
   }
 
-  signIn(email: string, password: string) {
-    return signInWithEmailAndPassword(this.auth, email, password);
-  }
-
-  signUp(email: string, password: string) {
-    return createUserWithEmailAndPassword(this.auth, email, password);
+  signInWithGoogle() {
+    return signInWithPopup(this.auth, googleProvider);
   }
 
   signOut() {

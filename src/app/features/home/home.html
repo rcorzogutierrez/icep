@@ -7,19 +7,24 @@
     </p>
   </header>
 
-  <section class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4">
-    <h2 class="text-sm font-semibold text-text">Estado de Firebase Auth</h2>
+  <section class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+    <h2 class="text-sm font-semibold text-text">Estado de Firebase Auth (Google)</h2>
     @if (auth.initializing()) {
       <p class="text-sm text-text-muted">Resolviendo sesión…</p>
     } @else if (auth.isAuthenticated()) {
-      <p class="text-sm text-status-active">
-        Sesión activa: {{ auth.user()?.email ?? auth.user()?.uid }}
-      </p>
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm text-status-active">
+          Sesión activa: {{ auth.user()?.displayName ?? auth.user()?.email }}
+        </p>
+        <app-button variant="secondary" size="sm" (pressed)="onSignOut()">Cerrar sesión</app-button>
+      </div>
     } @else {
-      <p class="text-sm text-text-muted">
-        Sin sesión (esperado: no hay UI de login todavía; corré los emuladores para probar
-        AuthService).
-      </p>
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm text-text-muted">Sin sesión.</p>
+        <app-button size="sm" [loading]="signingIn()" (pressed)="onSignIn()">
+          Iniciar sesión con Google
+        </app-button>
+      </div>
     }
   </section>
 

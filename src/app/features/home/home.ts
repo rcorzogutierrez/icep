@@ -42,10 +42,31 @@ export class Home {
   protected readonly loadingDemo = signal(false);
   protected readonly submittedOk = signal(false);
 
+  protected readonly signingIn = signal(false);
+
   protected async onSubmit(): Promise<void> {
     this.loadingDemo.set(true);
     const ok = await submit(this.demoForm, async () => undefined);
     this.loadingDemo.set(false);
     this.submittedOk.set(ok);
+  }
+
+  protected async onSignIn(): Promise<void> {
+    this.signingIn.set(true);
+    try {
+      await this.auth.signInWithGoogle();
+    } catch (error) {
+      // El usuario puede cerrar el popup de Google sin elegir cuenta
+      // (auth/popup-closed-by-user); no es un error real de la app.
+      if ((error as { code?: string }).code !== 'auth/popup-closed-by-user') {
+        console.error('Error al iniciar sesión con Google', error);
+      }
+    } finally {
+      this.signingIn.set(false);
+    }
+  }
+
+  protected onSignOut(): void {
+    void this.auth.signOut();
   }
 }
