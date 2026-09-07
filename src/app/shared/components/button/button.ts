@@ -62,11 +62,13 @@ export class Button {
   readonly type = input<'button' | 'submit' | 'reset'>('button');
   readonly disabled = input(false);
   readonly loading = input(false);
+  readonly fullWidth = input(false);
 
   readonly pressed = output<MouseEvent>();
 
   protected readonly hostClass = computed(
-    () => `${BASE_CLASSES} ${VARIANT_CLASSES[this.variant()]} ${SIZE_CLASSES[this.size()]}`,
+    () =>
+      `${BASE_CLASSES} ${VARIANT_CLASSES[this.variant()]} ${SIZE_CLASSES[this.size()]} ${this.fullWidth() ? 'w-full' : ''}`,
   );
   protected readonly iconSize = computed(() => ICON_SIZE[this.size()]);
 

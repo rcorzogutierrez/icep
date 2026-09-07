@@ -1,14 +1,62 @@
-<main class="flex min-h-dvh items-center justify-center bg-slate-50 px-6">
-  <div class="w-full max-w-sm rounded-lg border border-border bg-surface p-8 text-center shadow-sm">
-    <h1 class="text-2xl font-semibold text-brand-700">icep</h1>
-    <p class="mt-2 text-sm text-text-muted">
-      Iniciá sesión con tu cuenta de Google. Si es tu primera vez, tu cuenta se crea automáticamente
-      y queda pendiente de aprobación por un administrador.
-    </p>
+<main class="flex min-h-dvh">
+  <!-- Panel de marca (oculto en mobile) -->
+  <div
+    class="relative hidden overflow-hidden bg-gradient-to-br from-brand-600 to-brand-900 lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-12"
+  >
+    <div
+      class="pointer-events-none absolute -top-24 -right-24 size-96 rounded-[3rem] bg-white/10 blur-2xl"
+      aria-hidden="true"
+    ></div>
+    <div
+      class="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-[3rem] bg-brand-400/20 blur-3xl"
+      aria-hidden="true"
+    ></div>
 
-    <div class="mt-6 flex justify-center">
-      <app-button size="lg" [loading]="signingIn()" (pressed)="onSignIn()">
-        <span class="flex items-center justify-center gap-2">
+    <span class="text-xl font-semibold tracking-tight text-white">icep</span>
+
+    <div class="relative flex flex-col gap-6">
+      <h1 class="text-4xl leading-tight font-semibold text-white">
+        Acceso controlado, sin fricción.
+      </h1>
+      <p class="max-w-sm text-brand-100">
+        Un solo login con Google para entrar. Cada cuenta nueva queda a un clic de aprobación de un
+        administrador, sin contraseñas que gestionar.
+      </p>
+
+      <ul class="flex flex-col gap-3">
+        @for (item of highlights; track item) {
+          <li class="flex items-center gap-3 text-sm text-white">
+            <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-white/15">
+              <svg lucideCheck [size]="14" aria-hidden="true"></svg>
+            </span>
+            {{ item }}
+          </li>
+        }
+      </ul>
+    </div>
+
+    <p class="relative text-xs text-brand-200">Angular 22 · Tailwind 4 · Firebase</p>
+  </div>
+
+  <!-- Panel de login -->
+  <div class="flex flex-1 items-center justify-center bg-surface px-6 py-12">
+    <div class="w-full max-w-sm">
+      <span class="text-xl font-semibold tracking-tight text-brand-700 lg:hidden">icep</span>
+
+      <h2 class="mt-6 text-2xl font-semibold text-text lg:mt-0">Iniciá sesión</h2>
+      <p class="mt-2 text-sm text-text-muted">
+        Entrá con tu cuenta de Google. Si es tu primera vez, tu cuenta se crea automáticamente y
+        queda pendiente de aprobación.
+      </p>
+
+      <app-button
+        class="mt-8 block"
+        size="lg"
+        [fullWidth]="true"
+        [loading]="signingIn()"
+        (pressed)="onSignIn()"
+      >
+        <span class="flex w-full items-center justify-center gap-2">
           @if (!signingIn()) {
             <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
               <path
@@ -32,10 +80,10 @@
           Continuar con Google
         </span>
       </app-button>
-    </div>
 
-    @if (errorMessage(); as message) {
-      <p class="mt-4 text-sm text-status-expired">{{ message }}</p>
-    }
+      @if (errorMessage(); as message) {
+        <p class="mt-4 text-sm text-status-expired">{{ message }}</p>
+      }
+    </div>
   </div>
 </main>
