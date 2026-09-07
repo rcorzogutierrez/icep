@@ -1,7 +1,9 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import {
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
   type User,
@@ -41,6 +43,14 @@ export class AuthService {
 
   signInWithGoogle() {
     return signInWithPopup(this.auth, googleProvider);
+  }
+
+  signInWithEmail(email: string, password: string) {
+    return signInWithEmailAndPassword(this.auth, email, password);
+  }
+
+  signUpWithEmail(email: string, password: string) {
+    return createUserWithEmailAndPassword(this.auth, email, password);
   }
 
   signOut() {
