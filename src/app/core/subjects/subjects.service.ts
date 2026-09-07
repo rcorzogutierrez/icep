@@ -17,6 +17,7 @@ import {
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
+import { SubjectAssignmentsService } from './subject-assignments.service';
 import type { Subject } from './subjects.model';
 
 /** Firestore permite hasta 30 valores por cláusula "in". */
@@ -36,6 +37,7 @@ export class SubjectsService {
   private readonly firestore = inject(FIREBASE_FIRESTORE);
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
+  private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
 
   private readonly _subjects = signal<Subject[]>([]);
   private readonly _loading = signal(true);
@@ -43,10 +45,19 @@ export class SubjectsService {
   readonly subjects = this._subjects.asReadonly();
   readonly loading = this._loading.asReadonly();
 
-  /** Las materias del profesor logueado (para el checklist de invitaciones). */
+  /** Las materias que enseña el profesor logueado (para el checklist de invitaciones). */
   readonly mySubjects = computed(() => {
     const uid = this.authService.user()?.uid;
-    return this._subjects().filter((subject) => subject.teacherId === uid);
+    if (!uid) {
+      return [];
+    }
+    const myIds = new Set(
+      this.subjectAssignmentsService
+        .assignments()
+        .filter((assignment) => assignment.teacherId === uid)
+        .map((assignment) => assignment.subjectId),
+    );
+    return this._subjects().filter((subject) => myIds.has(subject.id));
   });
 
   constructor() {
@@ -86,18 +97,11 @@ export class SubjectsService {
     });
   }
 
-  async create(
-    name: string,
-    code: string,
-    teacherId: string | null,
-    teacherName: string | null,
-  ): Promise<string> {
+  async create(name: string, code: string): Promise<string> {
     const ref = doc(collection(this.firestore, 'subjects'));
     await setDoc(ref, {
       name: name.trim(),
       code: code.trim().toUpperCase(),
-      teacherId,
-      teacherName,
       createdAt: serverTimestamp(),
     });
     return ref.id;
@@ -120,14 +124,16 @@ export class SubjectsService {
     return results;
   }
 
-  update(
-    id: string,
-    fields: Partial<Pick<Subject, 'name' | 'code' | 'teacherId' | 'teacherName'>>,
-  ) {
+  update(id: string, fields: Partial<Pick<Subject, 'name' | 'code'>>) {
     return updateDoc(doc(this.firestore, 'subjects', id), fields as DocumentData);
   }
 
-  remove(id: string) {
-    return deleteDoc(doc(this.firestore, 'subjects', id));
+  /** Borra la materia y, con ella, todas sus asignaciones de profesor. */
+  async remove(id: string): Promise<void> {
+    const assignments = await this.subjectAssignmentsService.fetchBySubjectIds([id]);
+    await Promise.all(
+      assignments.map((assignment) => this.subjectAssignmentsService.unassign(assignment.id)),
+    );
+    await deleteDoc(doc(this.firestore, 'subjects', id));
   }
 }

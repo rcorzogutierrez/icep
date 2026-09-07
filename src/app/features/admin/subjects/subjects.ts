@@ -1,44 +1,63 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import type { SubjectAssignment } from '../../../core/subjects/subject-assignments.model';
+import { SubjectAssignmentsService } from '../../../core/subjects/subject-assignments.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import type { Subject } from '../../../core/subjects/subjects.model';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
+import { IconX } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
 
-/** Panel de admin: crear materias y asignarles un profesor. */
+/** Panel de admin: crear materias y asignarles uno o varios profesores. */
 @Component({
   selector: 'app-admin-subjects',
   standalone: true,
-  imports: [Button, Select],
+  imports: [Button, Select, IconX],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './subjects.html',
 })
 export class AdminSubjects {
   protected readonly subjectsService = inject(SubjectsService);
+  protected readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
   protected readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
 
-  protected readonly teacherOptions = computed<SelectOption<string>[]>(() =>
-    this.usersService
-      .users()
-      .filter((user) => user.role === 'teacher' || user.role === 'admin')
-      .map((user) => ({ value: user.uid, label: user.displayName ?? user.email ?? user.uid })),
+  private readonly teachers = computed(() =>
+    this.usersService.users().filter((user) => user.role === 'teacher' || user.role === 'admin'),
   );
 
   protected readonly name = signal('');
   protected readonly code = signal('');
-  protected readonly teacherId = signal<string | undefined>(undefined);
   protected readonly creating = signal(false);
   protected readonly removingId = signal<string | null>(null);
   protected readonly assigningId = signal<string | null>(null);
+  protected readonly unassigningId = signal<string | null>(null);
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly editName = signal('');
   protected readonly editCode = signal('');
   protected readonly savingEdit = signal(false);
+
+  /** Profesores ya asignados a una materia. */
+  protected assignmentsFor(subjectId: string): SubjectAssignment[] {
+    return this.subjectAssignmentsService
+      .assignments()
+      .filter((assignment) => assignment.subjectId === subjectId);
+  }
+
+  /** Profesores que todavía no están asignados a esa materia (para el selector de "agregar"). */
+  protected availableTeacherOptions(subjectId: string): SelectOption<string>[] {
+    const assignedIds = new Set(this.assignmentsFor(subjectId).map((a) => a.teacherId));
+    return this.teachers()
+      .filter((teacher) => !assignedIds.has(teacher.uid))
+      .map((teacher) => ({
+        value: teacher.uid,
+        label: teacher.displayName ?? teacher.email ?? teacher.uid,
+      }));
+  }
 
   /** El código ya existe en otra materia (comparación case-insensitive, excluyendo `excludeId`). */
   private isCodeTaken(code: string, excludeId?: string): boolean {
@@ -57,22 +76,11 @@ export class AdminSubjects {
       return;
     }
 
-    const teacherId = this.teacherId();
-    const teacher = teacherId
-      ? this.usersService.users().find((user) => user.uid === teacherId)
-      : undefined;
-
     this.creating.set(true);
     try {
-      await this.subjectsService.create(
-        this.name(),
-        this.code(),
-        teacherId ?? null,
-        teacher ? (teacher.displayName ?? teacher.email ?? teacherId!) : null,
-      );
+      await this.subjectsService.create(this.name(), this.code());
       this.name.set('');
       this.code.set('');
-      this.teacherId.set(undefined);
       this.toast.success(this.i18n.t('adminSubjects', 'created'));
     } catch {
       this.toast.error(this.i18n.t('adminSubjects', 'errorGeneric'));
@@ -82,21 +90,38 @@ export class AdminSubjects {
   }
 
   protected async onAssignTeacher(subject: Subject, teacherId: string | undefined): Promise<void> {
-    const teacher = teacherId
-      ? this.usersService.users().find((user) => user.uid === teacherId)
-      : undefined;
+    if (!teacherId) {
+      return;
+    }
+    const teacher = this.teachers().find((t) => t.uid === teacherId);
+    if (!teacher) {
+      return;
+    }
 
     this.assigningId.set(subject.id);
     try {
-      await this.subjectsService.update(subject.id, {
-        teacherId: teacherId ?? null,
-        teacherName: teacher ? (teacher.displayName ?? teacher.email ?? teacherId!) : null,
-      });
-      this.toast.success(this.i18n.t('adminSubjects', 'teacherUpdated'));
+      await this.subjectAssignmentsService.assign(
+        subject.id,
+        teacherId,
+        teacher.displayName ?? teacher.email ?? teacherId,
+      );
+      this.toast.success(this.i18n.t('adminSubjects', 'teacherAssigned'));
     } catch {
       this.toast.error(this.i18n.t('adminSubjects', 'errorGeneric'));
     } finally {
       this.assigningId.set(null);
+    }
+  }
+
+  protected async onUnassignTeacher(assignment: SubjectAssignment): Promise<void> {
+    this.unassigningId.set(assignment.id);
+    try {
+      await this.subjectAssignmentsService.unassign(assignment.id);
+      this.toast.success(this.i18n.t('adminSubjects', 'teacherRemoved'));
+    } catch {
+      this.toast.error(this.i18n.t('adminSubjects', 'errorGeneric'));
+    } finally {
+      this.unassigningId.set(null);
     }
   }
 

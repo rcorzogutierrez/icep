@@ -50,8 +50,7 @@
                 · {{ subject.name }}
               </p>
               <p class="text-sm text-text-muted">
-                {{ i18n.t('dashboard', 'taughtBy') }}:
-                {{ subject.teacherName ?? i18n.t('dashboard', 'noTeacherAssigned') }}
+                {{ i18n.t('dashboard', 'taughtBy') }}: {{ teacherNamesFor(subject.id) }}
               </p>
             </div>
           }

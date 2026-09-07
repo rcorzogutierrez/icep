@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { InvitationsService } from '../../core/invitations/invitations.service';
+import { SubjectAssignmentsService } from '../../core/subjects/subject-assignments.service';
 import type { Subject } from '../../core/subjects/subjects.model';
 import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
@@ -38,12 +39,22 @@ export class Dashboard {
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
   private readonly subjectsService = inject(SubjectsService);
+  private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
   private readonly usersService = inject(UsersService);
   private readonly invitationsService = inject(InvitationsService);
   private readonly router = inject(Router);
 
   protected readonly mySubjects = signal<Subject[]>([]);
+  protected readonly mySubjectTeachers = signal<Map<string, string[]>>(new Map());
   protected readonly loadingMySubjects = signal(false);
+
+  /** Nombres de los profesores de una materia, unidos con coma (o el fallback si no tiene ninguno). */
+  protected teacherNamesFor(subjectId: string): string {
+    const names = this.mySubjectTeachers().get(subjectId);
+    return names && names.length > 0
+      ? names.join(', ')
+      : this.i18n.t('dashboard', 'noTeacherAssigned');
+  }
 
   protected readonly roleLabel = computed(() => {
     switch (this.userProfileService.profile()?.role) {
@@ -112,15 +123,31 @@ export class Dashboard {
       const profile = this.userProfileService.profile();
       if (profile?.role !== 'student' || profile.enrolledSubjectIds.length === 0) {
         this.mySubjects.set([]);
+        this.mySubjectTeachers.set(new Map());
         this.loadingMySubjects.set(false);
         return;
       }
 
       this.loadingMySubjects.set(true);
-      this.subjectsService
-        .fetchByIds(profile.enrolledSubjectIds)
-        .then((subjects) => this.mySubjects.set(subjects))
-        .catch(() => this.mySubjects.set([]))
+      Promise.all([
+        this.subjectsService.fetchByIds(profile.enrolledSubjectIds),
+        this.subjectAssignmentsService.fetchBySubjectIds(profile.enrolledSubjectIds),
+      ])
+        .then(([subjects, assignments]) => {
+          this.mySubjects.set(subjects);
+          const byTeacher = new Map<string, string[]>();
+          for (const assignment of assignments) {
+            byTeacher.set(assignment.subjectId, [
+              ...(byTeacher.get(assignment.subjectId) ?? []),
+              assignment.teacherName,
+            ]);
+          }
+          this.mySubjectTeachers.set(byTeacher);
+        })
+        .catch(() => {
+          this.mySubjects.set([]);
+          this.mySubjectTeachers.set(new Map());
+        })
         .finally(() => this.loadingMySubjects.set(false));
     });
   }
