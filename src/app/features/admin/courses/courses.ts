@@ -7,7 +7,9 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
-import { Select, type SelectOption } from '../../../shared/components/select/select';
+import { Modal } from '../../../shared/components/modal/modal';
+import { type SelectOption } from '../../../shared/components/select/select';
+import { TransferList } from '../../../shared/components/transfer-list/transfer-list';
 import { IconX } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
 
@@ -15,7 +17,7 @@ import { ToastService } from '../../../shared/toast/toast.service';
 @Component({
   selector: 'app-admin-courses',
   standalone: true,
-  imports: [Button, Select, IconX],
+  imports: [Button, Modal, TransferList, IconX],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './courses.html',
 })
@@ -40,10 +42,18 @@ export class AdminCourses {
   protected readonly editName = signal('');
   protected readonly savingEdit = signal(false);
 
-  protected readonly assigningSubjectId = signal<string | null>(null);
   protected readonly unassigningSubjectRowId = signal<string | null>(null);
-  protected readonly assigningStudentId = signal<string | null>(null);
   protected readonly unassigningStudentRowId = signal<string | null>(null);
+
+  protected readonly managingSubjectsCourseId = signal<string | null>(null);
+  protected readonly managingStudentsCourseId = signal<string | null>(null);
+
+  protected readonly managingSubjectsCourse = computed(() =>
+    this.coursesService.courses().find((c) => c.id === this.managingSubjectsCourseId()),
+  );
+  protected readonly managingStudentsCourse = computed(() =>
+    this.coursesService.courses().find((c) => c.id === this.managingStudentsCourseId()),
+  );
 
   /** Materias ya asignadas a un curso. */
   protected subjectsFor(courseId: string): CourseSubject[] {
@@ -55,7 +65,15 @@ export class AdminCourses {
     return this.courseStudentsService.forCourse(courseId);
   }
 
-  /** Materias que todavía no están en ese curso (para el selector de "agregar"). */
+  /** Materias ya asignadas, como opciones para la columna "Seleccionadas" del transfer list. */
+  protected selectedSubjectOptions(courseId: string): SelectOption<string>[] {
+    return this.subjectsFor(courseId).map((cs) => ({
+      value: cs.subjectId,
+      label: `${cs.subjectCode} · ${cs.subjectName}`,
+    }));
+  }
+
+  /** Materias que todavía no están en ese curso, como opciones para "Disponibles". */
   protected availableSubjectOptions(courseId: string): SelectOption<string>[] {
     const assignedIds = new Set(this.subjectsFor(courseId).map((cs) => cs.subjectId));
     return this.subjectsService
@@ -64,7 +82,15 @@ export class AdminCourses {
       .map((subject) => ({ value: subject.id, label: `${subject.code} · ${subject.name}` }));
   }
 
-  /** Estudiantes que todavía no están en ese curso (para el selector de "agregar"). */
+  /** Estudiantes ya asignados, como opciones para la columna "Seleccionadas" del transfer list. */
+  protected selectedStudentOptions(courseId: string): SelectOption<string>[] {
+    return this.studentsFor(courseId).map((cs) => ({
+      value: cs.studentUid,
+      label: cs.studentName,
+    }));
+  }
+
+  /** Estudiantes que todavía no están en ese curso, como opciones para "Disponibles". */
   protected availableStudentOptions(courseId: string): SelectOption<string>[] {
     const assignedIds = new Set(this.studentsFor(courseId).map((cs) => cs.studentUid));
     return this.students()
@@ -128,22 +154,36 @@ export class AdminCourses {
     }
   }
 
-  protected async onAssignSubject(course: Course, subjectId: string | undefined): Promise<void> {
-    if (!subjectId) {
-      return;
-    }
-    const subject = this.subjectsService.subjects().find((s) => s.id === subjectId);
-    if (!subject) {
-      return;
-    }
+  protected openSubjectsModal(course: Course): void {
+    this.managingSubjectsCourseId.set(course.id);
+  }
 
-    this.assigningSubjectId.set(course.id);
+  protected closeSubjectsModal(): void {
+    this.managingSubjectsCourseId.set(null);
+  }
+
+  protected async onAddSubjects(courseId: string, subjectIds: string[]): Promise<void> {
     try {
-      await this.courseSubjectsService.assign(course.id, subjectId, subject.name, subject.code);
+      await Promise.all(
+        subjectIds.map((subjectId) => {
+          const subject = this.subjectsService.subjects().find((s) => s.id === subjectId);
+          return subject
+            ? this.courseSubjectsService.assign(courseId, subjectId, subject.name, subject.code)
+            : Promise.resolve();
+        }),
+      );
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
-    } finally {
-      this.assigningSubjectId.set(null);
+    }
+  }
+
+  protected async onRemoveSubjects(courseId: string, subjectIds: string[]): Promise<void> {
+    const ids = new Set(subjectIds);
+    const rows = this.subjectsFor(courseId).filter((cs) => ids.has(cs.subjectId));
+    try {
+      await Promise.all(rows.map((row) => this.courseSubjectsService.unassign(row.id)));
+    } catch {
+      this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     }
   }
 
@@ -158,26 +198,40 @@ export class AdminCourses {
     }
   }
 
-  protected async onAssignStudent(course: Course, studentUid: string | undefined): Promise<void> {
-    if (!studentUid) {
-      return;
-    }
-    const student = this.students().find((s) => s.uid === studentUid);
-    if (!student) {
-      return;
-    }
+  protected openStudentsModal(course: Course): void {
+    this.managingStudentsCourseId.set(course.id);
+  }
 
-    this.assigningStudentId.set(course.id);
+  protected closeStudentsModal(): void {
+    this.managingStudentsCourseId.set(null);
+  }
+
+  protected async onAddStudents(courseId: string, studentUids: string[]): Promise<void> {
     try {
-      await this.courseStudentsService.assign(
-        course.id,
-        studentUid,
-        student.displayName ?? student.email ?? studentUid,
+      await Promise.all(
+        studentUids.map((studentUid) => {
+          const student = this.students().find((s) => s.uid === studentUid);
+          return student
+            ? this.courseStudentsService.assign(
+                courseId,
+                studentUid,
+                student.displayName ?? student.email ?? studentUid,
+              )
+            : Promise.resolve();
+        }),
       );
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
-    } finally {
-      this.assigningStudentId.set(null);
+    }
+  }
+
+  protected async onRemoveStudents(courseId: string, studentUids: string[]): Promise<void> {
+    const ids = new Set(studentUids);
+    const rows = this.studentsFor(courseId).filter((cs) => ids.has(cs.studentUid));
+    try {
+      await Promise.all(rows.map((row) => this.courseStudentsService.unassign(row.id)));
+    } catch {
+      this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     }
   }
 

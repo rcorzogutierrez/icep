@@ -1,0 +1,84 @@
+<div class="grid grid-cols-1 items-start gap-3 sm:grid-cols-[1fr_auto_1fr]">
+  <div class="flex flex-col rounded-md border border-border">
+    <label
+      class="flex cursor-pointer items-center gap-2 border-b border-border bg-slate-50 px-3 py-2 text-sm font-medium text-text"
+    >
+      <input
+        type="checkbox"
+        class="accent-brand-600"
+        [checked]="allAvailableChecked()"
+        (change)="toggleAllAvailable()"
+      />
+      {{ availableLabel() }} ({{ availableItems().length }})
+    </label>
+    <div class="max-h-64 overflow-y-auto">
+      @for (item of availableItems(); track item.value) {
+        <label
+          class="flex cursor-pointer items-center gap-2 border-b border-border px-3 py-2 text-sm text-text last:border-0 hover:bg-slate-50"
+          (dblclick)="moveOneToSelected(item.value)"
+        >
+          <input
+            type="checkbox"
+            class="accent-brand-600"
+            [checked]="checkedAvailable().has(item.value)"
+            (change)="toggleAvailable(item.value)"
+          />
+          {{ item.label }}
+        </label>
+      } @empty {
+        <p class="px-3 py-4 text-center text-sm text-text-muted">—</p>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-row justify-center gap-2 sm:flex-col">
+    <app-button
+      variant="secondary"
+      size="sm"
+      [disabled]="checkedAvailable().size === 0"
+      (pressed)="moveToSelected()"
+    >
+      <svg lucideArrowRight [size]="16" aria-hidden="true"></svg>
+    </app-button>
+    <app-button
+      variant="secondary"
+      size="sm"
+      [disabled]="checkedSelected().size === 0"
+      (pressed)="moveToAvailable()"
+    >
+      <svg lucideArrowLeft [size]="16" aria-hidden="true"></svg>
+    </app-button>
+  </div>
+
+  <div class="flex flex-col rounded-md border border-border">
+    <label
+      class="flex cursor-pointer items-center gap-2 border-b border-border bg-slate-50 px-3 py-2 text-sm font-medium text-text"
+    >
+      <input
+        type="checkbox"
+        class="accent-brand-600"
+        [checked]="allSelectedChecked()"
+        (change)="toggleAllSelected()"
+      />
+      {{ selectedLabel() }} ({{ selectedItems().length }})
+    </label>
+    <div class="max-h-64 overflow-y-auto">
+      @for (item of selectedItems(); track item.value) {
+        <label
+          class="flex cursor-pointer items-center gap-2 border-b border-border px-3 py-2 text-sm text-text last:border-0 hover:bg-slate-50"
+          (dblclick)="moveOneToAvailable(item.value)"
+        >
+          <input
+            type="checkbox"
+            class="accent-brand-600"
+            [checked]="checkedSelected().has(item.value)"
+            (change)="toggleSelected(item.value)"
+          />
+          {{ item.label }}
+        </label>
+      } @empty {
+        <p class="px-3 py-4 text-center text-sm text-text-muted">—</p>
+      }
+    </div>
+  </div>
+</div>

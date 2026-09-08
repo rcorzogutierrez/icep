@@ -72,16 +72,13 @@
                     </button>
                   </span>
                 }
-                @if (availableSubjectOptions(course.id).length > 0) {
-                  <app-select
-                    class="block w-48"
-                    [placeholder]="i18n.t('adminCourses', 'addSubject')"
-                    [options]="availableSubjectOptions(course.id)"
-                    [disabled]="assigningSubjectId() === course.id"
-                    [value]="undefined"
-                    (valueChange)="onAssignSubject(course, $event)"
-                  />
-                }
+                <button
+                  type="button"
+                  class="text-sm text-brand-700 hover:underline"
+                  (click)="openSubjectsModal(course)"
+                >
+                  {{ i18n.t('adminCourses', 'manageSubjects') }}
+                </button>
               </div>
             </td>
 
@@ -103,16 +100,13 @@
                     </button>
                   </span>
                 }
-                @if (availableStudentOptions(course.id).length > 0) {
-                  <app-select
-                    class="block w-48"
-                    [placeholder]="i18n.t('adminCourses', 'addStudent')"
-                    [options]="availableStudentOptions(course.id)"
-                    [disabled]="assigningStudentId() === course.id"
-                    [value]="undefined"
-                    (valueChange)="onAssignStudent(course, $event)"
-                  />
-                }
+                <button
+                  type="button"
+                  class="text-sm text-brand-700 hover:underline"
+                  (click)="openStudentsModal(course)"
+                >
+                  {{ i18n.t('adminCourses', 'manageStudents') }}
+                </button>
               </div>
             </td>
 
@@ -162,4 +156,38 @@
       </tbody>
     </table>
   </div>
+
+  @if (managingSubjectsCourse(); as course) {
+    <app-modal
+      [open]="true"
+      [title]="i18n.t('adminCourses', 'manageSubjectsTitle') + ' — ' + course.name"
+      (closed)="closeSubjectsModal()"
+    >
+      <app-transfer-list
+        [availableItems]="availableSubjectOptions(course.id)"
+        [selectedItems]="selectedSubjectOptions(course.id)"
+        [availableLabel]="i18n.t('adminCourses', 'available')"
+        [selectedLabel]="i18n.t('adminCourses', 'inCourse')"
+        (add)="onAddSubjects(course.id, $event)"
+        (remove)="onRemoveSubjects(course.id, $event)"
+      />
+    </app-modal>
+  }
+
+  @if (managingStudentsCourse(); as course) {
+    <app-modal
+      [open]="true"
+      [title]="i18n.t('adminCourses', 'manageStudentsTitle') + ' — ' + course.name"
+      (closed)="closeStudentsModal()"
+    >
+      <app-transfer-list
+        [availableItems]="availableStudentOptions(course.id)"
+        [selectedItems]="selectedStudentOptions(course.id)"
+        [availableLabel]="i18n.t('adminCourses', 'available')"
+        [selectedLabel]="i18n.t('adminCourses', 'inCourse')"
+        (add)="onAddStudents(course.id, $event)"
+        (remove)="onRemoveStudents(course.id, $event)"
+      />
+    </app-modal>
+  }
 </div>
