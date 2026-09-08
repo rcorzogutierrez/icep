@@ -202,6 +202,12 @@ export const translations = {
       noCategories: 'Todavía no hay categorías definidas.',
       categoryNameLabel: 'Nombre de la categoría',
       categoryWeightLabel: 'Peso (%)',
+      categoryModeLabel: '¿Cómo se va a calificar esta categoría?',
+      categoryModeSingleTitle: 'Con una sola nota',
+      categoryModeSingleDesc:
+        'Para categorías simples, como Asistencia. Cargás un puntaje de 0 a 100.',
+      categoryModeMultipleTitle: 'Con varias tareas',
+      categoryModeMultipleDesc: 'Vas a poder agregar cada tarea, con sus puntos y vencimiento.',
       addCategory: 'Agregar categoría',
       weightExceeds: 'La suma de los pesos no puede superar 100.',
       assignmentsTitle: 'Tareas',
@@ -210,6 +216,8 @@ export const translations = {
       colDueDate: 'Vencimiento',
       noAssignments: 'Todavía no hay tareas en esta categoría.',
       needCategoryFirst: 'Creá primero una categoría en la rúbrica para poder agregar tareas.',
+      noMultiTaskCategories:
+        'Ninguna de tus categorías usa "varias tareas". Creá una así para poder agregarle tareas acá.',
       assignmentNameLabel: 'Nombre de la tarea',
       assignmentCategoryLabel: 'Categoría',
       assignmentPointsLabel: 'Puntos posibles',
@@ -421,6 +429,13 @@ export const translations = {
       noCategories: 'No categories defined yet.',
       categoryNameLabel: 'Category name',
       categoryWeightLabel: 'Weight (%)',
+      categoryModeLabel: 'How should this category be graded?',
+      categoryModeSingleTitle: 'With a single score',
+      categoryModeSingleDesc:
+        'For simple categories, like Attendance. You enter one score from 0 to 100.',
+      categoryModeMultipleTitle: 'With multiple assignments',
+      categoryModeMultipleDesc:
+        "You'll be able to add each assignment, with its points and due date.",
       addCategory: 'Add category',
       weightExceeds: "Weights can't add up to more than 100.",
       assignmentsTitle: 'Assignments',
@@ -429,6 +444,8 @@ export const translations = {
       colDueDate: 'Due date',
       noAssignments: 'No assignments in this category yet.',
       needCategoryFirst: 'Create a category in the rubric first to add assignments.',
+      noMultiTaskCategories:
+        'None of your categories use "multiple assignments". Create one that way to add assignments here.',
       assignmentNameLabel: 'Assignment name',
       assignmentCategoryLabel: 'Category',
       assignmentPointsLabel: 'Points possible',

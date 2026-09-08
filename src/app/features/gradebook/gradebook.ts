@@ -53,8 +53,13 @@ export class Gradebook {
     this.assignmentsService.forSubject(this.subjectId()),
   );
 
+  /** Categorías "con varias tareas" — las únicas que gestionan tareas propias (ver grades.model.ts). */
+  protected readonly multiTaskCategories = computed(() =>
+    this.categories().filter((category) => category.hasMultipleTasks !== false),
+  );
+
   protected readonly categoryOptions = computed<SelectOption<string>[]>(() =>
-    this.categories().map((category) => ({ value: category.id, label: category.name })),
+    this.multiTaskCategories().map((category) => ({ value: category.id, label: category.name })),
   );
 
   /** El roster sale de los cursos que incluyen esta materia (ver courses.model.ts), no de una lista suelta por estudiante. */
@@ -75,6 +80,7 @@ export class Gradebook {
 
   protected readonly categoryName = signal('');
   protected readonly categoryWeight = signal<number | null>(null);
+  protected readonly categoryHasMultipleTasks = signal(true);
   protected readonly creatingCategory = signal(false);
 
   protected readonly editingCategoryId = signal<string | null>(null);
@@ -142,9 +148,15 @@ export class Gradebook {
 
     this.creatingCategory.set(true);
     try {
-      await this.categoriesService.create(this.subjectId(), this.categoryName(), weight);
+      await this.categoriesService.create(
+        this.subjectId(),
+        this.categoryName(),
+        weight,
+        this.categoryHasMultipleTasks(),
+      );
       this.categoryName.set('');
       this.categoryWeight.set(null);
+      this.categoryHasMultipleTasks.set(true);
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {

@@ -77,7 +77,18 @@
                   </div>
                 </td>
               } @else {
-                <td class="px-4 py-3 font-medium text-text">{{ category.name }}</td>
+                <td class="px-4 py-3">
+                  <span class="font-medium text-text">{{ category.name }}</span>
+                  <span
+                    class="ml-2 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs text-text-muted"
+                  >
+                    {{
+                      category.hasMultipleTasks === false
+                        ? i18n.t('gradebook', 'categoryModeSingleTitle')
+                        : i18n.t('gradebook', 'categoryModeMultipleTitle')
+                    }}
+                  </span>
+                </td>
                 <td class="px-4 py-3 text-text-muted">{{ category.weight }}%</td>
                 <td class="px-4 py-3">
                   <div class="flex gap-2">
@@ -115,34 +126,77 @@
       </table>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
-      <div class="flex flex-col gap-1">
-        <label for="category-name" class="text-sm font-medium text-text">
-          {{ i18n.t('gradebook', 'categoryNameLabel') }}
-        </label>
-        <input
-          id="category-name"
-          type="text"
-          class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-          [value]="categoryName()"
-          (input)="categoryName.set($any($event.target).value)"
-        />
+    <div class="flex flex-col gap-3 rounded-lg border border-border bg-slate-50 p-3">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="flex flex-col gap-1">
+          <label for="category-name" class="text-sm font-medium text-text">
+            {{ i18n.t('gradebook', 'categoryNameLabel') }}
+          </label>
+          <input
+            id="category-name"
+            type="text"
+            class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            [value]="categoryName()"
+            (input)="categoryName.set($any($event.target).value)"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="category-weight" class="text-sm font-medium text-text">
+            {{ i18n.t('gradebook', 'categoryWeightLabel') }}
+          </label>
+          <input
+            id="category-weight"
+            type="number"
+            min="1"
+            max="100"
+            class="h-10 w-24 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            [value]="categoryWeight() ?? ''"
+            (input)="categoryWeight.set($any($event.target).valueAsNumber || null)"
+          />
+        </div>
       </div>
+
       <div class="flex flex-col gap-1">
-        <label for="category-weight" class="text-sm font-medium text-text">
-          {{ i18n.t('gradebook', 'categoryWeightLabel') }}
-        </label>
-        <input
-          id="category-weight"
-          type="number"
-          min="1"
-          max="100"
-          class="h-10 w-24 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-          [value]="categoryWeight() ?? ''"
-          (input)="categoryWeight.set($any($event.target).valueAsNumber || null)"
-        />
+        <span class="text-sm font-medium text-text">{{
+          i18n.t('gradebook', 'categoryModeLabel')
+        }}</span>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            class="flex flex-col gap-0.5 rounded-md border px-3 py-2 text-left transition-colors"
+            [class.border-brand-500]="!categoryHasMultipleTasks()"
+            [class.bg-brand-50]="!categoryHasMultipleTasks()"
+            [class.border-border]="categoryHasMultipleTasks()"
+            [attr.aria-pressed]="!categoryHasMultipleTasks()"
+            (click)="categoryHasMultipleTasks.set(false)"
+          >
+            <span class="text-sm font-medium text-text">{{
+              i18n.t('gradebook', 'categoryModeSingleTitle')
+            }}</span>
+            <span class="text-xs text-text-muted">{{
+              i18n.t('gradebook', 'categoryModeSingleDesc')
+            }}</span>
+          </button>
+          <button
+            type="button"
+            class="flex flex-col gap-0.5 rounded-md border px-3 py-2 text-left transition-colors"
+            [class.border-brand-500]="categoryHasMultipleTasks()"
+            [class.bg-brand-50]="categoryHasMultipleTasks()"
+            [class.border-border]="!categoryHasMultipleTasks()"
+            [attr.aria-pressed]="categoryHasMultipleTasks()"
+            (click)="categoryHasMultipleTasks.set(true)"
+          >
+            <span class="text-sm font-medium text-text">{{
+              i18n.t('gradebook', 'categoryModeMultipleTitle')
+            }}</span>
+            <span class="text-xs text-text-muted">{{
+              i18n.t('gradebook', 'categoryModeMultipleDesc')
+            }}</span>
+          </button>
+        </div>
       </div>
-      <div class="flex items-end">
+
+      <div>
         <app-button
           [loading]="creatingCategory()"
           [disabled]="!categoryName().trim() || !categoryWeight()"
@@ -157,7 +211,7 @@
   <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
     <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'assignmentsTitle') }}</h2>
 
-    @for (category of categories(); track category.id) {
+    @for (category of multiTaskCategories(); track category.id) {
       <div class="flex flex-col gap-2">
         <h3 class="text-sm font-medium text-text-muted">{{ category.name }}</h3>
         <div class="overflow-x-auto rounded-lg border border-border">
@@ -268,6 +322,8 @@
 
     @if (categories().length === 0) {
       <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'needCategoryFirst') }}</p>
+    } @else if (multiTaskCategories().length === 0) {
+      <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'noMultiTaskCategories') }}</p>
     } @else {
       <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto]">
         <div class="flex flex-col gap-1">
@@ -337,12 +393,21 @@
             </th>
             @for (category of categories(); track category.id) {
               @if (assignmentsFor(category.id).length > 0) {
-                <th
-                  class="border-l border-border px-4 py-2 text-center font-medium whitespace-nowrap"
-                  [attr.colspan]="assignmentsFor(category.id).length"
-                >
-                  {{ category.name }} ({{ category.weight }}%)
-                </th>
+                @if (category.hasMultipleTasks === false) {
+                  <th
+                    class="border-l border-border px-4 py-2 text-center font-medium whitespace-nowrap"
+                    rowspan="2"
+                  >
+                    {{ category.name }} ({{ category.weight }}%)
+                  </th>
+                } @else {
+                  <th
+                    class="border-l border-border px-4 py-2 text-center font-medium whitespace-nowrap"
+                    [attr.colspan]="assignmentsFor(category.id).length"
+                  >
+                    {{ category.name }} ({{ category.weight }}%)
+                  </th>
+                }
               }
             }
             <th class="px-4 py-2 font-medium" rowspan="2">
@@ -351,13 +416,15 @@
           </tr>
           <tr>
             @for (category of categories(); track category.id) {
-              @for (assignment of assignmentsFor(category.id); track assignment.id) {
-                <th class="border-l border-border px-4 py-2 font-medium whitespace-nowrap">
-                  {{ assignment.name }}
-                  <span class="block font-normal text-text-muted"
-                    >/{{ assignment.pointsPossible }}</span
-                  >
-                </th>
+              @if (category.hasMultipleTasks !== false) {
+                @for (assignment of assignmentsFor(category.id); track assignment.id) {
+                  <th class="border-l border-border px-4 py-2 font-medium whitespace-nowrap">
+                    {{ assignment.name }}
+                    <span class="block font-normal text-text-muted"
+                      >/{{ assignment.pointsPossible }}</span
+                    >
+                  </th>
+                }
               }
             }
           </tr>

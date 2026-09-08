@@ -15,7 +15,11 @@ import {
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
+import { AssignmentsService } from './assignments.service';
 import type { GradeCategory } from './grades.model';
+
+/** Puntos posibles de la tarea invisible que respalda una categoría "de una sola nota". */
+const SINGLE_TASK_POINTS_POSSIBLE = 100;
 
 /** Firestore permite hasta 30 valores por cláusula "in". */
 const IN_QUERY_CHUNK_SIZE = 30;
@@ -40,6 +44,7 @@ export class GradeCategoriesService {
   private readonly firestore = inject(FIREBASE_FIRESTORE);
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
+  private readonly assignmentsService = inject(AssignmentsService);
 
   private readonly _categories = signal<GradeCategory[]>([]);
   private readonly _loading = signal(true);
@@ -105,23 +110,54 @@ export class GradeCategoriesService {
     return results;
   }
 
-  async create(subjectId: string, name: string, weight: number): Promise<string> {
+  async create(
+    subjectId: string,
+    name: string,
+    weight: number,
+    hasMultipleTasks: boolean,
+  ): Promise<string> {
+    const trimmedName = name.trim();
     const ref = doc(collection(this.firestore, 'gradeCategories'));
     await setDoc(ref, {
       subjectId,
-      name: name.trim(),
+      name: trimmedName,
       weight,
+      hasMultipleTasks,
       order: this.forSubject(subjectId).length,
       createdAt: serverTimestamp(),
     });
+    if (!hasMultipleTasks) {
+      await this.assignmentsService.create(
+        subjectId,
+        ref.id,
+        trimmedName,
+        SINGLE_TASK_POINTS_POSSIBLE,
+        null,
+      );
+    }
     return ref.id;
   }
 
-  update(id: string, fields: Partial<Pick<GradeCategory, 'name' | 'weight'>>) {
-    return updateDoc(doc(this.firestore, 'gradeCategories', id), fields as DocumentData);
+  async update(id: string, fields: Partial<Pick<GradeCategory, 'name' | 'weight'>>) {
+    await updateDoc(doc(this.firestore, 'gradeCategories', id), fields as DocumentData);
+
+    if (fields.name === undefined) {
+      return;
+    }
+    // Categoría "de una sola nota": su tarea invisible lleva el mismo
+    // nombre (nunca se muestra, pero conviene mantenerlo en sincronía).
+    const category = this._categories().find((c) => c.id === id);
+    if (category && !category.hasMultipleTasks) {
+      const [soleAssignment] = this.assignmentsService.forCategory(id);
+      if (soleAssignment) {
+        await this.assignmentsService.update(soleAssignment.id, { name: fields.name });
+      }
+    }
   }
 
-  remove(id: string) {
-    return deleteDoc(doc(this.firestore, 'gradeCategories', id));
+  async remove(id: string): Promise<void> {
+    const assignments = this.assignmentsService.forCategory(id);
+    await Promise.all(assignments.map((a) => this.assignmentsService.remove(a.id)));
+    await deleteDoc(doc(this.firestore, 'gradeCategories', id));
   }
 }
