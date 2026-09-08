@@ -107,6 +107,16 @@ export class Gradebook {
     return this.assignments().filter((a) => a.categoryId === categoryId);
   }
 
+  /**
+   * Suma de puntos posibles ya repartidos en las tareas de una categoría.
+   * No puede superar el peso de la categoría (ver onCreateAssignment /
+   * saveEditAssignment) — así "Tareas" al 40% no puede tener tareas que
+   * sumen, por ejemplo, 500 puntos.
+   */
+  protected categoryPointsUsed(categoryId: string): number {
+    return this.assignmentsFor(categoryId).reduce((sum, a) => sum + a.pointsPossible, 0);
+  }
+
   protected finalGradeFor(studentUid: string): number | null {
     const grade = this.gradesService
       .forSubject(this.subjectId())
@@ -216,6 +226,11 @@ export class Gradebook {
     if (!this.assignmentName().trim() || !categoryId || points == null || points <= 0) {
       return;
     }
+    const category = this.categories().find((c) => c.id === categoryId);
+    if (category && this.categoryPointsUsed(categoryId) + points > category.weight) {
+      this.toast.error(this.i18n.t('gradebook', 'taskPointsExceed'));
+      return;
+    }
 
     this.creatingAssignment.set(true);
     try {
@@ -252,6 +267,12 @@ export class Gradebook {
   protected async saveEditAssignment(assignment: Assignment): Promise<void> {
     const points = this.editAssignmentPoints();
     if (!this.editAssignmentName().trim() || points == null || points <= 0) {
+      return;
+    }
+    const category = this.categories().find((c) => c.id === assignment.categoryId);
+    const otherPoints = this.categoryPointsUsed(assignment.categoryId) - assignment.pointsPossible;
+    if (category && otherPoints + points > category.weight) {
+      this.toast.error(this.i18n.t('gradebook', 'taskPointsExceed'));
       return;
     }
 

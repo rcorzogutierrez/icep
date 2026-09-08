@@ -218,6 +218,8 @@ export const translations = {
       needCategoryFirst: 'Creá primero una categoría en la rúbrica para poder agregar tareas.',
       noMultiTaskCategories:
         'Ninguna de tus categorías usa "varias tareas". Creá una así para poder agregarle tareas acá.',
+      categoryPoints: 'Puntos',
+      taskPointsExceed: 'Los puntos de las tareas no pueden superar el peso de la categoría.',
       assignmentNameLabel: 'Nombre de la tarea',
       assignmentCategoryLabel: 'Categoría',
       assignmentPointsLabel: 'Puntos posibles',
@@ -446,6 +448,8 @@ export const translations = {
       needCategoryFirst: 'Create a category in the rubric first to add assignments.',
       noMultiTaskCategories:
         'None of your categories use "multiple assignments". Create one that way to add assignments here.',
+      categoryPoints: 'Points',
+      taskPointsExceed: "The assignments' points can't add up to more than the category's weight.",
       assignmentNameLabel: 'Assignment name',
       assignmentCategoryLabel: 'Category',
       assignmentPointsLabel: 'Points possible',

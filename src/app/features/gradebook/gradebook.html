@@ -213,7 +213,19 @@
 
     @for (category of multiTaskCategories(); track category.id) {
       <div class="flex flex-col gap-2">
-        <h3 class="text-sm font-medium text-text-muted">{{ category.name }}</h3>
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-medium text-text-muted">{{ category.name }}</h3>
+          <span
+            class="text-sm"
+            [class.text-status-active]="categoryPointsUsed(category.id) === category.weight"
+            [class.text-status-expired]="categoryPointsUsed(category.id) > category.weight"
+            [class.text-text-muted]="categoryPointsUsed(category.id) < category.weight"
+          >
+            {{ i18n.t('gradebook', 'categoryPoints') }}: {{ categoryPointsUsed(category.id) }}/{{
+              category.weight
+            }}
+          </span>
+        </div>
         <div class="overflow-x-auto rounded-lg border border-border">
           <table class="w-full text-left text-sm">
             <thead class="border-b border-border bg-slate-50 text-text-muted">
