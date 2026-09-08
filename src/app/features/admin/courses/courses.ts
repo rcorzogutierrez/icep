@@ -10,14 +10,13 @@ import { Button } from '../../../shared/components/button/button';
 import { Modal } from '../../../shared/components/modal/modal';
 import { type SelectOption } from '../../../shared/components/select/select';
 import { TransferList } from '../../../shared/components/transfer-list/transfer-list';
-import { IconX } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
 
 /** Panel de admin: crear cursos y asignarles materias y estudiantes. */
 @Component({
   selector: 'app-admin-courses',
   standalone: true,
-  imports: [Button, Modal, TransferList, IconX],
+  imports: [Button, Modal, TransferList],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './courses.html',
 })
@@ -41,9 +40,6 @@ export class AdminCourses {
   protected readonly editingId = signal<string | null>(null);
   protected readonly editName = signal('');
   protected readonly savingEdit = signal(false);
-
-  protected readonly unassigningSubjectRowId = signal<string | null>(null);
-  protected readonly unassigningStudentRowId = signal<string | null>(null);
 
   protected readonly managingSubjectsCourseId = signal<string | null>(null);
   protected readonly managingStudentsCourseId = signal<string | null>(null);
@@ -187,17 +183,6 @@ export class AdminCourses {
     }
   }
 
-  protected async onUnassignSubject(courseSubject: CourseSubject): Promise<void> {
-    this.unassigningSubjectRowId.set(courseSubject.id);
-    try {
-      await this.courseSubjectsService.unassign(courseSubject.id);
-    } catch {
-      this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
-    } finally {
-      this.unassigningSubjectRowId.set(null);
-    }
-  }
-
   protected openStudentsModal(course: Course): void {
     this.managingStudentsCourseId.set(course.id);
   }
@@ -232,17 +217,6 @@ export class AdminCourses {
       await Promise.all(rows.map((row) => this.courseStudentsService.unassign(row.id)));
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
-    }
-  }
-
-  protected async onUnassignStudent(courseStudent: CourseStudent): Promise<void> {
-    this.unassigningStudentRowId.set(courseStudent.id);
-    try {
-      await this.courseStudentsService.unassign(courseStudent.id);
-    } catch {
-      this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
-    } finally {
-      this.unassigningStudentRowId.set(null);
     }
   }
 }

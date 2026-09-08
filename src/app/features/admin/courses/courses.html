@@ -54,24 +54,11 @@
             }
 
             <td class="px-4 py-3">
-              <div class="flex flex-wrap items-center gap-1.5">
-                @for (courseSubject of subjectsFor(course.id); track courseSubject.id) {
-                  <span
-                    class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pr-1 pl-2 text-xs text-text"
-                  >
-                    <span class="font-mono text-text-muted">{{ courseSubject.subjectCode }}</span>
-                    {{ courseSubject.subjectName }}
-                    <button
-                      type="button"
-                      class="flex size-4 items-center justify-center rounded-full text-text-muted hover:bg-slate-200 hover:text-text disabled:pointer-events-none disabled:opacity-50"
-                      [disabled]="unassigningSubjectRowId() === courseSubject.id"
-                      [attr.aria-label]="i18n.t('common', 'close')"
-                      (click)="onUnassignSubject(courseSubject)"
-                    >
-                      <svg lucideX [size]="12" aria-hidden="true"></svg>
-                    </button>
-                  </span>
-                }
+              <div class="flex flex-col items-start gap-1">
+                <span class="text-text-muted"
+                  >{{ i18n.t('adminCourses', 'subjectsCount') }}:
+                  {{ subjectsFor(course.id).length }}</span
+                >
                 <button
                   type="button"
                   class="text-sm text-brand-700 hover:underline"
@@ -83,23 +70,11 @@
             </td>
 
             <td class="px-4 py-3">
-              <div class="flex flex-wrap items-center gap-1.5">
-                @for (courseStudent of studentsFor(course.id); track courseStudent.id) {
-                  <span
-                    class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pr-1 pl-2 text-xs text-text"
-                  >
-                    {{ courseStudent.studentName }}
-                    <button
-                      type="button"
-                      class="flex size-4 items-center justify-center rounded-full text-text-muted hover:bg-slate-200 hover:text-text disabled:pointer-events-none disabled:opacity-50"
-                      [disabled]="unassigningStudentRowId() === courseStudent.id"
-                      [attr.aria-label]="i18n.t('common', 'close')"
-                      (click)="onUnassignStudent(courseStudent)"
-                    >
-                      <svg lucideX [size]="12" aria-hidden="true"></svg>
-                    </button>
-                  </span>
-                }
+              <div class="flex flex-col items-start gap-1">
+                <span class="text-text-muted"
+                  >{{ i18n.t('adminCourses', 'studentsCount') }}:
+                  {{ studentsFor(course.id).length }}</span
+                >
                 <button
                   type="button"
                   class="text-sm text-brand-700 hover:underline"
