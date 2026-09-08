@@ -226,7 +226,7 @@
                 {{ courseSubject.subjectName }}
               </p>
               <div class="flex flex-wrap items-center gap-1.5">
-                @for (row of subjectTeachersFor(course.id, courseSubject.subjectId); track row.id) {
+                @if (subjectTeacherFor(course.id, courseSubject.subjectId); as row) {
                   <span
                     class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pr-1 pl-2 text-xs text-text"
                   >
@@ -240,6 +240,10 @@
                       <svg lucideX [size]="12" aria-hidden="true"></svg>
                     </button>
                   </span>
+                } @else {
+                  <span class="text-xs text-text-muted">{{
+                    i18n.t('adminCourses', 'noTeacherAssigned')
+                  }}</span>
                 }
                 @if (
                   availableTeacherOptionsForSubject(course.id, courseSubject.subjectId).length > 0

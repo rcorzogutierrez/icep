@@ -89,8 +89,11 @@ export class AdminCourses {
     return this.courseTeachersService.forCourse(courseId);
   }
 
-  /** De los profesores del curso, cuáles dictan esta materia puntual (paso 2). */
-  protected subjectTeachersFor(courseId: string, subjectId: string): CourseSubjectTeacher[] {
+  /** El profesor del curso que dicta esta materia puntual, si hay uno (paso 2). */
+  protected subjectTeacherFor(
+    courseId: string,
+    subjectId: string,
+  ): CourseSubjectTeacher | undefined {
     return this.courseSubjectTeachersService.forCourseSubject(courseId, subjectId);
   }
 
@@ -146,16 +149,14 @@ export class AdminCourses {
       }));
   }
 
-  /** De los profesores YA asignados al curso, cuáles todavía no dictan esta materia puntual. */
+  /** De los profesores YA asignados al curso, cuáles se le pueden asignar a esta materia (todos menos quien ya la dicta). */
   protected availableTeacherOptionsForSubject(
     courseId: string,
     subjectId: string,
   ): SelectOption<string>[] {
-    const assignedIds = new Set(
-      this.subjectTeachersFor(courseId, subjectId).map((r) => r.teacherId),
-    );
+    const currentTeacherId = this.subjectTeacherFor(courseId, subjectId)?.teacherId;
     return this.teachersFor(courseId)
-      .filter((ct) => !assignedIds.has(ct.teacherId))
+      .filter((ct) => ct.teacherId !== currentTeacherId)
       .map((ct) => ({ value: ct.teacherId, label: ct.teacherName }));
   }
 

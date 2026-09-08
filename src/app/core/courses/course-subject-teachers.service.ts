@@ -29,8 +29,11 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 /**
  * Quién dicta cada materia de un curso (paso 2, ver courses.model.ts —
- * el paso 1, quién participa del curso, es CourseTeachersService). Solo
- * el admin agrega/quita (ver firestore.rules); el listado en vivo se
+ * el paso 1, quién participa del curso, es CourseTeachersService). A lo
+ * sumo un profesor por materia dentro de un mismo curso: `assign` hace
+ * upsert sobre el id determinístico `courseId_subjectId`, así que asignar
+ * un profesor distinto REEMPLAZA al anterior en vez de sumarlo. Solo el
+ * admin agrega/quita (ver firestore.rules); el listado en vivo se
  * sincroniza completo para staff (volumen trivial).
  *
  * `assign`/`unassign` acá TAMBIÉN mantienen `subjectAssignments` (materia
@@ -39,8 +42,9 @@ function chunk<T>(items: T[], size: number): T[][] {
  * reglas de grades/gradeCategories/assignments para decidir quién puede
  * calificar una materia, y no cambiamos esa infraestructura: solo
  * cambiamos quién la escribe (antes /admin/subjects a mano, ahora acá).
- * Al quitar una asignación, solo se revoca `subjectAssignments` si el
- * profesor no dicta esa materia en NINGÚN otro curso.
+ * Al quitar o reemplazar una asignación, solo se revoca
+ * `subjectAssignments` del profesor saliente si no dicta esa materia en
+ * NINGÚN otro curso.
  */
 @Injectable({ providedIn: 'root' })
 export class CourseSubjectTeachersService {
@@ -93,9 +97,9 @@ export class CourseSubjectTeachersService {
     return this._rows().filter((r) => r.courseId === courseId);
   }
 
-  /** Profesores (dentro de este curso) que dictan esta materia puntual. */
-  forCourseSubject(courseId: string, subjectId: string): CourseSubjectTeacher[] {
-    return this._rows().filter((r) => r.courseId === courseId && r.subjectId === subjectId);
+  /** El profesor (dentro de este curso) que dicta esta materia puntual, si hay uno. */
+  forCourseSubject(courseId: string, subjectId: string): CourseSubjectTeacher | undefined {
+    return this._rows().find((r) => r.courseId === courseId && r.subjectId === subjectId);
   }
 
   /** Fetch puntual (no reactivo) por curso; útil para borrar un curso. */
@@ -123,12 +127,10 @@ export class CourseSubjectTeachersService {
     teacherId: string,
     teacherName: string,
   ): Promise<void> {
-    const ref = doc(
-      this.firestore,
-      'courseSubjectTeachers',
-      `${courseId}_${subjectId}_${teacherId}`,
-    );
-    await setDoc(ref, {
+    const id = `${courseId}_${subjectId}`;
+    const previous = this._rows().find((r) => r.id === id);
+
+    await setDoc(doc(this.firestore, 'courseSubjectTeachers', id), {
       courseId,
       subjectId,
       teacherId,
@@ -138,6 +140,15 @@ export class CourseSubjectTeachersService {
     // Upsert idempotente: asegura que subjectAssignments refleje que este
     // profesor puede calificar esta materia.
     await this.subjectAssignmentsService.assign(subjectId, teacherId, teacherName);
+
+    if (previous && previous.teacherId !== teacherId) {
+      const previousStillTeachesElsewhere = this._rows().some(
+        (r) => r.id !== id && r.subjectId === subjectId && r.teacherId === previous.teacherId,
+      );
+      if (!previousStillTeachesElsewhere) {
+        await this.subjectAssignmentsService.unassign(`${subjectId}_${previous.teacherId}`);
+      }
+    }
   }
 
   async unassign(row: CourseSubjectTeacher): Promise<void> {

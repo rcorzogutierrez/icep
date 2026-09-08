@@ -185,15 +185,18 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // courseSubjectTeachers/{courseId_subjectId_teacherId}: de los
-    // profesores ya asignados al curso, cuál(es) dictan cada materia
-    // (paso 2). El cliente (CourseSubjectTeachersService) mantiene
-    // subjectAssignments como derivado de esto — esa colección y sus
-    // reglas no cambian.
+    // courseSubjectTeachers/{courseId_subjectId}: de los profesores ya
+    // asignados al curso, cuál dicta cada materia (paso 2) — a lo sumo
+    // uno por materia dentro del curso, por eso el id no incluye el
+    // teacherId: asignar otro profesor hace update sobre la misma fila.
+    // El cliente (CourseSubjectTeachersService) mantiene subjectAssignments
+    // como derivado de esto — esa colección y sus reglas no cambian.
     match /courseSubjectTeachers/{id} {
       allow read: if request.auth != null;
       allow create: if isAdmin()
-        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId + '_' + request.resource.data.teacherId;
+        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId;
+      allow update: if isAdmin()
+        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId;
       allow delete: if isAdmin();
     }
 

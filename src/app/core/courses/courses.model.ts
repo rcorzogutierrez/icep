@@ -56,14 +56,17 @@ export interface CourseTeacher {
 }
 
 /**
- * Documento en Firestore:
- * courseSubjectTeachers/{courseId}_{subjectId}_{teacherId}. De los
- * profesores ya asignados al curso (CourseTeacher), cuál(es) dictan cada
- * materia del curso — una materia puede tener más de un profesor dentro
- * del mismo curso. Crear/borrar esto mantiene `subjectAssignments`
- * (materia -> profesor, global, lo único que leen las reglas de grades/
- * gradeCategories/assignments y subjectAccessGuard) como tabla derivada —
- * ver CourseSubjectTeachersService.
+ * Documento en Firestore: courseSubjectTeachers/{courseId}_{subjectId}. De
+ * los profesores ya asignados al curso (CourseTeacher), cuál dicta cada
+ * materia del curso — a lo sumo UN profesor por materia dentro de un mismo
+ * curso (el mismo profesor puede dictar varias materias del curso, pero
+ * una materia no puede tener dos profesores calificándola en el mismo
+ * curso). Id determinístico sin el teacherId a propósito: asignar un
+ * profesor distinto reemplaza (update) la asignación anterior en vez de
+ * agregar otra fila. Crear/borrar/reemplazar esto mantiene
+ * `subjectAssignments` (materia -> profesor, global, lo único que leen las
+ * reglas de grades/gradeCategories/assignments y subjectAccessGuard) como
+ * tabla derivada — ver CourseSubjectTeachersService.
  */
 export interface CourseSubjectTeacher {
   id: string;
