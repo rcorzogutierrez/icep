@@ -231,9 +231,29 @@ export class AdminCourses {
             : Promise.resolve();
         }),
       );
+      await this.autoAssignIfSoleTeacher(courseId, subjectIds);
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     }
+  }
+
+  /** Si el curso tiene un solo profesor, le asigna directamente estas materias. */
+  private async autoAssignIfSoleTeacher(courseId: string, subjectIds: string[]): Promise<void> {
+    const teachers = this.teachersFor(courseId);
+    if (teachers.length !== 1) {
+      return;
+    }
+    const soleTeacher = teachers[0];
+    await Promise.all(
+      subjectIds.map((subjectId) =>
+        this.courseSubjectTeachersService.assign(
+          courseId,
+          subjectId,
+          soleTeacher.teacherId,
+          soleTeacher.teacherName,
+        ),
+      ),
+    );
   }
 
   protected async onRemoveSubjects(courseId: string, subjectIds: string[]): Promise<void> {
@@ -305,9 +325,45 @@ export class AdminCourses {
             : Promise.resolve();
         }),
       );
+      await this.autoAssignSoleTeacherToUnassignedSubjects(courseId, teacherIds);
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     }
+  }
+
+  /**
+   * Si este agregado deja al curso con un solo profesor en total, le asigna
+   * directamente todas las materias del curso que todavía no tengan uno.
+   */
+  private async autoAssignSoleTeacherToUnassignedSubjects(
+    courseId: string,
+    addedTeacherIds: string[],
+  ): Promise<void> {
+    const otherExistingTeachers = this.teachersFor(courseId).filter(
+      (ct) => !addedTeacherIds.includes(ct.teacherId),
+    );
+    if (otherExistingTeachers.length !== 0 || addedTeacherIds.length !== 1) {
+      return;
+    }
+    const soleTeacherId = addedTeacherIds[0];
+    const teacher = this.teachers().find((t) => t.uid === soleTeacherId);
+    if (!teacher) {
+      return;
+    }
+    const soleTeacherName = teacher.displayName ?? teacher.email ?? soleTeacherId;
+    const unassignedSubjects = this.subjectsFor(courseId).filter(
+      (cs) => !this.subjectTeacherFor(courseId, cs.subjectId),
+    );
+    await Promise.all(
+      unassignedSubjects.map((cs) =>
+        this.courseSubjectTeachersService.assign(
+          courseId,
+          cs.subjectId,
+          soleTeacherId,
+          soleTeacherName,
+        ),
+      ),
+    );
   }
 
   protected async onRemoveTeachers(courseId: string, teacherIds: string[]): Promise<void> {
