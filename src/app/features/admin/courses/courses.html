@@ -34,6 +34,7 @@
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminCourses', 'colName') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminCourses', 'colSubjects') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminCourses', 'colStudents') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminCourses', 'colTeachers') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminCourses', 'colActions') }}</th>
         </tr>
       </thead>
@@ -66,6 +67,13 @@
                 >
                   {{ i18n.t('adminCourses', 'manageSubjects') }}
                 </button>
+                <button
+                  type="button"
+                  class="text-sm text-brand-700 hover:underline"
+                  (click)="openAssignmentsModal(course)"
+                >
+                  {{ i18n.t('adminCourses', 'manageAssignments') }}
+                </button>
               </div>
             </td>
 
@@ -81,6 +89,22 @@
                   (click)="openStudentsModal(course)"
                 >
                   {{ i18n.t('adminCourses', 'manageStudents') }}
+                </button>
+              </div>
+            </td>
+
+            <td class="px-4 py-3">
+              <div class="flex flex-col items-start gap-1">
+                <span class="text-text-muted"
+                  >{{ i18n.t('adminCourses', 'teachersCount') }}:
+                  {{ teachersFor(course.id).length }}</span
+                >
+                <button
+                  type="button"
+                  class="text-sm text-brand-700 hover:underline"
+                  (click)="openTeachersModal(course)"
+                >
+                  {{ i18n.t('adminCourses', 'manageTeachers') }}
                 </button>
               </div>
             </td>
@@ -119,7 +143,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="4" class="px-4 py-6 text-center text-text-muted">
+            <td colspan="5" class="px-4 py-6 text-center text-text-muted">
               @if (coursesService.loading()) {
                 …
               } @else {
@@ -163,6 +187,80 @@
         (add)="onAddStudents(course.id, $event)"
         (remove)="onRemoveStudents(course.id, $event)"
       />
+    </app-modal>
+  }
+
+  @if (managingTeachersCourse(); as course) {
+    <app-modal
+      [open]="true"
+      [title]="i18n.t('adminCourses', 'manageTeachersTitle') + ' — ' + course.name"
+      (closed)="closeTeachersModal()"
+    >
+      <app-transfer-list
+        [availableItems]="availableTeacherOptions(course.id)"
+        [selectedItems]="selectedTeacherOptions(course.id)"
+        [availableLabel]="i18n.t('adminCourses', 'available')"
+        [selectedLabel]="i18n.t('adminCourses', 'inCourse')"
+        (add)="onAddTeachers(course.id, $event)"
+        (remove)="onRemoveTeachers(course.id, $event)"
+      />
+    </app-modal>
+  }
+
+  @if (managingAssignmentsCourse(); as course) {
+    <app-modal
+      [open]="true"
+      [title]="i18n.t('adminCourses', 'manageAssignmentsTitle') + ' — ' + course.name"
+      (closed)="closeAssignmentsModal()"
+    >
+      @if (teachersFor(course.id).length === 0) {
+        <p class="text-sm text-text-muted">{{ i18n.t('adminCourses', 'noTeachersInCourse') }}</p>
+      } @else if (subjectsFor(course.id).length === 0) {
+        <p class="text-sm text-text-muted">{{ i18n.t('adminCourses', 'noSubjectsInCourse') }}</p>
+      } @else {
+        <div class="flex flex-col gap-3">
+          @for (courseSubject of subjectsFor(course.id); track courseSubject.id) {
+            <div class="rounded-md border border-border p-3">
+              <p class="mb-2 text-sm font-medium text-text">
+                <span class="font-mono text-text-muted">{{ courseSubject.subjectCode }}</span>
+                {{ courseSubject.subjectName }}
+              </p>
+              <div class="flex flex-wrap items-center gap-1.5">
+                @for (row of subjectTeachersFor(course.id, courseSubject.subjectId); track row.id) {
+                  <span
+                    class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pr-1 pl-2 text-xs text-text"
+                  >
+                    {{ row.teacherName }}
+                    <button
+                      type="button"
+                      class="flex size-4 items-center justify-center rounded-full text-text-muted hover:bg-slate-200 hover:text-text"
+                      [attr.aria-label]="i18n.t('common', 'close')"
+                      (click)="onUnassignSubjectTeacher(row)"
+                    >
+                      <svg lucideX [size]="12" aria-hidden="true"></svg>
+                    </button>
+                  </span>
+                }
+                @if (
+                  availableTeacherOptionsForSubject(course.id, courseSubject.subjectId).length > 0
+                ) {
+                  <app-select
+                    class="block w-48"
+                    [placeholder]="i18n.t('adminCourses', 'assignTeacherPlaceholder')"
+                    [options]="
+                      availableTeacherOptionsForSubject(course.id, courseSubject.subjectId)
+                    "
+                    [value]="undefined"
+                    (valueChange)="
+                      onAssignSubjectTeacher(course.id, courseSubject.subjectId, $event)
+                    "
+                  />
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
     </app-modal>
   }
 </div>

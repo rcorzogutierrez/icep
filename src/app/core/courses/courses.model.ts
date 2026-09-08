@@ -40,3 +40,36 @@ export interface CourseStudent {
   studentName: string;
   createdAt: Timestamp;
 }
+
+/**
+ * Documento en Firestore: courseTeachers/{courseId}_{teacherId}. Qué
+ * profesores participan de un curso (un profesor puede participar de
+ * varios cursos). Este es el paso 1: "quién participa"; ver
+ * CourseSubjectTeacher para el paso 2, "quién dicta cada materia".
+ */
+export interface CourseTeacher {
+  id: string;
+  courseId: string;
+  teacherId: string;
+  teacherName: string;
+  createdAt: Timestamp;
+}
+
+/**
+ * Documento en Firestore:
+ * courseSubjectTeachers/{courseId}_{subjectId}_{teacherId}. De los
+ * profesores ya asignados al curso (CourseTeacher), cuál(es) dictan cada
+ * materia del curso — una materia puede tener más de un profesor dentro
+ * del mismo curso. Crear/borrar esto mantiene `subjectAssignments`
+ * (materia -> profesor, global, lo único que leen las reglas de grades/
+ * gradeCategories/assignments y subjectAccessGuard) como tabla derivada —
+ * ver CourseSubjectTeachersService.
+ */
+export interface CourseSubjectTeacher {
+  id: string;
+  courseId: string;
+  subjectId: string;
+  teacherId: string;
+  teacherName: string;
+  createdAt: Timestamp;
+}

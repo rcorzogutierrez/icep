@@ -15,7 +15,9 @@ import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
 import { CourseStudentsService } from './course-students.service';
+import { CourseSubjectTeachersService } from './course-subject-teachers.service';
 import { CourseSubjectsService } from './course-subjects.service';
+import { CourseTeachersService } from './course-teachers.service';
 import type { Course } from './courses.model';
 
 /** Catálogo de cursos. Solo el admin crea/edita/borra (ver firestore.rules); cualquier autenticado puede leer. */
@@ -26,6 +28,8 @@ export class CoursesService {
   private readonly userProfileService = inject(UserProfileService);
   private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly courseStudentsService = inject(CourseStudentsService);
+  private readonly courseTeachersService = inject(CourseTeachersService);
+  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
 
   private readonly _courses = signal<Course[]>([]);
   private readonly _loading = signal(true);
@@ -77,15 +81,24 @@ export class CoursesService {
     return updateDoc(doc(this.firestore, 'courses', id), fields as DocumentData);
   }
 
-  /** Borra el curso y, con él, sus materias y estudiantes asignados. */
+  /** Borra el curso y, con él, sus materias, estudiantes, profesores y asignaciones materia-profesor. */
   async remove(id: string): Promise<void> {
-    const [courseSubjects, courseStudents] = await Promise.all([
-      this.courseSubjectsService.fetchForCourseIds([id]),
-      this.courseStudentsService.fetchForCourseIds([id]),
-    ]);
+    const [courseSubjects, courseStudents, courseTeachers, courseSubjectTeachers] =
+      await Promise.all([
+        this.courseSubjectsService.fetchForCourseIds([id]),
+        this.courseStudentsService.fetchForCourseIds([id]),
+        this.courseTeachersService.fetchForCourseIds([id]),
+        this.courseSubjectTeachersService.fetchForCourseIds([id]),
+      ]);
+    // Las asignaciones materia-profesor primero (pueden revocar
+    // subjectAssignments), después el resto.
+    await Promise.all(
+      courseSubjectTeachers.map((row) => this.courseSubjectTeachersService.unassign(row)),
+    );
     await Promise.all([
       ...courseSubjects.map((cs) => this.courseSubjectsService.unassign(cs.id)),
       ...courseStudents.map((cs) => this.courseStudentsService.unassign(cs.id)),
+      ...courseTeachers.map((ct) => this.courseTeachersService.unassign(ct.id)),
     ]);
     await deleteDoc(doc(this.firestore, 'courses', id));
   }

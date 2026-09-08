@@ -51,7 +51,6 @@
         <tr>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colName') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colCode') }}</th>
-          <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colTeacher') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colActions') }}</th>
         </tr>
       </thead>
@@ -79,37 +78,6 @@
               <td class="px-4 py-3 font-medium text-text">{{ subject.name }}</td>
               <td class="px-4 py-3 font-mono text-text-muted">{{ subject.code }}</td>
             }
-
-            <td class="px-4 py-3">
-              <div class="flex flex-wrap items-center gap-1.5">
-                @for (assignment of assignmentsFor(subject.id); track assignment.id) {
-                  <span
-                    class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pr-1 pl-2 text-xs text-text"
-                  >
-                    {{ assignment.teacherName }}
-                    <button
-                      type="button"
-                      class="flex size-4 items-center justify-center rounded-full text-text-muted hover:bg-slate-200 hover:text-text disabled:pointer-events-none disabled:opacity-50"
-                      [disabled]="unassigningId() === assignment.id"
-                      [attr.aria-label]="i18n.t('common', 'close')"
-                      (click)="onUnassignTeacher(assignment)"
-                    >
-                      <svg lucideX [size]="12" aria-hidden="true"></svg>
-                    </button>
-                  </span>
-                }
-                @if (availableTeacherOptions(subject.id).length > 0) {
-                  <app-select
-                    class="block w-40"
-                    [placeholder]="i18n.t('adminSubjects', 'addTeacher')"
-                    [options]="availableTeacherOptions(subject.id)"
-                    [disabled]="assigningId() === subject.id"
-                    [value]="undefined"
-                    (valueChange)="onAssignTeacher(subject, $event)"
-                  />
-                }
-              </div>
-            </td>
 
             <td class="px-4 py-3">
               @if (editingId() === subject.id) {
@@ -148,7 +116,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="4" class="px-4 py-6 text-center text-text-muted">
+            <td colspan="3" class="px-4 py-6 text-center text-text-muted">
               @if (subjectsService.loading()) {
                 …
               } @else {
