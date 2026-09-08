@@ -8,6 +8,8 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { CourseStudentsService } from '../../core/courses/course-students.service';
+import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
 import { GradesService } from '../../core/grades/grades.service';
@@ -44,6 +46,8 @@ export class Dashboard {
   protected readonly i18n = inject(I18nService);
   protected readonly subjectsService = inject(SubjectsService);
   private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
+  private readonly courseStudentsService = inject(CourseStudentsService);
+  private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly gradeCategoriesService = inject(GradeCategoriesService);
   private readonly assignmentsService = inject(AssignmentsService);
   private readonly gradesService = inject(GradesService);
@@ -141,7 +145,8 @@ export class Dashboard {
   constructor() {
     effect(() => {
       const profile = this.userProfileService.profile();
-      if (profile?.role !== 'student' || profile.enrolledSubjectIds.length === 0) {
+      const uid = this.auth.user()?.uid;
+      if (profile?.role !== 'student' || !uid) {
         this.mySubjects.set([]);
         this.mySubjectTeachers.set(new Map());
         this.mySubjectFinalGrades.set(new Map());
@@ -149,41 +154,8 @@ export class Dashboard {
         return;
       }
 
-      const uid = this.auth.user()?.uid;
-      const subjectIds = profile.enrolledSubjectIds;
-
       this.loadingMySubjects.set(true);
-      Promise.all([
-        this.subjectsService.fetchByIds(subjectIds),
-        this.subjectAssignmentsService.fetchBySubjectIds(subjectIds),
-        this.gradeCategoriesService.fetchForSubjectIds(subjectIds),
-        this.assignmentsService.fetchForSubjectIds(subjectIds),
-        uid ? Promise.all(subjectIds.map((id) => this.gradesService.fetchOwn(id, uid))) : [],
-      ])
-        .then(([subjects, teacherAssignments, categories, assignments, grades]) => {
-          this.mySubjects.set(subjects);
-
-          const byTeacher = new Map<string, string[]>();
-          for (const assignment of teacherAssignments) {
-            byTeacher.set(assignment.subjectId, [
-              ...(byTeacher.get(assignment.subjectId) ?? []),
-              assignment.teacherName,
-            ]);
-          }
-          this.mySubjectTeachers.set(byTeacher);
-
-          const finalGrades = new Map<string, number | null>();
-          for (const subjectId of subjectIds) {
-            const grade = grades.find((g) => g?.subjectId === subjectId);
-            const subjectCategories = categories.filter((c) => c.subjectId === subjectId);
-            const subjectAssignments = assignments.filter((a) => a.subjectId === subjectId);
-            finalGrades.set(
-              subjectId,
-              computeFinalGrade(subjectCategories, subjectAssignments, grade?.scores),
-            );
-          }
-          this.mySubjectFinalGrades.set(finalGrades);
-        })
+      this.loadMySubjects(uid)
         .catch(() => {
           this.mySubjects.set([]);
           this.mySubjectTeachers.set(new Map());
@@ -191,6 +163,52 @@ export class Dashboard {
         })
         .finally(() => this.loadingMySubjects.set(false));
     });
+  }
+
+  /** Las materias de un estudiante salen de los cursos en los que está matriculado (ver courses.model.ts), no de una lista suelta. */
+  private async loadMySubjects(uid: string): Promise<void> {
+    const courseStudents = await this.courseStudentsService.fetchForStudent(uid);
+    const courseIds = courseStudents.map((cs) => cs.courseId);
+    const courseSubjects = await this.courseSubjectsService.fetchForCourseIds(courseIds);
+    const subjectIds = [...new Set(courseSubjects.map((cs) => cs.subjectId))];
+
+    if (subjectIds.length === 0) {
+      this.mySubjects.set([]);
+      this.mySubjectTeachers.set(new Map());
+      this.mySubjectFinalGrades.set(new Map());
+      return;
+    }
+
+    const [subjects, teacherAssignments, categories, assignments, grades] = await Promise.all([
+      this.subjectsService.fetchByIds(subjectIds),
+      this.subjectAssignmentsService.fetchBySubjectIds(subjectIds),
+      this.gradeCategoriesService.fetchForSubjectIds(subjectIds),
+      this.assignmentsService.fetchForSubjectIds(subjectIds),
+      Promise.all(subjectIds.map((id) => this.gradesService.fetchOwn(id, uid))),
+    ]);
+
+    this.mySubjects.set(subjects);
+
+    const byTeacher = new Map<string, string[]>();
+    for (const assignment of teacherAssignments) {
+      byTeacher.set(assignment.subjectId, [
+        ...(byTeacher.get(assignment.subjectId) ?? []),
+        assignment.teacherName,
+      ]);
+    }
+    this.mySubjectTeachers.set(byTeacher);
+
+    const finalGrades = new Map<string, number | null>();
+    for (const subjectId of subjectIds) {
+      const grade = grades.find((g) => g?.subjectId === subjectId);
+      const subjectCategories = categories.filter((c) => c.subjectId === subjectId);
+      const subjectAssignments = assignments.filter((a) => a.subjectId === subjectId);
+      finalGrades.set(
+        subjectId,
+        computeFinalGrade(subjectCategories, subjectAssignments, grade?.scores),
+      );
+    }
+    this.mySubjectFinalGrades.set(finalGrades);
   }
 
   protected goToAdmin(): void {

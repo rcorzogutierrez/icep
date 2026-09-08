@@ -1,5 +1,7 @@
 import { DatePipe, DecimalPipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { CourseStudentsService } from '../../core/courses/course-students.service';
+import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
@@ -29,6 +31,8 @@ export class Gradebook {
   protected readonly assignmentsService = inject(AssignmentsService);
   protected readonly gradesService = inject(GradesService);
   protected readonly usersService = inject(UsersService);
+  private readonly courseSubjectsService = inject(CourseSubjectsService);
+  private readonly courseStudentsService = inject(CourseStudentsService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly location = inject(Location);
@@ -53,16 +57,21 @@ export class Gradebook {
     this.categories().map((category) => ({ value: category.id, label: category.name })),
   );
 
-  protected readonly students = computed(() =>
-    this.usersService
+  /** El roster sale de los cursos que incluyen esta materia (ver courses.model.ts), no de una lista suelta por estudiante. */
+  protected readonly students = computed(() => {
+    const courseIds = this.courseSubjectsService
+      .forSubject(this.subjectId())
+      .map((cs) => cs.courseId);
+    const studentUids = new Set(
+      this.courseStudentsService.forCourseIds(courseIds).map((cs) => cs.studentUid),
+    );
+    return this.usersService
       .users()
-      .filter(
-        (user) => user.role === 'student' && user.enrolledSubjectIds.includes(this.subjectId()),
-      )
+      .filter((user) => user.role === 'student' && studentUids.has(user.uid))
       .sort((a, b) =>
         (a.displayName ?? a.email ?? '').localeCompare(b.displayName ?? b.email ?? ''),
-      ),
-  );
+      );
+  });
 
   protected readonly categoryName = signal('');
   protected readonly categoryWeight = signal<number | null>(null);

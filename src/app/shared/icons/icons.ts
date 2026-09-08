@@ -17,6 +17,7 @@ export {
   LucideCircleCheck as IconCircleCheck,
   LucideGraduationCap as IconGraduationCap,
   LucideInfo as IconInfo,
+  LucideLayers as IconLayers,
   LucideLayoutDashboard as IconLayoutDashboard,
   LucideLoaderCircle as IconLoaderCircle,
   LucideLock as IconLock,

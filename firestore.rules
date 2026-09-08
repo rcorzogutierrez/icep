@@ -133,15 +133,46 @@ service cloud.firestore {
     // — solo admin o el profesor asignado a ESA materia, y solo si el
     // estudiante está realmente inscripto en ella.
     match /grades/{gradeId} {
+      // El id ES subjectId_studentUid: alcanza con verificar que el uid
+      // coincida con el final del id (no se puede leer `resource.data`
+      // para saber de quién es la nota si el documento todavía no existe
+      // — un estudiante sin notas cargadas necesita poder consultar "¿ya
+      // tengo nota?" y recibir "no existe" en vez de permission-denied).
       allow get: if request.auth != null
-        && (isAdmin() || isTeacher() || resource.data.studentUid == request.auth.uid);
+        && (isAdmin() || isTeacher() || gradeId.matches('.*_' + request.auth.uid));
       allow list: if request.auth != null && (isAdmin() || isTeacher());
 
       allow create, update: if request.auth != null
         && gradeId == request.resource.data.subjectId + '_' + request.resource.data.studentUid
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)))
-        && request.resource.data.subjectId in get(/databases/$(database)/documents/users/$(request.resource.data.studentUid)).data.enrolledSubjectIds;
+        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
 
+      allow delete: if isAdmin();
+    }
+
+    // courses/{id}: agrupa estudiantes por énfasis/año (ver
+    // courses.model.ts) — reemplaza la asignación manual de materias. Solo
+    // el admin administra cursos; cualquier autenticado puede leer.
+    match /courses/{courseId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // courseSubjects/{courseId_subjectId}: qué materias tiene un curso
+    // (una materia puede estar en varios cursos). Mismo patrón de id
+    // determinístico que subjectAssignments.
+    match /courseSubjects/{id} {
+      allow read: if request.auth != null;
+      allow create: if isAdmin()
+        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId;
+      allow delete: if isAdmin();
+    }
+
+    // courseStudents/{courseId_studentUid}: qué estudiantes tiene un curso
+    // (un estudiante puede estar en varios cursos el mismo año).
+    match /courseStudents/{id} {
+      allow read: if request.auth != null;
+      allow create: if isAdmin()
+        && id == request.resource.data.courseId + '_' + request.resource.data.studentUid;
       allow delete: if isAdmin();
     }
 

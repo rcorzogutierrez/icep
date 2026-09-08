@@ -7,7 +7,6 @@ import type {
   InvitationStatus,
 } from '../../core/invitations/invitations.model';
 import { InvitationsService } from '../../core/invitations/invitations.service';
-import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
@@ -30,23 +29,10 @@ const STATUS_CLASS: Record<InvitationStatus, string> = {
 })
 export class Invitations {
   protected readonly invitationsService = inject(InvitationsService);
-  protected readonly subjectsService = inject(SubjectsService);
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
   private readonly usersService = inject(UsersService);
   private readonly toast = inject(ToastService);
-
-  protected readonly availableSubjects = computed(() =>
-    this.userProfileService.isAdmin()
-      ? this.subjectsService.subjects()
-      : this.subjectsService.mySubjects(),
-  );
-
-  protected readonly allSubjectsSelected = computed(
-    () =>
-      this.availableSubjects().length > 0 &&
-      this.availableSubjects().every((subject) => this.selectedSubjectIds().has(subject.id)),
-  );
 
   protected readonly statusClass = STATUS_CLASS;
 
@@ -61,7 +47,6 @@ export class Invitations {
 
   protected readonly email = signal('');
   protected readonly role = signal<InvitableRole>('student');
-  protected readonly selectedSubjectIds = signal<Set<string>>(new Set());
   protected readonly creating = signal(false);
   protected readonly createdCode = signal<string | null>(null);
   protected readonly copied = signal(false);
@@ -88,28 +73,10 @@ export class Invitations {
     return `${location.origin}/invite/${code}`;
   }
 
-  protected toggleSubject(subjectId: string): void {
-    const next = new Set(this.selectedSubjectIds());
-    if (next.has(subjectId)) {
-      next.delete(subjectId);
-    } else {
-      next.add(subjectId);
-    }
-    this.selectedSubjectIds.set(next);
-  }
-
   /** Ya existe una cuenta con ese email (comparación case-insensitive). */
   private isEmailRegistered(email: string): boolean {
     const normalized = email.trim().toLowerCase();
     return this.usersService.users().some((user) => user.email?.toLowerCase() === normalized);
-  }
-
-  protected toggleAllSubjects(): void {
-    this.selectedSubjectIds.set(
-      this.allSubjectsSelected()
-        ? new Set()
-        : new Set(this.availableSubjects().map((subject) => subject.id)),
-    );
   }
 
   protected async onCreate(): Promise<void> {
@@ -123,14 +90,9 @@ export class Invitations {
     this.creating.set(true);
     this.copied.set(false);
     try {
-      const code = await this.invitationsService.create(
-        this.email(),
-        this.role(),
-        Array.from(this.selectedSubjectIds()),
-      );
+      const code = await this.invitationsService.create(this.email(), this.role(), []);
       this.createdCode.set(code);
       this.email.set('');
-      this.selectedSubjectIds.set(new Set());
     } catch {
       this.toast.error(this.i18n.t('invitationsPage', 'errorGeneric'));
     } finally {

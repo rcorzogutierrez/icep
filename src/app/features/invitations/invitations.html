@@ -26,51 +26,6 @@
       />
     </div>
 
-    @if (role() === 'student') {
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-          <span class="text-sm font-medium text-text">{{
-            i18n.t('invitationsPage', 'subjectsLabel')
-          }}</span>
-          @if (availableSubjects().length > 0) {
-            <button
-              type="button"
-              class="text-sm text-brand-700 hover:underline"
-              (click)="toggleAllSubjects()"
-            >
-              {{
-                allSubjectsSelected()
-                  ? i18n.t('invitationsPage', 'deselectAll')
-                  : i18n.t('invitationsPage', 'selectAll')
-              }}
-            </button>
-          }
-        </div>
-        @if (availableSubjects().length > 0) {
-          <div class="flex flex-wrap gap-2">
-            @for (subject of availableSubjects(); track subject.id) {
-              <label
-                class="flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm text-text has-checked:border-brand-500 has-checked:bg-brand-50"
-              >
-                <input
-                  type="checkbox"
-                  class="accent-brand-600"
-                  [checked]="selectedSubjectIds().has(subject.id)"
-                  (change)="toggleSubject(subject.id)"
-                />
-                <span class="font-mono text-text-muted">{{ subject.code }}</span>
-                {{ subject.name }}
-              </label>
-            }
-          </div>
-        } @else {
-          <p class="text-sm text-text-muted">
-            {{ i18n.t('invitationsPage', 'noSubjectsAvailable') }}
-          </p>
-        }
-      </div>
-    }
-
     <div>
       <app-button [loading]="creating()" [disabled]="!email().trim()" (pressed)="onCreate()">
         {{ i18n.t('invitationsPage', 'generate') }}

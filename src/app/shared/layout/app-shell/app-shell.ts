@@ -3,7 +3,13 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UserProfileService } from '../../../core/users/user-profile.service';
-import { IconBookOpen, IconLayoutDashboard, IconUserPlus, IconUsers } from '../../icons/icons';
+import {
+  IconBookOpen,
+  IconLayers,
+  IconLayoutDashboard,
+  IconUserPlus,
+  IconUsers,
+} from '../../icons/icons';
 
 /**
  * Shell persistente de la app logueada: sidebar de navegación + barra
@@ -20,6 +26,7 @@ import { IconBookOpen, IconLayoutDashboard, IconUserPlus, IconUsers } from '../.
     IconLayoutDashboard,
     IconUserPlus,
     IconBookOpen,
+    IconLayers,
     IconUsers,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
