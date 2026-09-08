@@ -29,7 +29,11 @@ export interface Grade {
   id: string;
   subjectId: string;
   studentUid: string;
-  /** categoryId -> nota 0-100 (null = todavía sin calificar esa categoría). */
+  /**
+   * assignmentId -> puntos obtenidos (0 a Assignment.pointsPossible; null =
+   * todavía sin calificar esa tarea). Ver grades.util.ts::computeFinalGrade
+   * para cómo esto se agrega en nota de categoría y nota final.
+   */
   scores: Record<string, number | null>;
   updatedAt: Timestamp;
 }

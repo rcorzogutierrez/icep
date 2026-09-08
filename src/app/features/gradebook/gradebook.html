@@ -154,21 +154,212 @@
     </div>
   </section>
 
+  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+    <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'assignmentsTitle') }}</h2>
+
+    @for (category of categories(); track category.id) {
+      <div class="flex flex-col gap-2">
+        <h3 class="text-sm font-medium text-text-muted">{{ category.name }}</h3>
+        <div class="overflow-x-auto rounded-lg border border-border">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-border bg-slate-50 text-text-muted">
+              <tr>
+                <th class="px-4 py-2 font-medium">
+                  {{ i18n.t('gradebook', 'colAssignmentName') }}
+                </th>
+                <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colPoints') }}</th>
+                <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colDueDate') }}</th>
+                <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colActions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (assignment of assignmentsFor(category.id); track assignment.id) {
+                <tr class="border-b border-border last:border-0">
+                  @if (editingAssignmentId() === assignment.id) {
+                    <td class="px-4 py-3">
+                      <input
+                        type="text"
+                        class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        [value]="editAssignmentName()"
+                        (input)="editAssignmentName.set($any($event.target).value)"
+                      />
+                    </td>
+                    <td class="px-4 py-3">
+                      <input
+                        type="number"
+                        min="1"
+                        class="h-9 w-20 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        [value]="editAssignmentPoints() ?? ''"
+                        (input)="
+                          editAssignmentPoints.set($any($event.target).valueAsNumber || null)
+                        "
+                      />
+                    </td>
+                    <td class="px-4 py-3">
+                      <input
+                        type="date"
+                        class="h-9 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        [value]="editAssignmentDueDate()"
+                        (input)="editAssignmentDueDate.set($any($event.target).value)"
+                      />
+                    </td>
+                    <td class="px-4 py-3">
+                      <div class="flex gap-2">
+                        <app-button
+                          size="sm"
+                          [loading]="savingAssignment()"
+                          [disabled]="!editAssignmentName().trim() || !editAssignmentPoints()"
+                          (pressed)="saveEditAssignment(assignment)"
+                        >
+                          {{ i18n.t('gradebook', 'save') }}
+                        </app-button>
+                        <app-button
+                          variant="secondary"
+                          size="sm"
+                          (pressed)="cancelEditAssignment()"
+                        >
+                          {{ i18n.t('gradebook', 'cancel') }}
+                        </app-button>
+                      </div>
+                    </td>
+                  } @else {
+                    <td class="px-4 py-3 font-medium text-text">{{ assignment.name }}</td>
+                    <td class="px-4 py-3 text-text-muted">{{ assignment.pointsPossible }}</td>
+                    <td class="px-4 py-3 text-text-muted">
+                      @if (assignment.dueDate) {
+                        {{ assignment.dueDate.toDate() | date: 'mediumDate' }}
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td class="px-4 py-3">
+                      <div class="flex gap-2">
+                        <app-button
+                          variant="secondary"
+                          size="sm"
+                          (pressed)="startEditAssignment(assignment)"
+                        >
+                          {{ i18n.t('gradebook', 'edit') }}
+                        </app-button>
+                        <app-button
+                          variant="danger"
+                          size="sm"
+                          [loading]="removingAssignmentId() === assignment.id"
+                          (pressed)="onRemoveAssignment(assignment)"
+                        >
+                          {{ i18n.t('gradebook', 'delete') }}
+                        </app-button>
+                      </div>
+                    </td>
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="px-4 py-4 text-center text-text-muted">
+                    {{ i18n.t('gradebook', 'noAssignments') }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    @if (categories().length === 0) {
+      <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'needCategoryFirst') }}</p>
+    } @else {
+      <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto]">
+        <div class="flex flex-col gap-1">
+          <label for="assignment-name" class="text-sm font-medium text-text">
+            {{ i18n.t('gradebook', 'assignmentNameLabel') }}
+          </label>
+          <input
+            id="assignment-name"
+            type="text"
+            class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            [value]="assignmentName()"
+            (input)="assignmentName.set($any($event.target).value)"
+          />
+        </div>
+        <app-select
+          [label]="i18n.t('gradebook', 'assignmentCategoryLabel')"
+          [options]="categoryOptions()"
+          [value]="assignmentCategoryId()"
+          (valueChange)="assignmentCategoryId.set($event)"
+        />
+        <div class="flex flex-col gap-1">
+          <label for="assignment-points" class="text-sm font-medium text-text">
+            {{ i18n.t('gradebook', 'assignmentPointsLabel') }}
+          </label>
+          <input
+            id="assignment-points"
+            type="number"
+            min="1"
+            class="h-10 w-24 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            [value]="assignmentPoints() ?? ''"
+            (input)="assignmentPoints.set($any($event.target).valueAsNumber || null)"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="assignment-due-date" class="text-sm font-medium text-text">
+            {{ i18n.t('gradebook', 'assignmentDueDateLabel') }}
+          </label>
+          <input
+            id="assignment-due-date"
+            type="date"
+            class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            [value]="assignmentDueDate()"
+            (input)="assignmentDueDate.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+      <div>
+        <app-button
+          [loading]="creatingAssignment()"
+          [disabled]="!assignmentName().trim() || !assignmentCategoryId() || !assignmentPoints()"
+          (pressed)="onCreateAssignment()"
+        >
+          {{ i18n.t('gradebook', 'addAssignment') }}
+        </app-button>
+      </div>
+    }
+  </section>
+
   <section class="flex flex-col gap-3">
     <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'gradesTitle') }}</h2>
     <div class="overflow-x-auto rounded-lg border border-border">
       <table class="w-full text-left text-sm">
         <thead class="border-b border-border bg-slate-50 text-text-muted">
           <tr>
-            <th class="sticky left-0 bg-slate-50 px-4 py-2 font-medium">
+            <th class="sticky left-0 bg-slate-50 px-4 py-2 font-medium" rowspan="2">
               {{ i18n.t('gradebook', 'colStudent') }}
             </th>
             @for (category of categories(); track category.id) {
-              <th class="px-4 py-2 font-medium whitespace-nowrap">
-                {{ category.name }} ({{ category.weight }}%)
-              </th>
+              @if (assignmentsFor(category.id).length > 0) {
+                <th
+                  class="border-l border-border px-4 py-2 text-center font-medium whitespace-nowrap"
+                  [attr.colspan]="assignmentsFor(category.id).length"
+                >
+                  {{ category.name }} ({{ category.weight }}%)
+                </th>
+              }
             }
-            <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colFinalGrade') }}</th>
+            <th class="px-4 py-2 font-medium" rowspan="2">
+              {{ i18n.t('gradebook', 'colFinalGrade') }}
+            </th>
+          </tr>
+          <tr>
+            @for (category of categories(); track category.id) {
+              @for (assignment of assignmentsFor(category.id); track assignment.id) {
+                <th class="border-l border-border px-4 py-2 font-medium whitespace-nowrap">
+                  {{ assignment.name }}
+                  <span class="block font-normal text-text-muted"
+                    >/{{ assignment.pointsPossible }}</span
+                  >
+                </th>
+              }
+            }
           </tr>
         </thead>
         <tbody>
@@ -178,16 +369,18 @@
                 {{ student.displayName ?? student.email }}
               </td>
               @for (category of categories(); track category.id) {
-                <td class="px-4 py-3">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    class="h-9 w-20 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                    [value]="scoreFor(student.uid, category.id) ?? ''"
-                    (change)="onSetScore(student.uid, category.id, $any($event.target).value)"
-                  />
-                </td>
+                @for (assignment of assignmentsFor(category.id); track assignment.id) {
+                  <td class="border-l border-border px-4 py-3">
+                    <input
+                      type="number"
+                      min="0"
+                      [max]="assignment.pointsPossible"
+                      class="h-9 w-16 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      [value]="scoreFor(student.uid, assignment.id) ?? ''"
+                      (change)="onSetScore(student.uid, assignment, $any($event.target).value)"
+                    />
+                  </td>
+                }
               }
               <td class="px-4 py-3 font-semibold text-text">
                 @if (finalGradeFor(student.uid) !== null) {
@@ -202,7 +395,7 @@
           } @empty {
             <tr>
               <td
-                [attr.colspan]="categories().length + 2"
+                [attr.colspan]="assignments().length + 2"
                 class="px-4 py-6 text-center text-text-muted"
               >
                 {{ i18n.t('gradebook', 'noStudents') }}

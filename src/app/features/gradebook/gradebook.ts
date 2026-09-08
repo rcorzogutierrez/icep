@@ -1,5 +1,7 @@
-import { DecimalPipe, Location } from '@angular/common';
+import { DatePipe, DecimalPipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import type { Assignment } from '../../core/grades/assignments.model';
+import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
 import { GradesService } from '../../core/grades/grades.service';
 import type { GradeCategory } from '../../core/grades/grades.model';
@@ -8,13 +10,14 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
+import { Select, type SelectOption } from '../../shared/components/select/select';
 import { ToastService } from '../../shared/toast/toast.service';
 
-/** Rúbrica + grilla de notas de una materia. Ver auth.guards.ts::subjectAccessGuard para quién puede entrar. */
+/** Rúbrica + tareas + grilla de notas de una materia. Ver auth.guards.ts::subjectAccessGuard para quién puede entrar. */
 @Component({
   selector: 'app-gradebook',
   standalone: true,
-  imports: [Button, DecimalPipe],
+  imports: [Button, Select, DecimalPipe, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gradebook.html',
 })
@@ -23,6 +26,7 @@ export class Gradebook {
 
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly categoriesService = inject(GradeCategoriesService);
+  protected readonly assignmentsService = inject(AssignmentsService);
   protected readonly gradesService = inject(GradesService);
   protected readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
@@ -39,6 +43,14 @@ export class Gradebook {
 
   protected readonly totalWeight = computed(() =>
     this.categories().reduce((sum, category) => sum + category.weight, 0),
+  );
+
+  protected readonly assignments = computed(() =>
+    this.assignmentsService.forSubject(this.subjectId()),
+  );
+
+  protected readonly categoryOptions = computed<SelectOption<string>[]>(() =>
+    this.categories().map((category) => ({ value: category.id, label: category.name })),
   );
 
   protected readonly students = computed(() =>
@@ -62,30 +74,48 @@ export class Gradebook {
   protected readonly savingCategory = signal(false);
   protected readonly removingCategoryId = signal<string | null>(null);
 
+  protected readonly assignmentName = signal('');
+  protected readonly assignmentCategoryId = signal<string | undefined>(undefined);
+  protected readonly assignmentPoints = signal<number | null>(null);
+  protected readonly assignmentDueDate = signal('');
+  protected readonly creatingAssignment = signal(false);
+
+  protected readonly editingAssignmentId = signal<string | null>(null);
+  protected readonly editAssignmentName = signal('');
+  protected readonly editAssignmentPoints = signal<number | null>(null);
+  protected readonly editAssignmentDueDate = signal('');
+  protected readonly savingAssignment = signal(false);
+  protected readonly removingAssignmentId = signal<string | null>(null);
+
+  /** Tareas de una categoría, para agruparlas en la lista y en la grilla. */
+  protected assignmentsFor(categoryId: string): Assignment[] {
+    return this.assignments().filter((a) => a.categoryId === categoryId);
+  }
+
   protected finalGradeFor(studentUid: string): number | null {
     const grade = this.gradesService
       .forSubject(this.subjectId())
       .find((g) => g.studentUid === studentUid);
-    return computeFinalGrade(this.categories(), grade?.scores);
+    return computeFinalGrade(this.categories(), this.assignments(), grade?.scores);
   }
 
-  protected scoreFor(studentUid: string, categoryId: string): number | null {
-    return this.gradesService.scoreFor(this.subjectId(), studentUid, categoryId);
+  protected scoreFor(studentUid: string, assignmentId: string): number | null {
+    return this.gradesService.scoreFor(this.subjectId(), studentUid, assignmentId);
   }
 
   protected async onSetScore(
     studentUid: string,
-    categoryId: string,
+    assignment: Assignment,
     rawValue: string,
   ): Promise<void> {
     const trimmed = rawValue.trim();
     const score = trimmed === '' ? null : Number(trimmed);
-    if (score !== null && (Number.isNaN(score) || score < 0 || score > 100)) {
+    if (score !== null && (Number.isNaN(score) || score < 0 || score > assignment.pointsPossible)) {
       this.toast.error(this.i18n.t('gradebook', 'invalidScore'));
       return;
     }
     try {
-      await this.gradesService.setScore(this.subjectId(), studentUid, categoryId, score);
+      await this.gradesService.setScore(this.subjectId(), studentUid, assignment.id, score);
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     }
@@ -156,6 +186,77 @@ export class Gradebook {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
       this.removingCategoryId.set(null);
+    }
+  }
+
+  protected async onCreateAssignment(): Promise<void> {
+    const categoryId = this.assignmentCategoryId();
+    const points = this.assignmentPoints();
+    if (!this.assignmentName().trim() || !categoryId || points == null || points <= 0) {
+      return;
+    }
+
+    this.creatingAssignment.set(true);
+    try {
+      await this.assignmentsService.create(
+        this.subjectId(),
+        categoryId,
+        this.assignmentName(),
+        points,
+        this.assignmentDueDate() ? new Date(this.assignmentDueDate()) : null,
+      );
+      this.assignmentName.set('');
+      this.assignmentPoints.set(null);
+      this.assignmentDueDate.set('');
+    } catch {
+      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
+    } finally {
+      this.creatingAssignment.set(false);
+    }
+  }
+
+  protected startEditAssignment(assignment: Assignment): void {
+    this.editingAssignmentId.set(assignment.id);
+    this.editAssignmentName.set(assignment.name);
+    this.editAssignmentPoints.set(assignment.pointsPossible);
+    this.editAssignmentDueDate.set(
+      assignment.dueDate ? assignment.dueDate.toDate().toISOString().slice(0, 10) : '',
+    );
+  }
+
+  protected cancelEditAssignment(): void {
+    this.editingAssignmentId.set(null);
+  }
+
+  protected async saveEditAssignment(assignment: Assignment): Promise<void> {
+    const points = this.editAssignmentPoints();
+    if (!this.editAssignmentName().trim() || points == null || points <= 0) {
+      return;
+    }
+
+    this.savingAssignment.set(true);
+    try {
+      await this.assignmentsService.update(assignment.id, {
+        name: this.editAssignmentName().trim(),
+        pointsPossible: points,
+        dueDate: this.editAssignmentDueDate() ? new Date(this.editAssignmentDueDate()) : null,
+      });
+      this.editingAssignmentId.set(null);
+    } catch {
+      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
+    } finally {
+      this.savingAssignment.set(false);
+    }
+  }
+
+  protected async onRemoveAssignment(assignment: Assignment): Promise<void> {
+    this.removingAssignmentId.set(assignment.id);
+    try {
+      await this.assignmentsService.remove(assignment.id);
+    } catch {
+      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
+    } finally {
+      this.removingAssignmentId.set(null);
     }
   }
 

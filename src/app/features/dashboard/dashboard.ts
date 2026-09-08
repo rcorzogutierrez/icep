@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
 import { GradesService } from '../../core/grades/grades.service';
 import { computeFinalGrade } from '../../core/grades/grades.util';
@@ -44,6 +45,7 @@ export class Dashboard {
   protected readonly subjectsService = inject(SubjectsService);
   private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
   private readonly gradeCategoriesService = inject(GradeCategoriesService);
+  private readonly assignmentsService = inject(AssignmentsService);
   private readonly gradesService = inject(GradesService);
   private readonly usersService = inject(UsersService);
   private readonly invitationsService = inject(InvitationsService);
@@ -155,13 +157,14 @@ export class Dashboard {
         this.subjectsService.fetchByIds(subjectIds),
         this.subjectAssignmentsService.fetchBySubjectIds(subjectIds),
         this.gradeCategoriesService.fetchForSubjectIds(subjectIds),
+        this.assignmentsService.fetchForSubjectIds(subjectIds),
         uid ? Promise.all(subjectIds.map((id) => this.gradesService.fetchOwn(id, uid))) : [],
       ])
-        .then(([subjects, assignments, categories, grades]) => {
+        .then(([subjects, teacherAssignments, categories, assignments, grades]) => {
           this.mySubjects.set(subjects);
 
           const byTeacher = new Map<string, string[]>();
-          for (const assignment of assignments) {
+          for (const assignment of teacherAssignments) {
             byTeacher.set(assignment.subjectId, [
               ...(byTeacher.get(assignment.subjectId) ?? []),
               assignment.teacherName,
@@ -173,7 +176,11 @@ export class Dashboard {
           for (const subjectId of subjectIds) {
             const grade = grades.find((g) => g?.subjectId === subjectId);
             const subjectCategories = categories.filter((c) => c.subjectId === subjectId);
-            finalGrades.set(subjectId, computeFinalGrade(subjectCategories, grade?.scores));
+            const subjectAssignments = assignments.filter((a) => a.subjectId === subjectId);
+            finalGrades.set(
+              subjectId,
+              computeFinalGrade(subjectCategories, subjectAssignments, grade?.scores),
+            );
           }
           this.mySubjectFinalGrades.set(finalGrades);
         })
