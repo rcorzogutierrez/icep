@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
 import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import type { Assignment } from '../../core/grades/assignments.model';
@@ -36,6 +37,7 @@ export class Gradebook {
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly location = inject(Location);
+  private readonly router = inject(Router);
 
   protected readonly subject = computed(() =>
     this.subjectsService.subjects().find((s) => s.id === this.subjectId()),
@@ -304,5 +306,9 @@ export class Gradebook {
 
   protected goBack(): void {
     this.location.back();
+  }
+
+  protected goToReview(assignmentId: string): void {
+    this.router.navigate(['/subjects', this.subjectId(), 'assignments', assignmentId, 'review']);
   }
 }

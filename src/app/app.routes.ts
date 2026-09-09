@@ -68,6 +68,12 @@ export const routes: Routes = [
         canActivate: [staffGuard, subjectAccessGuard],
         loadComponent: () => import('./features/gradebook/gradebook').then((m) => m.Gradebook),
       },
+      {
+        path: 'subjects/:subjectId/assignments/:assignmentId/review',
+        canActivate: [staffGuard, subjectAccessGuard],
+        loadComponent: () =>
+          import('./features/assignment-review/assignment-review').then((m) => m.AssignmentReview),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

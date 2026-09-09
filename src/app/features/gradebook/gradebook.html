@@ -300,6 +300,9 @@
                     </td>
                     <td class="px-4 py-3">
                       <div class="flex gap-2">
+                        <app-button size="sm" (pressed)="goToReview(assignment.id)">
+                          {{ i18n.t('gradebook', 'review') }}
+                        </app-button>
                         <app-button
                           variant="secondary"
                           size="sm"
