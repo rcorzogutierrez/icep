@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "emulators": "firebase emulators:start",
     "deploy": "ng build && firebase deploy --only hosting:icep"
   },
