@@ -16,7 +16,7 @@ export const translations = {
     login: {
       title: 'Iniciá sesión',
       subtitle: 'El registro es solo por invitación de tu profesor o del administrador.',
-      inviteSubtitle: 'Fuiste invitado a ICEP Gradebook. Completá tu registro para continuar.',
+      inviteSubtitle: 'Fuiste invitado a IET Gradebook. Completá tu registro para continuar.',
       tabSignIn: 'Iniciar sesión',
       tabSignUp: 'Registrarme',
       emailLabel: 'Email',
@@ -37,7 +37,7 @@ export const translations = {
       errorInvalidCredential: 'Email o contraseña incorrectos.',
       errorWeakPassword: 'La contraseña es muy débil (mínimo 6 caracteres).',
       footerDescription:
-        'Sistema de calificaciones para estudiantes y profesores del Instituto Centro Evangélico Pentecostal.',
+        'Sistema de calificaciones para estudiantes y profesores del Instituto Evangélico de Teología.',
       footerVerse:
         'Procura con diligencia presentarte a Dios aprobado, como obrero que no tiene de qué avergonzarse, que usa bien la palabra de verdad.',
       footerVerseRef: '2 Timoteo 2:15',
@@ -48,7 +48,7 @@ export const translations = {
     },
     noInvitation: {
       title: 'Necesitás una invitación',
-      body: 'Para registrarte en ICEP Gradebook necesitás que un profesor o el administrador te invite.',
+      body: 'Para registrarte en IET Gradebook necesitás que un profesor o el administrador te invite.',
       haveCode: '¿Tenés un código de invitación?',
       codePlaceholder: 'Código de invitación',
       submit: 'Validar código',
@@ -56,10 +56,10 @@ export const translations = {
     },
     rejected: {
       title: 'Acceso revocado',
-      body: 'Tu acceso a ICEP Gradebook fue revocado. Comunicate con el administrador del sistema si creés que es un error.',
+      body: 'Tu acceso a IET Gradebook fue revocado. Comunicate con el administrador del sistema si creés que es un error.',
     },
     dashboard: {
-      subtitle: 'ICEP Gradebook',
+      subtitle: 'IET Gradebook',
       greeting: 'Hola',
       toolsTitle: 'Herramientas',
       adminPanel: 'Usuarios',
@@ -287,7 +287,7 @@ export const translations = {
     login: {
       title: 'Sign in',
       subtitle: 'Registration is invite-only, from a teacher or the administrator.',
-      inviteSubtitle: "You've been invited to ICEP Gradebook. Finish signing up to continue.",
+      inviteSubtitle: "You've been invited to IET Gradebook. Finish signing up to continue.",
       tabSignIn: 'Sign in',
       tabSignUp: 'Sign up',
       emailLabel: 'Email',
@@ -308,7 +308,7 @@ export const translations = {
       errorInvalidCredential: 'Incorrect email or password.',
       errorWeakPassword: 'Password is too weak (minimum 6 characters).',
       footerDescription:
-        'A gradebook for students and teachers of the Instituto Centro Evangélico Pentecostal.',
+        'A gradebook for students and teachers of the Instituto Evangélico de Teología.',
       footerVerse:
         'Study to shew thyself approved unto God, a workman that needeth not to be ashamed, rightly dividing the word of truth.',
       footerVerseRef: '2 Timothy 2:15',
@@ -319,7 +319,7 @@ export const translations = {
     },
     noInvitation: {
       title: 'You need an invitation',
-      body: 'To sign up for ICEP Gradebook you need a teacher or the administrator to invite you.',
+      body: 'To sign up for IET Gradebook you need a teacher or the administrator to invite you.',
       haveCode: 'Have an invitation code?',
       codePlaceholder: 'Invitation code',
       submit: 'Validate code',
@@ -327,10 +327,10 @@ export const translations = {
     },
     rejected: {
       title: 'Access revoked',
-      body: 'Your access to ICEP Gradebook was revoked. Contact the system administrator if you think this is a mistake.',
+      body: 'Your access to IET Gradebook was revoked. Contact the system administrator if you think this is a mistake.',
     },
     dashboard: {
-      subtitle: 'ICEP Gradebook',
+      subtitle: 'IET Gradebook',
       greeting: 'Hello',
       toolsTitle: 'Tools',
       adminPanel: 'Users',
