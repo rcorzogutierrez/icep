@@ -64,6 +64,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/courses/courses').then((m) => m.AdminCourses),
       },
       {
+        path: 'admin/courses/:courseId',
+        canActivate: [staffGuard],
+        loadComponent: () =>
+          import('./features/admin/course-detail/course-detail').then((m) => m.CourseDetail),
+      },
+      {
         path: 'subjects/:subjectId/gradebook',
         canActivate: [staffGuard, subjectAccessGuard],
         loadComponent: () => import('./features/gradebook/gradebook').then((m) => m.Gradebook),

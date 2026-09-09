@@ -28,6 +28,7 @@ export {
   LucideLoaderCircle as IconLoaderCircle,
   LucideLock as IconLock,
   LucideMail as IconMail,
+  LucidePlus as IconPlus,
   LucideSearch as IconSearch,
   LucideUserPlus as IconUserPlus,
   LucideUsers as IconUsers,
