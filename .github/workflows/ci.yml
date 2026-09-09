@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Angular CLI 22 requires Node >=22.22.3 (or >=24.15.0/>=26) —
+          # "22" resolves to the latest 22.x release, which satisfies that.
+          node-version: '22'
+          cache: 'npm'
+
+      # Match the npm version pinned in package.json's "packageManager" so
+      # npm ci doesn't rewrite package-lock.json against a different npm.
+      - run: npm install -g npm@11.12.0
+      - run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
