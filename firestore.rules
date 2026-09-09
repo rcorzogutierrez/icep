@@ -43,7 +43,14 @@ service cloud.firestore {
     // solo puede invitar con rol "student"; el admin puede invitar
     // "student" o "teacher".
     match /invitations/{code} {
-      allow get: if request.auth != null;
+      // Leer una invitación puntual: staff, quien ya la canjeó, o el dueño
+      // del email al que fue dirigida (necesario para poder canjearla).
+      // Que cualquier autenticado pudiera leer cualquier código habilitaba
+      // adivinar/enumerar invitaciones ajenas.
+      allow get: if request.auth != null
+        && (isAdmin() || isTeacher()
+            || resource.data.usedByUid == request.auth.uid
+            || request.auth.token.email.lower() == resource.data.email);
       allow list: if request.auth != null && (isAdmin() || isTeacher());
 
       allow create: if request.auth != null
@@ -53,11 +60,17 @@ service cloud.firestore {
         && ((isAdmin() && request.resource.data.role in ['student', 'teacher'])
             || (isTeacher() && request.resource.data.role == 'student'));
 
-      // Canjear: cualquier autenticado se marca a sí mismo como quien la usó.
+      // Canjear: solo el dueño del email al que se dirigió la invitación
+      // puede marcarse a sí mismo como quien la usó. Sin este chequeo, el
+      // código funcionaba como un bearer token: cualquiera que lo
+      // consiguiera (link reenviado, filtrado, adivinado) podía canjearlo
+      // con su propia cuenta y quedarse con el rol/materias de otra
+      // persona.
       allow update: if request.auth != null
         && resource.data.status == 'pending'
         && request.resource.data.status == 'used'
         && request.resource.data.usedByUid == request.auth.uid
+        && request.auth.token.email.lower() == resource.data.email
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'usedByUid', 'usedAt']);
 
       // Revocar: quien la creó, o un admin.
