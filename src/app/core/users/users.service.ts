@@ -1,6 +1,7 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import {
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
@@ -72,5 +73,16 @@ export class UsersService {
       status,
       updatedAt: serverTimestamp(),
     });
+  }
+
+  /**
+   * Borra el perfil (users/{uid}), no la cuenta de Firebase Auth
+   * subyacente: eso requiere Admin SDK (no disponible desde el cliente).
+   * La persona podría volver a iniciar sesión con esa misma cuenta, pero
+   * caería en /no-invitation sin un código nuevo — mismo efecto de acceso
+   * que "reject", solo que sin dejar el registro en la lista.
+   */
+  remove(uid: string) {
+    return deleteDoc(doc(this.firestore, 'users', uid));
   }
 }

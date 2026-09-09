@@ -19,8 +19,17 @@
         @for (user of usersService.users(); track user.uid) {
           <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
             <td class="px-4 py-3">
-              <div class="font-medium text-text">{{ user.displayName ?? '—' }}</div>
-              <div class="text-text-muted">{{ user.email ?? '—' }}</div>
+              <div class="flex items-center gap-3">
+                <span
+                  class="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 ring-2 ring-brand-50"
+                >
+                  {{ initial(user) }}
+                </span>
+                <div class="min-w-0">
+                  <div class="truncate font-medium text-text">{{ user.displayName ?? '—' }}</div>
+                  <div class="truncate text-text-muted">{{ user.email ?? '—' }}</div>
+                </div>
+              </div>
             </td>
             <td class="px-4 py-3 text-text-muted">
               @if (user.createdAt) {
@@ -31,29 +40,44 @@
             </td>
             <td class="px-4 py-3 text-text-muted">{{ roleLabel(user.role) }}</td>
             <td class="px-4 py-3">
-              <span [class]="statusClass[user.status]">{{ statusLabel(user.status) }}</span>
+              <span
+                class="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+                [class]="statusClass[user.status]"
+              >
+                {{ statusLabel(user.status) }}
+              </span>
             </td>
             <td class="px-4 py-3">
-              @if (user.status === 'approved') {
-                <app-button
-                  variant="danger"
-                  size="sm"
-                  [loading]="pendingActionUid() === user.uid"
-                  (pressed)="onRevoke(user)"
-                >
-                  {{ i18n.t('adminUsers', 'revoke') }}
-                </app-button>
-              } @else if (user.status === 'rejected') {
-                <app-button
-                  size="sm"
-                  [loading]="pendingActionUid() === user.uid"
-                  (pressed)="onReinstate(user)"
-                >
-                  {{ i18n.t('adminUsers', 'reinstate') }}
-                </app-button>
-              } @else {
-                <span class="text-text-muted">—</span>
-              }
+              <div class="flex flex-wrap gap-2">
+                @if (user.status === 'approved') {
+                  <app-button
+                    variant="danger"
+                    size="sm"
+                    [loading]="pendingActionUid() === user.uid"
+                    (pressed)="onRevoke(user)"
+                  >
+                    {{ i18n.t('adminUsers', 'revoke') }}
+                  </app-button>
+                } @else if (user.status === 'rejected') {
+                  <app-button
+                    size="sm"
+                    [loading]="pendingActionUid() === user.uid"
+                    (pressed)="onReinstate(user)"
+                  >
+                    {{ i18n.t('adminUsers', 'reinstate') }}
+                  </app-button>
+                }
+                @if (!isSelf(user)) {
+                  <app-button
+                    variant="danger"
+                    size="sm"
+                    [loading]="removingUid() === user.uid"
+                    (pressed)="onRemove(user)"
+                  >
+                    {{ i18n.t('adminUsers', 'delete') }}
+                  </app-button>
+                }
+              </div>
             </td>
           </tr>
         } @empty {

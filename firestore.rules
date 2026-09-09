@@ -42,7 +42,9 @@ service cloud.firestore {
       allow update: if request.auth != null && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locale', 'updatedAt']);
 
-      allow delete: if false;
+      // Solo un admin, y nunca sobre su propia cuenta (evita que el
+      // último admin se quede sin poder administrar el sistema).
+      allow delete: if isAdmin() && request.auth.uid != userId;
     }
 
     // invitations/{code}: el código es el propio id del doc. Un profesor

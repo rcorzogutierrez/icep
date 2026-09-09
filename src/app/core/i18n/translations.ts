@@ -103,6 +103,7 @@ export const translations = {
       statusRejected: 'Revocado',
       revoke: 'Revocar',
       reinstate: 'Restaurar',
+      delete: 'Borrar',
     },
     invitationsPage: {
       title: 'Invitaciones',
@@ -373,6 +374,7 @@ export const translations = {
       statusRejected: 'Revoked',
       revoke: 'Revoke',
       reinstate: 'Reinstate',
+      delete: 'Delete',
     },
     invitationsPage: {
       title: 'Invitations',
