@@ -14,6 +14,8 @@ export interface Invitation {
   status: InvitationStatus;
   createdBy: string;
   createdAt: Timestamp;
+  /** Vencimiento: pasado este momento, ya no se puede canjear (ver firestore.rules). Ausente en invitaciones creadas antes de este campo. */
+  expiresAt?: Timestamp;
   usedByUid: string | null;
   usedAt: Timestamp | null;
 }

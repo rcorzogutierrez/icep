@@ -18,6 +18,8 @@ const STATUS_CLASS: Record<InvitationStatus, string> = {
   used: 'text-status-active',
   revoked: 'text-status-expired',
 };
+/** Una "pending" vencida se muestra igual que "revoked": ya no se puede canjear. */
+const EXPIRED_CLASS = STATUS_CLASS.revoked;
 
 /** Pantalla de admin/profesor: generar invitaciones y gestionar las existentes. */
 @Component({
@@ -34,7 +36,18 @@ export class Invitations {
   private readonly usersService = inject(UsersService);
   private readonly toast = inject(ToastService);
 
-  protected readonly statusClass = STATUS_CLASS;
+  /** true si es "pending" y ya pasó su expiresAt — no se puede canjear aunque el status siga "pending" (ver firestore.rules). */
+  protected isExpired(invitation: Invitation): boolean {
+    return (
+      invitation.status === 'pending' &&
+      invitation.expiresAt != null &&
+      invitation.expiresAt.toMillis() < Date.now()
+    );
+  }
+
+  protected statusClassFor(invitation: Invitation): string {
+    return this.isExpired(invitation) ? EXPIRED_CLASS : STATUS_CLASS[invitation.status];
+  }
 
   protected readonly roleOptions = computed<SelectOption<InvitableRole>[]>(() => [
     { value: 'student', label: this.i18n.t('invitationsPage', 'roleStudent') },
@@ -58,8 +71,11 @@ export class Invitations {
   protected readonly editEmail = signal('');
   protected readonly savingEdit = signal(false);
 
-  protected readonly statusLabel = (status: InvitationStatus): string => {
-    switch (status) {
+  protected statusLabel(invitation: Invitation): string {
+    if (this.isExpired(invitation)) {
+      return this.i18n.t('invitationsPage', 'statusExpired');
+    }
+    switch (invitation.status) {
       case 'pending':
         return this.i18n.t('invitationsPage', 'statusPending');
       case 'used':
@@ -67,7 +83,7 @@ export class Invitations {
       case 'revoked':
         return this.i18n.t('invitationsPage', 'statusRevoked');
     }
-  };
+  }
 
   protected inviteLink(code: string): string {
     return `${location.origin}/invite/${code}`;
@@ -118,9 +134,9 @@ export class Invitations {
     }
   }
 
-  /** Pendiente: solo vuelve a mostrar el mismo link para copiar. Revocada: genera una invitación nueva (código nuevo) con los mismos datos. */
+  /** Pendiente y vigente: solo vuelve a mostrar el mismo link para copiar. Revocada o vencida: genera una invitación nueva (código y expiresAt nuevos) con los mismos datos. */
   protected async onResend(invitation: Invitation): Promise<void> {
-    if (invitation.status === 'pending') {
+    if (invitation.status === 'pending' && !this.isExpired(invitation)) {
       this.createdCode.set(invitation.code);
       this.copied.set(false);
       return;
