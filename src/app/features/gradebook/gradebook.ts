@@ -14,13 +14,14 @@ import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
+import { IconPlus } from '../../shared/icons/icons';
 import { ToastService } from '../../shared/toast/toast.service';
 
 /** Rúbrica + tareas + grilla de notas de una materia. Ver auth.guards.ts::subjectAccessGuard para quién puede entrar. */
 @Component({
   selector: 'app-gradebook',
   standalone: true,
-  imports: [Button, Select, DecimalPipe, DatePipe],
+  imports: [Button, Select, IconPlus, DecimalPipe, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gradebook.html',
 })
@@ -80,6 +81,7 @@ export class Gradebook {
       );
   });
 
+  protected readonly showAddCategoryForm = signal(false);
   protected readonly categoryName = signal('');
   protected readonly categoryWeight = signal<number | null>(null);
   protected readonly categoryHasMultipleTasks = signal(true);
@@ -91,6 +93,7 @@ export class Gradebook {
   protected readonly savingCategory = signal(false);
   protected readonly removingCategoryId = signal<string | null>(null);
 
+  protected readonly showAddAssignmentForm = signal(false);
   protected readonly assignmentName = signal('');
   protected readonly assignmentCategoryId = signal<string | undefined>(undefined);
   protected readonly assignmentPoints = signal<number | null>(null);
@@ -166,14 +169,23 @@ export class Gradebook {
         weight,
         this.categoryHasMultipleTasks(),
       );
-      this.categoryName.set('');
-      this.categoryWeight.set(null);
-      this.categoryHasMultipleTasks.set(true);
+      this.closeAddCategoryForm();
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
       this.creatingCategory.set(false);
     }
+  }
+
+  protected openAddCategoryForm(): void {
+    this.showAddCategoryForm.set(true);
+  }
+
+  protected closeAddCategoryForm(): void {
+    this.showAddCategoryForm.set(false);
+    this.categoryName.set('');
+    this.categoryWeight.set(null);
+    this.categoryHasMultipleTasks.set(true);
   }
 
   protected startEditCategory(category: GradeCategory): void {
@@ -243,14 +255,24 @@ export class Gradebook {
         points,
         this.assignmentDueDate() ? new Date(this.assignmentDueDate()) : null,
       );
-      this.assignmentName.set('');
-      this.assignmentPoints.set(null);
-      this.assignmentDueDate.set('');
+      this.closeAddAssignmentForm();
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
       this.creatingAssignment.set(false);
     }
+  }
+
+  protected openAddAssignmentForm(): void {
+    this.showAddAssignmentForm.set(true);
+  }
+
+  /** No resetea assignmentCategoryId a propósito: al agregar varias tareas seguidas a la misma categoría, conviene que quede seleccionada. */
+  protected closeAddAssignmentForm(): void {
+    this.showAddAssignmentForm.set(false);
+    this.assignmentName.set('');
+    this.assignmentPoints.set(null);
+    this.assignmentDueDate.set('');
   }
 
   protected startEditAssignment(assignment: Assignment): void {

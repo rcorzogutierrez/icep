@@ -126,86 +126,98 @@
       </table>
     </div>
 
-    <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-1">
-          <label for="category-name" class="text-sm font-medium text-text">
-            {{ i18n.t('gradebook', 'categoryNameLabel') }}
-          </label>
-          <input
-            id="category-name"
-            type="text"
-            class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            [value]="categoryName()"
-            (input)="categoryName.set($any($event.target).value)"
-          />
+    @if (showAddCategoryForm()) {
+      <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="flex flex-col gap-1">
+            <label for="category-name" class="text-sm font-medium text-text">
+              {{ i18n.t('gradebook', 'categoryNameLabel') }}
+            </label>
+            <input
+              id="category-name"
+              type="text"
+              class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              [value]="categoryName()"
+              (input)="categoryName.set($any($event.target).value)"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="category-weight" class="text-sm font-medium text-text">
+              {{ i18n.t('gradebook', 'categoryWeightLabel') }}
+            </label>
+            <input
+              id="category-weight"
+              type="number"
+              min="1"
+              max="100"
+              class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              [value]="categoryWeight() ?? ''"
+              (input)="categoryWeight.set($any($event.target).valueAsNumber || null)"
+            />
+          </div>
         </div>
+
         <div class="flex flex-col gap-1">
-          <label for="category-weight" class="text-sm font-medium text-text">
-            {{ i18n.t('gradebook', 'categoryWeightLabel') }}
-          </label>
-          <input
-            id="category-weight"
-            type="number"
-            min="1"
-            max="100"
-            class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            [value]="categoryWeight() ?? ''"
-            (input)="categoryWeight.set($any($event.target).valueAsNumber || null)"
-          />
+          <span class="text-sm font-medium text-text">{{
+            i18n.t('gradebook', 'categoryModeLabel')
+          }}</span>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
+              [class.border-brand-500]="!categoryHasMultipleTasks()"
+              [class.bg-brand-50]="!categoryHasMultipleTasks()"
+              [class.border-border]="categoryHasMultipleTasks()"
+              [attr.aria-pressed]="!categoryHasMultipleTasks()"
+              (click)="categoryHasMultipleTasks.set(false)"
+            >
+              <span class="text-sm font-medium text-text">{{
+                i18n.t('gradebook', 'categoryModeSingleTitle')
+              }}</span>
+              <span class="text-xs text-text-muted">{{
+                i18n.t('gradebook', 'categoryModeSingleDesc')
+              }}</span>
+            </button>
+            <button
+              type="button"
+              class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
+              [class.border-brand-500]="categoryHasMultipleTasks()"
+              [class.bg-brand-50]="categoryHasMultipleTasks()"
+              [class.border-border]="!categoryHasMultipleTasks()"
+              [attr.aria-pressed]="categoryHasMultipleTasks()"
+              (click)="categoryHasMultipleTasks.set(true)"
+            >
+              <span class="text-sm font-medium text-text">{{
+                i18n.t('gradebook', 'categoryModeMultipleTitle')
+              }}</span>
+              <span class="text-xs text-text-muted">{{
+                i18n.t('gradebook', 'categoryModeMultipleDesc')
+              }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <app-button
+            [loading]="creatingCategory()"
+            [disabled]="!categoryName().trim() || !categoryWeight()"
+            (pressed)="onCreateCategory()"
+          >
+            {{ i18n.t('gradebook', 'addCategory') }}
+          </app-button>
+          <app-button variant="secondary" (pressed)="closeAddCategoryForm()">
+            {{ i18n.t('gradebook', 'cancel') }}
+          </app-button>
         </div>
       </div>
-
-      <div class="flex flex-col gap-1">
-        <span class="text-sm font-medium text-text">{{
-          i18n.t('gradebook', 'categoryModeLabel')
-        }}</span>
-        <div class="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
-            [class.border-brand-500]="!categoryHasMultipleTasks()"
-            [class.bg-brand-50]="!categoryHasMultipleTasks()"
-            [class.border-border]="categoryHasMultipleTasks()"
-            [attr.aria-pressed]="!categoryHasMultipleTasks()"
-            (click)="categoryHasMultipleTasks.set(false)"
-          >
-            <span class="text-sm font-medium text-text">{{
-              i18n.t('gradebook', 'categoryModeSingleTitle')
-            }}</span>
-            <span class="text-xs text-text-muted">{{
-              i18n.t('gradebook', 'categoryModeSingleDesc')
-            }}</span>
-          </button>
-          <button
-            type="button"
-            class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
-            [class.border-brand-500]="categoryHasMultipleTasks()"
-            [class.bg-brand-50]="categoryHasMultipleTasks()"
-            [class.border-border]="!categoryHasMultipleTasks()"
-            [attr.aria-pressed]="categoryHasMultipleTasks()"
-            (click)="categoryHasMultipleTasks.set(true)"
-          >
-            <span class="text-sm font-medium text-text">{{
-              i18n.t('gradebook', 'categoryModeMultipleTitle')
-            }}</span>
-            <span class="text-xs text-text-muted">{{
-              i18n.t('gradebook', 'categoryModeMultipleDesc')
-            }}</span>
-          </button>
-        </div>
-      </div>
-
+    } @else {
       <div>
-        <app-button
-          [loading]="creatingCategory()"
-          [disabled]="!categoryName().trim() || !categoryWeight()"
-          (pressed)="onCreateCategory()"
-        >
+        <app-button variant="secondary" (pressed)="openAddCategoryForm()">
+          <svg lucidePlus [size]="14" aria-hidden="true"></svg>
           {{ i18n.t('gradebook', 'addCategory') }}
         </app-button>
       </div>
-    </div>
+    }
   </section>
 
   <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
@@ -341,58 +353,70 @@
       <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'needCategoryFirst') }}</p>
     } @else if (multiTaskCategories().length === 0) {
       <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'noMultiTaskCategories') }}</p>
-    } @else {
-      <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto]">
-        <div class="flex flex-col gap-1">
-          <label for="assignment-name" class="text-sm font-medium text-text">
-            {{ i18n.t('gradebook', 'assignmentNameLabel') }}
-          </label>
-          <input
-            id="assignment-name"
-            type="text"
-            class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            [value]="assignmentName()"
-            (input)="assignmentName.set($any($event.target).value)"
+    } @else if (showAddAssignmentForm()) {
+      <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
+        <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto]">
+          <div class="flex flex-col gap-1">
+            <label for="assignment-name" class="text-sm font-medium text-text">
+              {{ i18n.t('gradebook', 'assignmentNameLabel') }}
+            </label>
+            <input
+              id="assignment-name"
+              type="text"
+              class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              [value]="assignmentName()"
+              (input)="assignmentName.set($any($event.target).value)"
+            />
+          </div>
+          <app-select
+            [label]="i18n.t('gradebook', 'assignmentCategoryLabel')"
+            [options]="categoryOptions()"
+            [value]="assignmentCategoryId()"
+            (valueChange)="assignmentCategoryId.set($event)"
           />
+          <div class="flex flex-col gap-1">
+            <label for="assignment-points" class="text-sm font-medium text-text">
+              {{ i18n.t('gradebook', 'assignmentPointsLabel') }}
+            </label>
+            <input
+              id="assignment-points"
+              type="number"
+              min="1"
+              class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              [value]="assignmentPoints() ?? ''"
+              (input)="assignmentPoints.set($any($event.target).valueAsNumber || null)"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="assignment-due-date" class="text-sm font-medium text-text">
+              {{ i18n.t('gradebook', 'assignmentDueDateLabel') }}
+            </label>
+            <input
+              id="assignment-due-date"
+              type="date"
+              class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              [value]="assignmentDueDate()"
+              (input)="assignmentDueDate.set($any($event.target).value)"
+            />
+          </div>
         </div>
-        <app-select
-          [label]="i18n.t('gradebook', 'assignmentCategoryLabel')"
-          [options]="categoryOptions()"
-          [value]="assignmentCategoryId()"
-          (valueChange)="assignmentCategoryId.set($event)"
-        />
-        <div class="flex flex-col gap-1">
-          <label for="assignment-points" class="text-sm font-medium text-text">
-            {{ i18n.t('gradebook', 'assignmentPointsLabel') }}
-          </label>
-          <input
-            id="assignment-points"
-            type="number"
-            min="1"
-            class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            [value]="assignmentPoints() ?? ''"
-            (input)="assignmentPoints.set($any($event.target).valueAsNumber || null)"
-          />
-        </div>
-        <div class="flex flex-col gap-1">
-          <label for="assignment-due-date" class="text-sm font-medium text-text">
-            {{ i18n.t('gradebook', 'assignmentDueDateLabel') }}
-          </label>
-          <input
-            id="assignment-due-date"
-            type="date"
-            class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            [value]="assignmentDueDate()"
-            (input)="assignmentDueDate.set($any($event.target).value)"
-          />
+        <div class="flex gap-2">
+          <app-button
+            [loading]="creatingAssignment()"
+            [disabled]="!assignmentName().trim() || !assignmentCategoryId() || !assignmentPoints()"
+            (pressed)="onCreateAssignment()"
+          >
+            {{ i18n.t('gradebook', 'addAssignment') }}
+          </app-button>
+          <app-button variant="secondary" (pressed)="closeAddAssignmentForm()">
+            {{ i18n.t('gradebook', 'cancel') }}
+          </app-button>
         </div>
       </div>
+    } @else {
       <div>
-        <app-button
-          [loading]="creatingAssignment()"
-          [disabled]="!assignmentName().trim() || !assignmentCategoryId() || !assignmentPoints()"
-          (pressed)="onCreateAssignment()"
-        >
+        <app-button variant="secondary" (pressed)="openAddAssignmentForm()">
+          <svg lucidePlus [size]="14" aria-hidden="true"></svg>
           {{ i18n.t('gradebook', 'addAssignment') }}
         </app-button>
       </div>
