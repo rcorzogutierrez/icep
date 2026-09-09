@@ -1,41 +1,70 @@
 <main class="flex min-h-dvh">
   <!-- Panel de marca (oculto en mobile) -->
   <div
-    class="relative hidden overflow-hidden bg-gradient-to-br from-brand-400 via-brand-600 to-brand-900 lg:flex lg:w-1/2 lg:flex-col lg:p-12"
+    class="relative hidden overflow-hidden lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-14"
+    style="background: radial-gradient(120% 140% at 15% 0%, #16234a 0%, #0b1530 46%, #060b1c 100%)"
   >
     <div
-      class="pointer-events-none absolute -top-24 -right-24 size-96 rounded-[3rem] bg-white/10 blur-2xl"
-      aria-hidden="true"
-    ></div>
-    <div
-      class="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-[3rem] bg-brand-400/20 blur-3xl"
-      aria-hidden="true"
-    ></div>
-    <div
-      class="pointer-events-none absolute inset-0 opacity-[0.07]"
+      class="login-sweep pointer-events-none absolute -inset-[30%]"
       style="
-        background-image: radial-gradient(circle, white 1px, transparent 1px);
-        background-size: 24px 24px;
+        background: conic-gradient(
+          from 210deg at 28% 22%,
+          rgba(147, 197, 253, 0.3),
+          rgba(147, 197, 253, 0) 24%,
+          rgba(147, 197, 253, 0) 76%,
+          rgba(147, 197, 253, 0.22) 100%
+        );
+      "
+      aria-hidden="true"
+    ></div>
+    <div
+      class="pointer-events-none absolute inset-0"
+      style="
+        background: radial-gradient(60% 45% at 18% 8%, rgba(147, 197, 253, 0.16), transparent 60%);
       "
       aria-hidden="true"
     ></div>
 
     <div class="relative flex items-center gap-3">
-      <img src="logo.png" alt="" class="size-11" />
+      <img src="logo.png" alt="" class="size-11 rounded-full" />
       <span class="text-lg font-semibold tracking-tight text-white">ICEP Gradebook</span>
     </div>
 
-    <div class="relative flex flex-1 flex-col justify-center gap-5 py-12">
-      <span class="font-serif text-7xl leading-none text-white/25">&ldquo;</span>
-      <p class="-mt-8 max-w-md text-2xl leading-snug font-medium text-white">
-        {{ i18n.t('login', 'footerVerse') }}
+    <div class="relative max-w-md py-12">
+      <span class="relative inline-flex">
+        <span
+          class="login-beacon-ring absolute -inset-1.5 rounded-full bg-brand-300 opacity-55"
+          aria-hidden="true"
+        ></span>
+        <span class="relative block size-2 rounded-full bg-brand-300"></span>
+      </span>
+      <p class="mt-4 text-[11px] font-bold tracking-[0.16em] text-brand-300 uppercase">
+        {{ i18n.t('login', 'heroEyebrow') }}
       </p>
-      <p class="text-sm font-semibold tracking-wide text-brand-200 uppercase">
+      <p class="mt-4 text-[26px] leading-snug font-semibold tracking-tight text-white">
+        &ldquo;{{ i18n.t('login', 'footerVerse') }}&rdquo;
+      </p>
+      <p class="mt-3.5 text-xs font-semibold tracking-wide text-[#8fa3c9] uppercase">
         {{ i18n.t('login', 'footerVerseRef') }}
       </p>
+
+      <ul class="mt-9 flex flex-col">
+        <li class="flex items-center gap-2.5 border-t border-white/10 py-3.5">
+          <svg lucideCheck [size]="15" class="shrink-0 text-brand-300" aria-hidden="true"></svg>
+          <span class="text-sm text-[#e7ecf7]">{{ i18n.t('login', 'heroFeature1') }}</span>
+        </li>
+        <li class="flex items-center gap-2.5 border-t border-white/10 py-3.5">
+          <svg lucideCheck [size]="15" class="shrink-0 text-brand-300" aria-hidden="true"></svg>
+          <span class="text-sm text-[#e7ecf7]">{{ i18n.t('login', 'heroFeature2') }}</span>
+        </li>
+        <li class="flex items-center gap-2.5 border-y border-white/10 py-3.5">
+          <svg lucideCheck [size]="15" class="shrink-0 text-brand-300" aria-hidden="true"></svg>
+          <span class="text-sm text-[#e7ecf7]">{{ i18n.t('login', 'heroFeature3') }}</span>
+        </li>
+      </ul>
     </div>
 
-    <p class="relative max-w-sm text-sm text-brand-100">
+    <p class="relative max-w-sm text-sm text-[#8fa3c9]">
       {{ i18n.t('login', 'footerDescription') }}
     </p>
   </div>

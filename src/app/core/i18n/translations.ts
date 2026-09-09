@@ -41,6 +41,10 @@ export const translations = {
       footerVerse:
         'Procura con diligencia presentarte a Dios aprobado, como obrero que no tiene de qué avergonzarse, que usa bien la palabra de verdad.',
       footerVerseRef: '2 Timoteo 2:15',
+      heroEyebrow: 'Un faro para tu estudio',
+      heroFeature1: 'Notas y tareas de cada estudiante, siempre al día',
+      heroFeature2: 'Un mismo lugar para profesores y administración',
+      heroFeature3: 'Progreso claro, curso por curso',
     },
     noInvitation: {
       title: 'Necesitás una invitación',
@@ -304,6 +308,10 @@ export const translations = {
       footerVerse:
         'Study to shew thyself approved unto God, a workman that needeth not to be ashamed, rightly dividing the word of truth.',
       footerVerseRef: '2 Timothy 2:15',
+      heroEyebrow: 'A beacon for your study',
+      heroFeature1: "Every student's grades and assignments, always up to date",
+      heroFeature2: 'One place for teachers and administrators',
+      heroFeature3: 'Clear progress, course by course',
     },
     noInvitation: {
       title: 'You need an invitation',

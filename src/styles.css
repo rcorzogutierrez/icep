@@ -55,3 +55,35 @@
     @apply bg-surface text-text;
   }
 }
+
+/* Barrido y pulso del panel de login ("Faro Nocturno"). */
+@keyframes login-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes login-pulse {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+.login-sweep {
+  animation: login-sweep 26s linear infinite;
+}
+.login-beacon-ring {
+  animation: login-pulse 2.6s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-sweep,
+  .login-beacon-ring {
+    animation: none;
+  }
+}
