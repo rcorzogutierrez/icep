@@ -14,14 +14,14 @@ import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
-import { IconPlus } from '../../shared/icons/icons';
+import { IconChevronDown, IconPlus } from '../../shared/icons/icons';
 import { ToastService } from '../../shared/toast/toast.service';
 
 /** Rúbrica + tareas + grilla de notas de una materia. Ver auth.guards.ts::subjectAccessGuard para quién puede entrar. */
 @Component({
   selector: 'app-gradebook',
   standalone: true,
-  imports: [Button, Select, IconPlus, DecimalPipe, DatePipe],
+  imports: [Button, Select, IconChevronDown, IconPlus, DecimalPipe, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gradebook.html',
 })
@@ -81,6 +81,7 @@ export class Gradebook {
       );
   });
 
+  protected readonly rubricOpen = signal(false);
   protected readonly showAddCategoryForm = signal(false);
   protected readonly categoryName = signal('');
   protected readonly categoryWeight = signal<number | null>(null);
@@ -93,6 +94,7 @@ export class Gradebook {
   protected readonly savingCategory = signal(false);
   protected readonly removingCategoryId = signal<string | null>(null);
 
+  protected readonly assignmentsOpen = signal(false);
   protected readonly showAddAssignmentForm = signal(false);
   protected readonly assignmentName = signal('');
   protected readonly assignmentCategoryId = signal<string | undefined>(undefined);

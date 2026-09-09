@@ -18,8 +18,22 @@
   </header>
 
   <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-    <div class="flex items-center justify-between">
-      <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'rubricTitle') }}</h2>
+    <button
+      type="button"
+      class="flex w-full items-center justify-between"
+      [attr.aria-expanded]="rubricOpen()"
+      (click)="rubricOpen.set(!rubricOpen())"
+    >
+      <span class="flex items-center gap-2">
+        <svg
+          lucideChevronDown
+          [size]="16"
+          class="text-text-muted transition-transform"
+          [class.-rotate-90]="!rubricOpen()"
+          aria-hidden="true"
+        ></svg>
+        <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'rubricTitle') }}</h2>
+      </span>
       <span
         class="text-sm"
         [class.text-status-active]="totalWeight() === 100"
@@ -28,398 +42,420 @@
       >
         {{ i18n.t('gradebook', 'weightTotal') }}: {{ totalWeight() }}/100
       </span>
-    </div>
+    </button>
 
-    <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
-      <table class="w-full text-left text-sm">
-        <thead class="border-b border-border bg-slate-50 text-text-muted">
-          <tr>
-            <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colCategoryName') }}</th>
-            <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colCategoryWeight') }}</th>
-            <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colActions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (category of categories(); track category.id) {
-            <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
-              @if (editingCategoryId() === category.id) {
-                <td class="px-4 py-3">
-                  <input
-                    type="text"
-                    class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                    [value]="editCategoryName()"
-                    (input)="editCategoryName.set($any($event.target).value)"
-                  />
-                </td>
-                <td class="px-4 py-3">
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    class="h-9 w-20 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                    [value]="editCategoryWeight() ?? ''"
-                    (input)="editCategoryWeight.set($any($event.target).valueAsNumber || null)"
-                  />
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex gap-2">
-                    <app-button
-                      size="sm"
-                      [loading]="savingCategory()"
-                      [disabled]="!editCategoryName().trim() || !editCategoryWeight()"
-                      (pressed)="saveEditCategory(category)"
-                    >
-                      {{ i18n.t('gradebook', 'save') }}
-                    </app-button>
-                    <app-button variant="secondary" size="sm" (pressed)="cancelEditCategory()">
-                      {{ i18n.t('gradebook', 'cancel') }}
-                    </app-button>
-                  </div>
-                </td>
-              } @else {
-                <td class="px-4 py-3">
-                  <span class="font-medium text-text">{{ category.name }}</span>
-                  <span
-                    class="ml-2 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs text-text-muted"
-                  >
-                    {{
-                      category.hasMultipleTasks === false
-                        ? i18n.t('gradebook', 'categoryModeSingleTitle')
-                        : i18n.t('gradebook', 'categoryModeMultipleTitle')
-                    }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-text-muted">{{ category.weight }}%</td>
-                <td class="px-4 py-3">
-                  <div class="flex gap-2">
-                    <app-button
-                      variant="secondary"
-                      size="sm"
-                      (pressed)="startEditCategory(category)"
-                    >
-                      {{ i18n.t('gradebook', 'edit') }}
-                    </app-button>
-                    <app-button
-                      variant="danger"
-                      size="sm"
-                      [loading]="removingCategoryId() === category.id"
-                      (pressed)="onRemoveCategory(category)"
-                    >
-                      {{ i18n.t('gradebook', 'delete') }}
-                    </app-button>
-                  </div>
-                </td>
-              }
-            </tr>
-          } @empty {
+    @if (rubricOpen()) {
+      <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-border bg-slate-50 text-text-muted">
             <tr>
-              <td colspan="3" class="px-4 py-6 text-center text-text-muted">
-                @if (categoriesService.loading()) {
-                  …
-                } @else {
-                  {{ i18n.t('gradebook', 'noCategories') }}
-                }
-              </td>
+              <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colCategoryName') }}</th>
+              <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colCategoryWeight') }}</th>
+              <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colActions') }}</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @for (category of categories(); track category.id) {
+              <tr
+                class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60"
+              >
+                @if (editingCategoryId() === category.id) {
+                  <td class="px-4 py-3">
+                    <input
+                      type="text"
+                      class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      [value]="editCategoryName()"
+                      (input)="editCategoryName.set($any($event.target).value)"
+                    />
+                  </td>
+                  <td class="px-4 py-3">
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      class="h-9 w-20 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      [value]="editCategoryWeight() ?? ''"
+                      (input)="editCategoryWeight.set($any($event.target).valueAsNumber || null)"
+                    />
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex gap-2">
+                      <app-button
+                        size="sm"
+                        [loading]="savingCategory()"
+                        [disabled]="!editCategoryName().trim() || !editCategoryWeight()"
+                        (pressed)="saveEditCategory(category)"
+                      >
+                        {{ i18n.t('gradebook', 'save') }}
+                      </app-button>
+                      <app-button variant="secondary" size="sm" (pressed)="cancelEditCategory()">
+                        {{ i18n.t('gradebook', 'cancel') }}
+                      </app-button>
+                    </div>
+                  </td>
+                } @else {
+                  <td class="px-4 py-3">
+                    <span class="font-medium text-text">{{ category.name }}</span>
+                    <span
+                      class="ml-2 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs text-text-muted"
+                    >
+                      {{
+                        category.hasMultipleTasks === false
+                          ? i18n.t('gradebook', 'categoryModeSingleTitle')
+                          : i18n.t('gradebook', 'categoryModeMultipleTitle')
+                      }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-text-muted">{{ category.weight }}%</td>
+                  <td class="px-4 py-3">
+                    <div class="flex gap-2">
+                      <app-button
+                        variant="secondary"
+                        size="sm"
+                        (pressed)="startEditCategory(category)"
+                      >
+                        {{ i18n.t('gradebook', 'edit') }}
+                      </app-button>
+                      <app-button
+                        variant="danger"
+                        size="sm"
+                        [loading]="removingCategoryId() === category.id"
+                        (pressed)="onRemoveCategory(category)"
+                      >
+                        {{ i18n.t('gradebook', 'delete') }}
+                      </app-button>
+                    </div>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="px-4 py-6 text-center text-text-muted">
+                  @if (categoriesService.loading()) {
+                    …
+                  } @else {
+                    {{ i18n.t('gradebook', 'noCategories') }}
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
 
-    @if (showAddCategoryForm()) {
-      <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div class="flex flex-col gap-1">
-            <label for="category-name" class="text-sm font-medium text-text">
-              {{ i18n.t('gradebook', 'categoryNameLabel') }}
-            </label>
-            <input
-              id="category-name"
-              type="text"
-              class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-              [value]="categoryName()"
-              (input)="categoryName.set($any($event.target).value)"
-            />
+      @if (showAddCategoryForm()) {
+        <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
+              <label for="category-name" class="text-sm font-medium text-text">
+                {{ i18n.t('gradebook', 'categoryNameLabel') }}
+              </label>
+              <input
+                id="category-name"
+                type="text"
+                class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                [value]="categoryName()"
+                (input)="categoryName.set($any($event.target).value)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="category-weight" class="text-sm font-medium text-text">
+                {{ i18n.t('gradebook', 'categoryWeightLabel') }}
+              </label>
+              <input
+                id="category-weight"
+                type="number"
+                min="1"
+                max="100"
+                class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                [value]="categoryWeight() ?? ''"
+                (input)="categoryWeight.set($any($event.target).valueAsNumber || null)"
+              />
+            </div>
           </div>
+
           <div class="flex flex-col gap-1">
-            <label for="category-weight" class="text-sm font-medium text-text">
-              {{ i18n.t('gradebook', 'categoryWeightLabel') }}
-            </label>
-            <input
-              id="category-weight"
-              type="number"
-              min="1"
-              max="100"
-              class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-              [value]="categoryWeight() ?? ''"
-              (input)="categoryWeight.set($any($event.target).valueAsNumber || null)"
-            />
+            <span class="text-sm font-medium text-text">{{
+              i18n.t('gradebook', 'categoryModeLabel')
+            }}</span>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
+                [class.border-brand-500]="!categoryHasMultipleTasks()"
+                [class.bg-brand-50]="!categoryHasMultipleTasks()"
+                [class.border-border]="categoryHasMultipleTasks()"
+                [attr.aria-pressed]="!categoryHasMultipleTasks()"
+                (click)="categoryHasMultipleTasks.set(false)"
+              >
+                <span class="text-sm font-medium text-text">{{
+                  i18n.t('gradebook', 'categoryModeSingleTitle')
+                }}</span>
+                <span class="text-xs text-text-muted">{{
+                  i18n.t('gradebook', 'categoryModeSingleDesc')
+                }}</span>
+              </button>
+              <button
+                type="button"
+                class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
+                [class.border-brand-500]="categoryHasMultipleTasks()"
+                [class.bg-brand-50]="categoryHasMultipleTasks()"
+                [class.border-border]="!categoryHasMultipleTasks()"
+                [attr.aria-pressed]="categoryHasMultipleTasks()"
+                (click)="categoryHasMultipleTasks.set(true)"
+              >
+                <span class="text-sm font-medium text-text">{{
+                  i18n.t('gradebook', 'categoryModeMultipleTitle')
+                }}</span>
+                <span class="text-xs text-text-muted">{{
+                  i18n.t('gradebook', 'categoryModeMultipleDesc')
+                }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <app-button
+              [loading]="creatingCategory()"
+              [disabled]="!categoryName().trim() || !categoryWeight()"
+              (pressed)="onCreateCategory()"
+            >
+              {{ i18n.t('gradebook', 'addCategory') }}
+            </app-button>
+            <app-button variant="secondary" (pressed)="closeAddCategoryForm()">
+              {{ i18n.t('gradebook', 'cancel') }}
+            </app-button>
           </div>
         </div>
-
-        <div class="flex flex-col gap-1">
-          <span class="text-sm font-medium text-text">{{
-            i18n.t('gradebook', 'categoryModeLabel')
-          }}</span>
-          <div class="grid gap-2 sm:grid-cols-2">
-            <button
-              type="button"
-              class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
-              [class.border-brand-500]="!categoryHasMultipleTasks()"
-              [class.bg-brand-50]="!categoryHasMultipleTasks()"
-              [class.border-border]="categoryHasMultipleTasks()"
-              [attr.aria-pressed]="!categoryHasMultipleTasks()"
-              (click)="categoryHasMultipleTasks.set(false)"
-            >
-              <span class="text-sm font-medium text-text">{{
-                i18n.t('gradebook', 'categoryModeSingleTitle')
-              }}</span>
-              <span class="text-xs text-text-muted">{{
-                i18n.t('gradebook', 'categoryModeSingleDesc')
-              }}</span>
-            </button>
-            <button
-              type="button"
-              class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
-              [class.border-brand-500]="categoryHasMultipleTasks()"
-              [class.bg-brand-50]="categoryHasMultipleTasks()"
-              [class.border-border]="!categoryHasMultipleTasks()"
-              [attr.aria-pressed]="categoryHasMultipleTasks()"
-              (click)="categoryHasMultipleTasks.set(true)"
-            >
-              <span class="text-sm font-medium text-text">{{
-                i18n.t('gradebook', 'categoryModeMultipleTitle')
-              }}</span>
-              <span class="text-xs text-text-muted">{{
-                i18n.t('gradebook', 'categoryModeMultipleDesc')
-              }}</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="flex gap-2">
-          <app-button
-            [loading]="creatingCategory()"
-            [disabled]="!categoryName().trim() || !categoryWeight()"
-            (pressed)="onCreateCategory()"
-          >
+      } @else {
+        <div>
+          <app-button variant="secondary" (pressed)="openAddCategoryForm()">
+            <svg lucidePlus [size]="14" aria-hidden="true"></svg>
             {{ i18n.t('gradebook', 'addCategory') }}
           </app-button>
-          <app-button variant="secondary" (pressed)="closeAddCategoryForm()">
-            {{ i18n.t('gradebook', 'cancel') }}
-          </app-button>
         </div>
-      </div>
-    } @else {
-      <div>
-        <app-button variant="secondary" (pressed)="openAddCategoryForm()">
-          <svg lucidePlus [size]="14" aria-hidden="true"></svg>
-          {{ i18n.t('gradebook', 'addCategory') }}
-        </app-button>
-      </div>
+      }
     }
   </section>
 
   <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-    <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'assignmentsTitle') }}</h2>
+    <button
+      type="button"
+      class="flex w-full items-center gap-2"
+      [attr.aria-expanded]="assignmentsOpen()"
+      (click)="assignmentsOpen.set(!assignmentsOpen())"
+    >
+      <svg
+        lucideChevronDown
+        [size]="16"
+        class="text-text-muted transition-transform"
+        [class.-rotate-90]="!assignmentsOpen()"
+        aria-hidden="true"
+      ></svg>
+      <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'assignmentsTitle') }}</h2>
+    </button>
 
-    @for (category of multiTaskCategories(); track category.id) {
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-medium text-text-muted">{{ category.name }}</h3>
-          <span
-            class="text-sm"
-            [class.text-status-active]="categoryPointsUsed(category.id) === category.weight"
-            [class.text-status-expired]="categoryPointsUsed(category.id) > category.weight"
-            [class.text-text-muted]="categoryPointsUsed(category.id) < category.weight"
-          >
-            {{ i18n.t('gradebook', 'categoryPoints') }}: {{ categoryPointsUsed(category.id) }}/{{
-              category.weight
-            }}
-          </span>
-        </div>
-        <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
-          <table class="w-full text-left text-sm">
-            <thead class="border-b border-border bg-slate-50 text-text-muted">
-              <tr>
-                <th class="px-4 py-2 font-medium">
-                  {{ i18n.t('gradebook', 'colAssignmentName') }}
-                </th>
-                <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colPoints') }}</th>
-                <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colDueDate') }}</th>
-                <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colActions') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (assignment of assignmentsFor(category.id); track assignment.id) {
-                <tr
-                  class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60"
-                >
-                  @if (editingAssignmentId() === assignment.id) {
-                    <td class="px-4 py-3">
-                      <input
-                        type="text"
-                        class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                        [value]="editAssignmentName()"
-                        (input)="editAssignmentName.set($any($event.target).value)"
-                      />
-                    </td>
-                    <td class="px-4 py-3">
-                      <input
-                        type="number"
-                        min="1"
-                        class="h-9 w-20 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                        [value]="editAssignmentPoints() ?? ''"
-                        (input)="
-                          editAssignmentPoints.set($any($event.target).valueAsNumber || null)
-                        "
-                      />
-                    </td>
-                    <td class="px-4 py-3">
-                      <input
-                        type="date"
-                        class="h-9 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                        [value]="editAssignmentDueDate()"
-                        (input)="editAssignmentDueDate.set($any($event.target).value)"
-                      />
-                    </td>
-                    <td class="px-4 py-3">
-                      <div class="flex gap-2">
-                        <app-button
-                          size="sm"
-                          [loading]="savingAssignment()"
-                          [disabled]="!editAssignmentName().trim() || !editAssignmentPoints()"
-                          (pressed)="saveEditAssignment(assignment)"
-                        >
-                          {{ i18n.t('gradebook', 'save') }}
-                        </app-button>
-                        <app-button
-                          variant="secondary"
-                          size="sm"
-                          (pressed)="cancelEditAssignment()"
-                        >
-                          {{ i18n.t('gradebook', 'cancel') }}
-                        </app-button>
-                      </div>
-                    </td>
-                  } @else {
-                    <td class="px-4 py-3 font-medium text-text">{{ assignment.name }}</td>
-                    <td class="px-4 py-3 text-text-muted">{{ assignment.pointsPossible }}</td>
-                    <td class="px-4 py-3 text-text-muted">
-                      @if (assignment.dueDate) {
-                        {{ assignment.dueDate.toDate() | date: 'mediumDate' }}
-                      } @else {
-                        —
-                      }
-                    </td>
-                    <td class="px-4 py-3">
-                      <div class="flex gap-2">
-                        <app-button size="sm" (pressed)="goToReview(assignment.id)">
-                          {{ i18n.t('gradebook', 'review') }}
-                        </app-button>
-                        <app-button
-                          variant="secondary"
-                          size="sm"
-                          (pressed)="startEditAssignment(assignment)"
-                        >
-                          {{ i18n.t('gradebook', 'edit') }}
-                        </app-button>
-                        <app-button
-                          variant="danger"
-                          size="sm"
-                          [loading]="removingAssignmentId() === assignment.id"
-                          (pressed)="onRemoveAssignment(assignment)"
-                        >
-                          {{ i18n.t('gradebook', 'delete') }}
-                        </app-button>
-                      </div>
-                    </td>
-                  }
-                </tr>
-              } @empty {
+    @if (assignmentsOpen()) {
+      @for (category of multiTaskCategories(); track category.id) {
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-text-muted">{{ category.name }}</h3>
+            <span
+              class="text-sm"
+              [class.text-status-active]="categoryPointsUsed(category.id) === category.weight"
+              [class.text-status-expired]="categoryPointsUsed(category.id) > category.weight"
+              [class.text-text-muted]="categoryPointsUsed(category.id) < category.weight"
+            >
+              {{ i18n.t('gradebook', 'categoryPoints') }}: {{ categoryPointsUsed(category.id) }}/{{
+                category.weight
+              }}
+            </span>
+          </div>
+          <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
+            <table class="w-full text-left text-sm">
+              <thead class="border-b border-border bg-slate-50 text-text-muted">
                 <tr>
-                  <td colspan="4" class="px-4 py-4 text-center text-text-muted">
-                    {{ i18n.t('gradebook', 'noAssignments') }}
-                  </td>
+                  <th class="px-4 py-2 font-medium">
+                    {{ i18n.t('gradebook', 'colAssignmentName') }}
+                  </th>
+                  <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colPoints') }}</th>
+                  <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colDueDate') }}</th>
+                  <th class="px-4 py-2 font-medium">{{ i18n.t('gradebook', 'colActions') }}</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (assignment of assignmentsFor(category.id); track assignment.id) {
+                  <tr
+                    class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60"
+                  >
+                    @if (editingAssignmentId() === assignment.id) {
+                      <td class="px-4 py-3">
+                        <input
+                          type="text"
+                          class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                          [value]="editAssignmentName()"
+                          (input)="editAssignmentName.set($any($event.target).value)"
+                        />
+                      </td>
+                      <td class="px-4 py-3">
+                        <input
+                          type="number"
+                          min="1"
+                          class="h-9 w-20 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                          [value]="editAssignmentPoints() ?? ''"
+                          (input)="
+                            editAssignmentPoints.set($any($event.target).valueAsNumber || null)
+                          "
+                        />
+                      </td>
+                      <td class="px-4 py-3">
+                        <input
+                          type="date"
+                          class="h-9 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                          [value]="editAssignmentDueDate()"
+                          (input)="editAssignmentDueDate.set($any($event.target).value)"
+                        />
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                          <app-button
+                            size="sm"
+                            [loading]="savingAssignment()"
+                            [disabled]="!editAssignmentName().trim() || !editAssignmentPoints()"
+                            (pressed)="saveEditAssignment(assignment)"
+                          >
+                            {{ i18n.t('gradebook', 'save') }}
+                          </app-button>
+                          <app-button
+                            variant="secondary"
+                            size="sm"
+                            (pressed)="cancelEditAssignment()"
+                          >
+                            {{ i18n.t('gradebook', 'cancel') }}
+                          </app-button>
+                        </div>
+                      </td>
+                    } @else {
+                      <td class="px-4 py-3 font-medium text-text">{{ assignment.name }}</td>
+                      <td class="px-4 py-3 text-text-muted">{{ assignment.pointsPossible }}</td>
+                      <td class="px-4 py-3 text-text-muted">
+                        @if (assignment.dueDate) {
+                          {{ assignment.dueDate.toDate() | date: 'mediumDate' }}
+                        } @else {
+                          —
+                        }
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                          <app-button size="sm" (pressed)="goToReview(assignment.id)">
+                            {{ i18n.t('gradebook', 'review') }}
+                          </app-button>
+                          <app-button
+                            variant="secondary"
+                            size="sm"
+                            (pressed)="startEditAssignment(assignment)"
+                          >
+                            {{ i18n.t('gradebook', 'edit') }}
+                          </app-button>
+                          <app-button
+                            variant="danger"
+                            size="sm"
+                            [loading]="removingAssignmentId() === assignment.id"
+                            (pressed)="onRemoveAssignment(assignment)"
+                          >
+                            {{ i18n.t('gradebook', 'delete') }}
+                          </app-button>
+                        </div>
+                      </td>
+                    }
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="px-4 py-4 text-center text-text-muted">
+                      {{ i18n.t('gradebook', 'noAssignments') }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    }
+      }
 
-    @if (categories().length === 0) {
-      <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'needCategoryFirst') }}</p>
-    } @else if (multiTaskCategories().length === 0) {
-      <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'noMultiTaskCategories') }}</p>
-    } @else if (showAddAssignmentForm()) {
-      <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
-        <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto]">
-          <div class="flex flex-col gap-1">
-            <label for="assignment-name" class="text-sm font-medium text-text">
-              {{ i18n.t('gradebook', 'assignmentNameLabel') }}
-            </label>
-            <input
-              id="assignment-name"
-              type="text"
-              class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-              [value]="assignmentName()"
-              (input)="assignmentName.set($any($event.target).value)"
+      @if (categories().length === 0) {
+        <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'needCategoryFirst') }}</p>
+      } @else if (multiTaskCategories().length === 0) {
+        <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'noMultiTaskCategories') }}</p>
+      } @else if (showAddAssignmentForm()) {
+        <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
+          <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto]">
+            <div class="flex flex-col gap-1">
+              <label for="assignment-name" class="text-sm font-medium text-text">
+                {{ i18n.t('gradebook', 'assignmentNameLabel') }}
+              </label>
+              <input
+                id="assignment-name"
+                type="text"
+                class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                [value]="assignmentName()"
+                (input)="assignmentName.set($any($event.target).value)"
+              />
+            </div>
+            <app-select
+              [label]="i18n.t('gradebook', 'assignmentCategoryLabel')"
+              [options]="categoryOptions()"
+              [value]="assignmentCategoryId()"
+              (valueChange)="assignmentCategoryId.set($event)"
             />
+            <div class="flex flex-col gap-1">
+              <label for="assignment-points" class="text-sm font-medium text-text">
+                {{ i18n.t('gradebook', 'assignmentPointsLabel') }}
+              </label>
+              <input
+                id="assignment-points"
+                type="number"
+                min="1"
+                class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                [value]="assignmentPoints() ?? ''"
+                (input)="assignmentPoints.set($any($event.target).valueAsNumber || null)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="assignment-due-date" class="text-sm font-medium text-text">
+                {{ i18n.t('gradebook', 'assignmentDueDateLabel') }}
+              </label>
+              <input
+                id="assignment-due-date"
+                type="date"
+                class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                [value]="assignmentDueDate()"
+                (input)="assignmentDueDate.set($any($event.target).value)"
+              />
+            </div>
           </div>
-          <app-select
-            [label]="i18n.t('gradebook', 'assignmentCategoryLabel')"
-            [options]="categoryOptions()"
-            [value]="assignmentCategoryId()"
-            (valueChange)="assignmentCategoryId.set($event)"
-          />
-          <div class="flex flex-col gap-1">
-            <label for="assignment-points" class="text-sm font-medium text-text">
-              {{ i18n.t('gradebook', 'assignmentPointsLabel') }}
-            </label>
-            <input
-              id="assignment-points"
-              type="number"
-              min="1"
-              class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-              [value]="assignmentPoints() ?? ''"
-              (input)="assignmentPoints.set($any($event.target).valueAsNumber || null)"
-            />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label for="assignment-due-date" class="text-sm font-medium text-text">
-              {{ i18n.t('gradebook', 'assignmentDueDateLabel') }}
-            </label>
-            <input
-              id="assignment-due-date"
-              type="date"
-              class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-              [value]="assignmentDueDate()"
-              (input)="assignmentDueDate.set($any($event.target).value)"
-            />
+          <div class="flex gap-2">
+            <app-button
+              [loading]="creatingAssignment()"
+              [disabled]="
+                !assignmentName().trim() || !assignmentCategoryId() || !assignmentPoints()
+              "
+              (pressed)="onCreateAssignment()"
+            >
+              {{ i18n.t('gradebook', 'addAssignment') }}
+            </app-button>
+            <app-button variant="secondary" (pressed)="closeAddAssignmentForm()">
+              {{ i18n.t('gradebook', 'cancel') }}
+            </app-button>
           </div>
         </div>
-        <div class="flex gap-2">
-          <app-button
-            [loading]="creatingAssignment()"
-            [disabled]="!assignmentName().trim() || !assignmentCategoryId() || !assignmentPoints()"
-            (pressed)="onCreateAssignment()"
-          >
+      } @else {
+        <div>
+          <app-button variant="secondary" (pressed)="openAddAssignmentForm()">
+            <svg lucidePlus [size]="14" aria-hidden="true"></svg>
             {{ i18n.t('gradebook', 'addAssignment') }}
           </app-button>
-          <app-button variant="secondary" (pressed)="closeAddAssignmentForm()">
-            {{ i18n.t('gradebook', 'cancel') }}
-          </app-button>
         </div>
-      </div>
-    } @else {
-      <div>
-        <app-button variant="secondary" (pressed)="openAddAssignmentForm()">
-          <svg lucidePlus [size]="14" aria-hidden="true"></svg>
-          {{ i18n.t('gradebook', 'addAssignment') }}
-        </app-button>
-      </div>
+      }
     }
   </section>
 
