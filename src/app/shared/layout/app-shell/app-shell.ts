@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -8,8 +9,11 @@ import {
   IconGraduationCap,
   IconLayers,
   IconLayoutDashboard,
+  IconLogOut,
+  IconMenu,
   IconUserPlus,
   IconUsers,
+  IconX,
 } from '../../icons/icons';
 
 /**
@@ -21,6 +25,7 @@ import {
   selector: 'app-shell',
   standalone: true,
   imports: [
+    NgTemplateOutlet,
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
@@ -30,6 +35,9 @@ import {
     IconLayers,
     IconUsers,
     IconGraduationCap,
+    IconMenu,
+    IconX,
+    IconLogOut,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app-shell.html',
@@ -39,6 +47,14 @@ export class AppShell {
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
+
+  /** Sidebar como overlay en mobile (<lg); en desktop siempre visible, este signal no aplica. */
+  protected readonly mobileNavOpen = signal(false);
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    this.mobileNavOpen.set(false);
+  }
 
   protected async onSignOut(): Promise<void> {
     await this.auth.signOut();

@@ -86,6 +86,7 @@ export const translations = {
       manageSection: 'Gestionar',
       coursesLink: 'Cursos',
       myStudentsLink: 'Mis estudiantes',
+      openMenu: 'Abrir menú',
     },
     adminUsers: {
       title: 'Usuarios',
@@ -353,6 +354,7 @@ export const translations = {
       manageSection: 'Manage',
       coursesLink: 'Courses',
       myStudentsLink: 'My students',
+      openMenu: 'Open menu',
     },
     adminUsers: {
       title: 'Users',
