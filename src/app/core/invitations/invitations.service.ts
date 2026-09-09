@@ -24,9 +24,11 @@ const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 8;
 
 function generateCode(): string {
+  const randomValues = new Uint32Array(CODE_LENGTH);
+  crypto.getRandomValues(randomValues);
   let code = '';
   for (let i = 0; i < CODE_LENGTH; i++) {
-    code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+    code += CODE_ALPHABET[randomValues[i] % CODE_ALPHABET.length];
   }
   return code;
 }
@@ -110,17 +112,25 @@ export class InvitationsService {
 
   /**
    * Canjea un código para el uid dado: marca la invitación como usada y
-   * devuelve su rol y materias asignadas, o null si el código no existe / ya
-   * fue usado. El orden (canjear primero, crear el perfil después) importa:
-   * firestore.rules valida la creación de users/{uid} contra la invitación
-   * ya comprometida.
+   * devuelve su rol y materias asignadas, o null si el código no existe, ya
+   * fue usado, o el email de la sesión actual no coincide con el de la
+   * invitación (firestore.rules solo deja leer/canjear al dueño de ese
+   * email o a staff; acá se trata como "no existe" en vez de dejar
+   * propagar el permission-denied). El orden (canjear primero, crear el
+   * perfil después) importa: firestore.rules valida la creación de
+   * users/{uid} contra la invitación ya comprometida.
    */
   async redeem(
     code: string,
     uid: string,
   ): Promise<{ role: InvitableRole; subjectIds: string[] } | null> {
     const ref = doc(this.firestore, 'invitations', code);
-    const snapshot = await getDoc(ref);
+    let snapshot;
+    try {
+      snapshot = await getDoc(ref);
+    } catch {
+      return null;
+    }
     if (!snapshot.exists() || snapshot.data()['status'] !== 'pending') {
       return null;
     }
