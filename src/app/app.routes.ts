@@ -43,6 +43,11 @@ export const routes: Routes = [
           import('./features/invitations/invitations').then((m) => m.Invitations),
       },
       {
+        path: 'my-students',
+        canActivate: [staffGuard],
+        loadComponent: () => import('./features/my-students/my-students').then((m) => m.MyStudents),
+      },
+      {
         path: 'admin/users',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/admin/users/admin-users').then((m) => m.AdminUsers),

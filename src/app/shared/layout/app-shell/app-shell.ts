@@ -5,6 +5,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { UserProfileService } from '../../../core/users/user-profile.service';
 import {
   IconBookOpen,
+  IconGraduationCap,
   IconLayers,
   IconLayoutDashboard,
   IconUserPlus,
@@ -28,6 +29,7 @@ import {
     IconBookOpen,
     IconLayers,
     IconUsers,
+    IconGraduationCap,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app-shell.html',

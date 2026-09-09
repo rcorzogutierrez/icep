@@ -1,0 +1,231 @@
+<div class="mx-auto flex max-w-5xl flex-col gap-6">
+  <header>
+    <h1 class="text-lg font-semibold text-text">{{ i18n.t('myStudents', 'title') }}</h1>
+    <p class="text-sm text-text-muted">{{ i18n.t('myStudents', 'subtitle') }}</p>
+  </header>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="relative max-w-xs min-w-56 flex-1">
+      <svg
+        lucideSearch
+        [size]="16"
+        class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+        aria-hidden="true"
+      ></svg>
+      <input
+        type="text"
+        [placeholder]="i18n.t('myStudents', 'searchPlaceholder')"
+        class="h-10 w-full rounded-md border border-border bg-surface pr-3 pl-9 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </div>
+
+    <app-select
+      class="block w-56"
+      [placeholder]="i18n.t('myStudents', 'allSubjects')"
+      [options]="mySubjectOptions()"
+      [value]="subjectFilter()"
+      (valueChange)="subjectFilter.set($event)"
+    />
+
+    <label class="ml-auto flex items-center gap-2 text-sm text-text-muted">
+      <input
+        type="checkbox"
+        class="accent-brand-600"
+        [checked]="onlyPending()"
+        (change)="onlyPending.set($any($event.target).checked)"
+      />
+      {{ i18n.t('myStudents', 'onlyPending') }}
+    </label>
+  </div>
+
+  <div class="overflow-x-auto rounded-lg border border-border">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-border bg-slate-50 text-text-muted">
+        <tr>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('myStudents', 'colStudent') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('myStudents', 'colProgress') }}</th>
+          <th class="px-4 py-2 font-medium"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of filteredRows(); track row.uid) {
+          <tr class="border-b border-border last:border-0">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2.5">
+                <span
+                  class="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700"
+                >
+                  {{ row.displayName.charAt(0).toUpperCase() }}
+                </span>
+                <div class="min-w-0">
+                  <div class="truncate font-medium text-text">{{ row.displayName }}</div>
+                  <div class="truncate text-xs text-text-muted">{{ row.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-2">
+                @for (s of row.subjects; track s.subjectId) {
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs"
+                  >
+                    <span class="font-mono text-text-muted">{{ s.subjectCode }}</span>
+                    <span
+                      class="font-semibold"
+                      [class.text-status-active]="gradeBand(s.finalGrade) === 'active'"
+                      [class.text-status-paused]="gradeBand(s.finalGrade) === 'paused'"
+                      [class.text-status-expired]="gradeBand(s.finalGrade) === 'expired'"
+                      [class.text-text-muted]="gradeBand(s.finalGrade) === 'muted'"
+                    >
+                      @if (s.finalGrade !== null) {
+                        {{ s.finalGrade | number: '1.0-0' }}%
+                      } @else {
+                        —
+                      }
+                    </span>
+                  </span>
+                }
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <app-button variant="secondary" size="sm" (pressed)="openDrawer(row.uid)">
+                {{ i18n.t('myStudents', 'viewProgress') }}
+                <svg lucideChevronRight [size]="14" aria-hidden="true"></svg>
+              </app-button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="px-4 py-6 text-center text-text-muted">
+              @if (loading()) {
+                …
+              } @else {
+                {{ i18n.t('myStudents', 'empty') }}
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (openStudent(); as student) {
+  <app-drawer
+    [open]="true"
+    [title]="student.displayName"
+    [subtitle]="student.email"
+    [avatarInitial]="student.displayName.charAt(0).toUpperCase()"
+    (closed)="closeDrawer()"
+  >
+    <div class="flex flex-col gap-4">
+      @for (s of student.subjects; track s.subjectId) {
+        <div class="flex flex-col gap-3.5 rounded-lg border border-border p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-xs text-text-muted">{{ s.subjectCode }}</span>
+              <span class="text-sm font-semibold text-text">{{ s.subjectName }}</span>
+            </div>
+            <span
+              class="text-sm font-semibold"
+              [class.text-status-active]="gradeBand(s.finalGrade) === 'active'"
+              [class.text-status-paused]="gradeBand(s.finalGrade) === 'paused'"
+              [class.text-status-expired]="gradeBand(s.finalGrade) === 'expired'"
+              [class.text-text-muted]="gradeBand(s.finalGrade) === 'muted'"
+            >
+              @if (s.finalGrade !== null) {
+                {{ s.finalGrade | number: '1.0-0' }}%
+              } @else {
+                {{ i18n.t('myStudents', 'noGradeYet') }}
+              }
+            </span>
+          </div>
+
+          @for (catRow of categoryRowsFor(s.subjectId, student.uid); track catRow.category.id) {
+            <div>
+              <div class="mb-1.5 flex items-center justify-between text-sm">
+                <span class="text-text"
+                  >{{ catRow.category.name }}
+                  <span class="text-text-muted">· {{ catRow.category.weight }}%</span></span
+                >
+                @if (
+                  catRow.singleAssignment &&
+                  savingAssignmentId() !== catRow.singleAssignment.id &&
+                  !isDirty(s.subjectId, student.uid, catRow.singleAssignment.id) &&
+                  catRow.percent !== null
+                ) {
+                  <span class="inline-flex items-center gap-1 text-xs text-status-active">
+                    <svg lucideCheck [size]="13" aria-hidden="true"></svg>
+                    {{ i18n.t('myStudents', 'saved') }}
+                  </span>
+                } @else {
+                  <span
+                    class="text-xs"
+                    [class.text-status-active]="gradeBand(catRow.percent) === 'active'"
+                    [class.text-status-paused]="gradeBand(catRow.percent) === 'paused'"
+                    [class.text-status-expired]="gradeBand(catRow.percent) === 'expired'"
+                    [class.text-text-muted]="gradeBand(catRow.percent) === 'muted'"
+                  >
+                    @if (catRow.percent !== null) {
+                      {{ catRow.percent | number: '1.0-0' }}%
+                    } @else {
+                      {{ i18n.t('myStudents', 'noGradeYet') }}
+                    }
+                  </span>
+                }
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    class="h-full rounded-full"
+                    [class.bg-status-active]="gradeBand(catRow.percent) === 'active'"
+                    [class.bg-status-paused]="gradeBand(catRow.percent) === 'paused'"
+                    [class.bg-status-expired]="gradeBand(catRow.percent) === 'expired'"
+                    [style.width.%]="catRow.percent ?? 0"
+                  ></div>
+                </div>
+                @if (catRow.singleAssignment; as assignment) {
+                  <input
+                    type="number"
+                    min="0"
+                    [max]="assignment.pointsPossible"
+                    class="h-7 w-14 rounded-md border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                    [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
+                    (input)="onScoreInput(assignment.id, $any($event.target).value)"
+                  />
+                  <app-button
+                    size="sm"
+                    [loading]="savingAssignmentId() === assignment.id"
+                    [disabled]="!isDirty(s.subjectId, student.uid, assignment.id)"
+                    (pressed)="onSaveScore(s.subjectId, student.uid, assignment)"
+                  >
+                    {{ i18n.t('myStudents', 'save') }}
+                  </app-button>
+                } @else {
+                  <button
+                    type="button"
+                    class="text-xs whitespace-nowrap text-brand-700 hover:underline"
+                    (click)="goToGradebook(s.subjectId)"
+                  >
+                    {{ i18n.t('myStudents', 'viewTasks') }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <button
+            type="button"
+            class="inline-flex w-fit items-center gap-1.5 text-xs text-brand-700 hover:underline"
+            (click)="goToGradebook(s.subjectId)"
+          >
+            {{ i18n.t('myStudents', 'goToGradebook') }}
+            <svg lucideArrowUpRight [size]="13" aria-hidden="true"></svg>
+          </button>
+        </div>
+      }
+    </div>
+  </app-drawer>
+}
