@@ -1,10 +1,12 @@
 <div class="mx-auto flex max-w-4xl flex-col gap-6">
   <header>
-    <h1 class="text-lg font-semibold text-text">{{ i18n.t('invitationsPage', 'title') }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight text-text">
+      {{ i18n.t('invitationsPage', 'title') }}
+    </h1>
     <p class="text-sm text-text-muted">{{ i18n.t('invitationsPage', 'subtitle') }}</p>
   </header>
 
-  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+  <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
     <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
       <div class="flex flex-col gap-1">
         <label for="invitation-email" class="text-sm font-medium text-text">{{
@@ -13,7 +15,7 @@
         <input
           id="invitation-email"
           type="email"
-          class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           [value]="email()"
           (input)="email.set($any($event.target).value)"
         />
@@ -34,7 +36,7 @@
 
     @if (createdCode(); as code) {
       <div
-        class="flex items-center justify-between gap-3 rounded-md border border-border bg-slate-50 p-3"
+        class="flex items-center justify-between gap-3 rounded-xl border border-border bg-slate-50 p-3"
       >
         <div class="flex flex-col gap-1">
           <p class="text-sm text-text-muted">{{ i18n.t('invitationsPage', 'linkGenerated') }}</p>
@@ -47,7 +49,7 @@
     }
   </section>
 
-  <div class="overflow-x-auto rounded-lg border border-border">
+  <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
     <table class="w-full text-left text-sm">
       <thead class="border-b border-border bg-slate-50 text-text-muted">
         <tr>
@@ -60,12 +62,12 @@
       </thead>
       <tbody>
         @for (invitation of invitationsService.invitations(); track invitation.code) {
-          <tr class="border-b border-border last:border-0">
+          <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
             @if (editingCode() === invitation.code) {
               <td class="px-4 py-3">
                 <input
                   type="email"
-                  class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   [value]="editEmail()"
                   (input)="editEmail.set($any($event.target).value)"
                 />

@@ -18,7 +18,7 @@ import { Button } from '../../../shared/components/button/button';
   template: `
     <main class="flex min-h-dvh items-center justify-center bg-slate-50 px-6">
       <div
-        class="w-full max-w-sm rounded-lg border border-border bg-surface p-8 text-center shadow-sm"
+        class="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 text-center shadow-sm"
       >
         <h1 class="text-xl font-semibold text-text">{{ i18n.t('noInvitation', 'title') }}</h1>
         <p class="mt-2 text-sm text-text-muted">{{ i18n.t('noInvitation', 'body') }}</p>
@@ -30,7 +30,7 @@ import { Button } from '../../../shared/components/button/button';
           <input
             id="invitation-code"
             type="text"
-            class="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm uppercase text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            class="mt-1 block w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm uppercase text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             [placeholder]="i18n.t('noInvitation', 'codePlaceholder')"
             [value]="code()"
             (input)="code.set($any($event.target).value)"

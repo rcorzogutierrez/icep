@@ -6,11 +6,11 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-500',
+    'bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-500',
   secondary:
-    'bg-surface text-text border border-border hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-brand-500',
+    'bg-surface text-text border border-border shadow-sm hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-brand-500',
   danger:
-    'bg-status-expired text-white hover:brightness-90 active:brightness-75 focus-visible:ring-status-expired',
+    'bg-status-expired text-white shadow-sm hover:brightness-90 active:brightness-75 focus-visible:ring-status-expired',
   ghost:
     'bg-transparent text-text hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-brand-500',
 };
@@ -28,7 +28,7 @@ const ICON_SIZE: Record<ButtonSize, number> = {
 };
 
 const BASE_CLASSES =
-  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+  'inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
 
 /**
  * Botón base de la app. Estilo 100% Tailwind sobre los tokens de marca; no

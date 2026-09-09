@@ -7,7 +7,7 @@
     >
       ← {{ i18n.t('gradebook', 'back') }}
     </button>
-    <h1 class="text-lg font-semibold text-text">
+    <h1 class="text-2xl font-bold tracking-tight text-text">
       {{ i18n.t('gradebook', 'title') }}
       @if (subject(); as subject) {
         <span class="font-mono text-text-muted">{{ subject.code }}</span>
@@ -17,7 +17,7 @@
     <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'subtitle') }}</p>
   </header>
 
-  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+  <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
     <div class="flex items-center justify-between">
       <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'rubricTitle') }}</h2>
       <span
@@ -30,7 +30,7 @@
       </span>
     </div>
 
-    <div class="overflow-x-auto rounded-lg border border-border">
+    <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
       <table class="w-full text-left text-sm">
         <thead class="border-b border-border bg-slate-50 text-text-muted">
           <tr>
@@ -41,12 +41,12 @@
         </thead>
         <tbody>
           @for (category of categories(); track category.id) {
-            <tr class="border-b border-border last:border-0">
+            <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
               @if (editingCategoryId() === category.id) {
                 <td class="px-4 py-3">
                   <input
                     type="text"
-                    class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                    class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                     [value]="editCategoryName()"
                     (input)="editCategoryName.set($any($event.target).value)"
                   />
@@ -56,7 +56,7 @@
                     type="number"
                     min="1"
                     max="100"
-                    class="h-9 w-20 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                    class="h-9 w-20 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                     [value]="editCategoryWeight() ?? ''"
                     (input)="editCategoryWeight.set($any($event.target).valueAsNumber || null)"
                   />
@@ -126,7 +126,7 @@
       </table>
     </div>
 
-    <div class="flex flex-col gap-3 rounded-lg border border-border bg-slate-50 p-3">
+    <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-1">
           <label for="category-name" class="text-sm font-medium text-text">
@@ -135,7 +135,7 @@
           <input
             id="category-name"
             type="text"
-            class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             [value]="categoryName()"
             (input)="categoryName.set($any($event.target).value)"
           />
@@ -149,7 +149,7 @@
             type="number"
             min="1"
             max="100"
-            class="h-10 w-24 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             [value]="categoryWeight() ?? ''"
             (input)="categoryWeight.set($any($event.target).valueAsNumber || null)"
           />
@@ -163,7 +163,7 @@
         <div class="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
-            class="flex flex-col gap-0.5 rounded-md border px-3 py-2 text-left transition-colors"
+            class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
             [class.border-brand-500]="!categoryHasMultipleTasks()"
             [class.bg-brand-50]="!categoryHasMultipleTasks()"
             [class.border-border]="categoryHasMultipleTasks()"
@@ -179,7 +179,7 @@
           </button>
           <button
             type="button"
-            class="flex flex-col gap-0.5 rounded-md border px-3 py-2 text-left transition-colors"
+            class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 text-left transition-colors"
             [class.border-brand-500]="categoryHasMultipleTasks()"
             [class.bg-brand-50]="categoryHasMultipleTasks()"
             [class.border-border]="!categoryHasMultipleTasks()"
@@ -208,7 +208,7 @@
     </div>
   </section>
 
-  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+  <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
     <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'assignmentsTitle') }}</h2>
 
     @for (category of multiTaskCategories(); track category.id) {
@@ -226,7 +226,7 @@
             }}
           </span>
         </div>
-        <div class="overflow-x-auto rounded-lg border border-border">
+        <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
           <table class="w-full text-left text-sm">
             <thead class="border-b border-border bg-slate-50 text-text-muted">
               <tr>
@@ -240,12 +240,14 @@
             </thead>
             <tbody>
               @for (assignment of assignmentsFor(category.id); track assignment.id) {
-                <tr class="border-b border-border last:border-0">
+                <tr
+                  class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60"
+                >
                   @if (editingAssignmentId() === assignment.id) {
                     <td class="px-4 py-3">
                       <input
                         type="text"
-                        class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                         [value]="editAssignmentName()"
                         (input)="editAssignmentName.set($any($event.target).value)"
                       />
@@ -254,7 +256,7 @@
                       <input
                         type="number"
                         min="1"
-                        class="h-9 w-20 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        class="h-9 w-20 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                         [value]="editAssignmentPoints() ?? ''"
                         (input)="
                           editAssignmentPoints.set($any($event.target).valueAsNumber || null)
@@ -264,7 +266,7 @@
                     <td class="px-4 py-3">
                       <input
                         type="date"
-                        class="h-9 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        class="h-9 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                         [value]="editAssignmentDueDate()"
                         (input)="editAssignmentDueDate.set($any($event.target).value)"
                       />
@@ -348,7 +350,7 @@
           <input
             id="assignment-name"
             type="text"
-            class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             [value]="assignmentName()"
             (input)="assignmentName.set($any($event.target).value)"
           />
@@ -367,7 +369,7 @@
             id="assignment-points"
             type="number"
             min="1"
-            class="h-10 w-24 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            class="h-10 w-24 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             [value]="assignmentPoints() ?? ''"
             (input)="assignmentPoints.set($any($event.target).valueAsNumber || null)"
           />
@@ -379,7 +381,7 @@
           <input
             id="assignment-due-date"
             type="date"
-            class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             [value]="assignmentDueDate()"
             (input)="assignmentDueDate.set($any($event.target).value)"
           />
@@ -399,7 +401,7 @@
 
   <section class="flex flex-col gap-3">
     <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'gradesTitle') }}</h2>
-    <div class="overflow-x-auto rounded-lg border border-border">
+    <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
       <table class="w-full text-left text-sm">
         <thead class="border-b border-border bg-slate-50 text-text-muted">
           <tr>
@@ -446,7 +448,7 @@
         </thead>
         <tbody>
           @for (student of students(); track student.uid) {
-            <tr class="border-b border-border last:border-0">
+            <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
               <td class="sticky left-0 bg-surface px-4 py-3 font-medium text-text">
                 {{ student.displayName ?? student.email }}
               </td>
@@ -457,7 +459,7 @@
                       type="number"
                       min="0"
                       [max]="assignment.pointsPossible"
-                      class="h-9 w-16 rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      class="h-9 w-16 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                       [value]="scoreFor(student.uid, assignment.id) ?? ''"
                       (change)="onSetScore(student.uid, assignment, $any($event.target).value)"
                     />

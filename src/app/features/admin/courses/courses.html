@@ -1,10 +1,12 @@
 <div class="mx-auto flex max-w-6xl flex-col gap-6">
   <header>
-    <h1 class="text-lg font-semibold text-text">{{ i18n.t('adminCourses', 'title') }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight text-text">
+      {{ i18n.t('adminCourses', 'title') }}
+    </h1>
     <p class="text-sm text-text-muted">{{ i18n.t('adminCourses', 'subtitle') }}</p>
   </header>
 
-  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+  <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
     <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
       <div class="flex flex-col gap-1">
         <label for="course-name" class="text-sm font-medium text-text">
@@ -13,7 +15,7 @@
         <input
           id="course-name"
           type="text"
-          class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           [value]="name()"
           (input)="name.set($any($event.target).value)"
         />
@@ -27,7 +29,7 @@
     </div>
   </section>
 
-  <div class="overflow-x-auto rounded-lg border border-border">
+  <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
     <table class="w-full text-left text-sm">
       <thead class="border-b border-border bg-slate-50 text-text-muted">
         <tr>
@@ -40,12 +42,14 @@
       </thead>
       <tbody>
         @for (course of coursesService.courses(); track course.id) {
-          <tr class="border-b border-border last:border-0 align-top">
+          <tr
+            class="border-b border-border align-top transition-colors last:border-0 hover:bg-slate-50/60"
+          >
             @if (editingId() === course.id) {
               <td class="px-4 py-3">
                 <input
                   type="text"
-                  class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   [value]="editName()"
                   (input)="editName.set($any($event.target).value)"
                 />
@@ -220,7 +224,7 @@
       } @else {
         <div class="flex flex-col gap-3">
           @for (courseSubject of subjectsFor(course.id); track courseSubject.id) {
-            <div class="rounded-md border border-border p-3">
+            <div class="rounded-xl border border-border p-3">
               <p class="mb-2 text-sm font-medium text-text">
                 <span class="font-mono text-text-muted">{{ courseSubject.subjectCode }}</span>
                 {{ courseSubject.subjectName }}

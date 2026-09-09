@@ -1,10 +1,10 @@
 <div class="mx-auto flex max-w-4xl flex-col gap-6">
   <header>
-    <h1 class="text-lg font-semibold text-text">{{ i18n.t('adminUsers', 'title') }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight text-text">{{ i18n.t('adminUsers', 'title') }}</h1>
     <p class="text-sm text-text-muted">{{ i18n.t('adminUsers', 'subtitle') }}</p>
   </header>
 
-  <div class="overflow-x-auto rounded-lg border border-border">
+  <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
     <table class="w-full text-left text-sm">
       <thead class="border-b border-border bg-slate-50 text-text-muted">
         <tr>
@@ -17,7 +17,7 @@
       </thead>
       <tbody>
         @for (user of usersService.users(); track user.uid) {
-          <tr class="border-b border-border last:border-0">
+          <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
             <td class="px-4 py-3">
               <div class="font-medium text-text">{{ user.displayName ?? '—' }}</div>
               <div class="text-text-muted">{{ user.email ?? '—' }}</div>

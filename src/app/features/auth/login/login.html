@@ -114,7 +114,7 @@
             <input
               id="invite-code"
               type="text"
-              class="h-11 rounded-lg border border-border bg-surface px-3 text-sm uppercase text-text transition-shadow focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-500/20 focus-visible:outline-none"
+              class="h-11 rounded-xl border border-border bg-surface px-3 text-sm uppercase text-text transition-shadow focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-500/20 focus-visible:outline-none"
               [value]="manualCode()"
               (input)="manualCode.set($any($event.target).value)"
             />
@@ -135,7 +135,7 @@
             <input
               id="email"
               type="email"
-              class="h-11 w-full rounded-lg border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
+              class="h-11 w-full rounded-xl border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
               [class.border-border]="!emailFieldError()"
               [class.focus-visible:border-brand-500]="!emailFieldError()"
               [class.focus-visible:ring-brand-500/20]="!emailFieldError()"
@@ -163,7 +163,7 @@
             <input
               id="password"
               type="password"
-              class="h-11 w-full rounded-lg border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
+              class="h-11 w-full rounded-xl border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
               [class.border-border]="!passwordFieldError()"
               [class.focus-visible:border-brand-500]="!passwordFieldError()"
               [class.focus-visible:ring-brand-500/20]="!passwordFieldError()"

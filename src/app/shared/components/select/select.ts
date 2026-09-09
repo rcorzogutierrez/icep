@@ -55,7 +55,7 @@ let nextSelectId = 0;
         #trigger
         type="button"
         [id]="triggerId"
-        class="flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 text-sm text-text transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-50"
+        class="flex h-10 w-full items-center justify-between rounded-xl border bg-surface px-3 text-sm text-text shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-50"
         [class.border-border]="!invalid()"
         [class.border-status-expired]="invalid()"
         [disabled]="disabled()"
@@ -91,7 +91,7 @@ let nextSelectId = 0;
         [value]="selectedArray()"
         (valueChange)="onListboxValueChange($event)"
         [style.width.px]="panelWidth()"
-        class="max-h-60 overflow-auto rounded-md border border-border bg-surface py-1 shadow-lg focus:outline-none"
+        class="max-h-60 overflow-auto rounded-xl border border-border bg-surface py-1 shadow-lg focus:outline-none"
       >
         @for (option of options(); track option.value) {
           <li

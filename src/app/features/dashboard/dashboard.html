@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-8">
   <div>
-    <h1 class="text-2xl font-semibold text-text">
+    <h1 class="text-2xl font-bold tracking-tight text-text">
       {{ i18n.t('dashboard', 'greeting') }},
       {{ auth.user()?.displayName ?? auth.user()?.email }}
     </h1>
@@ -9,9 +9,11 @@
 
   <div class="grid gap-4 sm:grid-cols-3">
     @for (stat of statCards(); track stat.label) {
-      <div class="flex items-center gap-4 rounded-lg border border-border bg-surface p-4">
+      <div
+        class="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm"
+      >
         <span
-          class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600"
+          class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"
         >
           @switch (stat.icon) {
             @case ('users') {
@@ -29,7 +31,7 @@
           }
         </span>
         <div>
-          <p class="text-2xl font-semibold text-text">{{ stat.value }}</p>
+          <p class="text-2xl font-bold tracking-tight text-text">{{ stat.value }}</p>
           <p class="text-sm text-text-muted">{{ stat.label }}</p>
         </div>
       </div>
@@ -44,7 +46,9 @@
       } @else if (mySubjects().length > 0) {
         <div class="grid gap-3 sm:grid-cols-2">
           @for (subject of mySubjects(); track subject.id) {
-            <div class="rounded-lg border border-border bg-surface p-4">
+            <div
+              class="rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md"
+            >
               <p class="font-medium text-text">
                 <span class="font-mono text-text-muted">{{ subject.code }}</span>
                 · {{ subject.name }}
@@ -71,7 +75,7 @@
         <div class="grid gap-3 sm:grid-cols-2">
           @for (subject of subjectsService.mySubjects(); track subject.id) {
             <div
-              class="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4"
+              class="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md"
             >
               <p class="font-medium text-text">
                 <span class="font-mono text-text-muted">{{ subject.code }}</span>

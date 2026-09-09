@@ -7,11 +7,11 @@
   -->
   <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
   <div class="fixed inset-0 z-50 flex justify-end bg-black/40" (click)="onBackdropClick($event)">
-    <div class="flex h-full w-full max-w-md flex-col bg-surface shadow-xl">
+    <div class="flex h-full w-full max-w-md flex-col rounded-l-2xl bg-surface shadow-xl">
       <div class="flex items-center gap-4 border-b border-border px-6 py-5">
         @if (avatarInitial(); as initial) {
           <span
-            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-lg font-semibold text-brand-700"
+            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-lg font-semibold text-brand-700 ring-4 ring-brand-50"
           >
             {{ initial }}
           </span>

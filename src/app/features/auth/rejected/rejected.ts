@@ -12,7 +12,7 @@ import { Button } from '../../../shared/components/button/button';
   template: `
     <main class="flex min-h-dvh items-center justify-center bg-slate-50 px-6">
       <div
-        class="w-full max-w-sm rounded-lg border border-border bg-surface p-8 text-center shadow-sm"
+        class="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 text-center shadow-sm"
       >
         <h1 class="text-xl font-semibold text-status-expired">{{ i18n.t('rejected', 'title') }}</h1>
         <p class="mt-2 text-sm text-text-muted">{{ i18n.t('rejected', 'body') }}</p>

@@ -1,10 +1,12 @@
 <div class="mx-auto flex max-w-4xl flex-col gap-6">
   <header>
-    <h1 class="text-lg font-semibold text-text">{{ i18n.t('adminSubjects', 'title') }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight text-text">
+      {{ i18n.t('adminSubjects', 'title') }}
+    </h1>
     <p class="text-sm text-text-muted">{{ i18n.t('adminSubjects', 'subtitle') }}</p>
   </header>
 
-  <section class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+  <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
     <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
       <div class="flex flex-col gap-1">
         <label for="subject-name" class="text-sm font-medium text-text">
@@ -13,7 +15,7 @@
         <input
           id="subject-name"
           type="text"
-          class="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           [value]="name()"
           (input)="name.set($any($event.target).value)"
         />
@@ -27,7 +29,7 @@
           id="subject-code"
           type="text"
           placeholder="BIB431"
-          class="h-10 w-32 rounded-md border border-border bg-surface px-3 text-sm text-text uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          class="h-10 w-32 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           [value]="code()"
           (input)="code.set($any($event.target).value)"
         />
@@ -45,7 +47,7 @@
     </div>
   </section>
 
-  <div class="overflow-x-auto rounded-lg border border-border">
+  <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
     <table class="w-full text-left text-sm">
       <thead class="border-b border-border bg-slate-50 text-text-muted">
         <tr>
@@ -56,12 +58,12 @@
       </thead>
       <tbody>
         @for (subject of subjectsService.subjects(); track subject.id) {
-          <tr class="border-b border-border last:border-0">
+          <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
             @if (editingId() === subject.id) {
               <td class="px-4 py-3">
                 <input
                   type="text"
-                  class="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  class="h-9 w-full rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   [value]="editName()"
                   (input)="editName.set($any($event.target).value)"
                 />
@@ -69,7 +71,7 @@
               <td class="px-4 py-3">
                 <input
                   type="text"
-                  class="h-9 w-28 rounded-md border border-border bg-surface px-2 text-sm text-text uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  class="h-9 w-28 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   [value]="editCode()"
                   (input)="editCode.set($any($event.target).value)"
                 />

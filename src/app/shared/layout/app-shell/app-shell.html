@@ -1,8 +1,10 @@
 <div class="flex min-h-dvh bg-slate-50">
-  <aside class="flex w-64 shrink-0 flex-col gap-6 border-r border-border bg-surface p-4">
+  <aside
+    class="flex w-64 shrink-0 flex-col gap-6 bg-surface p-4 shadow-[1px_0_0_rgba(15,23,42,0.04)]"
+  >
     <div class="flex items-center gap-2 px-2">
       <img src="logo.png" alt="" class="size-8" />
-      <span class="font-semibold text-text">ICEP Gradebook</span>
+      <span class="font-bold tracking-tight text-text">ICEP Gradebook</span>
     </div>
 
     <nav class="flex flex-col gap-0.5">
@@ -10,7 +12,7 @@
         routerLink="/dashboard"
         routerLinkActive="bg-brand-50 text-brand-700"
         [routerLinkActiveOptions]="{ exact: true }"
-        class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
+        class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
       >
         <svg lucideLayoutDashboard [size]="18" aria-hidden="true"></svg>
         {{ i18n.t('shell', 'summary') }}
@@ -20,7 +22,7 @@
         <a
           routerLink="/my-students"
           routerLinkActive="bg-brand-50 text-brand-700"
-          class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
+          class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
         >
           <svg lucideGraduationCap [size]="18" aria-hidden="true"></svg>
           {{ i18n.t('shell', 'myStudentsLink') }}
@@ -32,7 +34,7 @@
         <a
           routerLink="/invitations"
           routerLinkActive="bg-brand-50 text-brand-700"
-          class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
+          class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
         >
           <svg lucideUserPlus [size]="18" aria-hidden="true"></svg>
           {{ i18n.t('dashboard', 'invitations') }}
@@ -41,7 +43,7 @@
           <a
             routerLink="/admin/subjects"
             routerLinkActive="bg-brand-50 text-brand-700"
-            class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
+            class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
           >
             <svg lucideBookOpen [size]="18" aria-hidden="true"></svg>
             {{ i18n.t('dashboard', 'subjectsLink') }}
@@ -49,7 +51,7 @@
           <a
             routerLink="/admin/courses"
             routerLinkActive="bg-brand-50 text-brand-700"
-            class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
+            class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
           >
             <svg lucideLayers [size]="18" aria-hidden="true"></svg>
             {{ i18n.t('shell', 'coursesLink') }}
@@ -57,7 +59,7 @@
           <a
             routerLink="/admin/users"
             routerLinkActive="bg-brand-50 text-brand-700"
-            class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
+            class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
           >
             <svg lucideUsers [size]="18" aria-hidden="true"></svg>
             {{ i18n.t('dashboard', 'adminPanel') }}
@@ -68,7 +70,9 @@
   </aside>
 
   <div class="flex flex-1 flex-col">
-    <header class="flex items-center justify-end gap-4 border-b border-border bg-surface px-6 py-3">
+    <header
+      class="flex items-center justify-end gap-4 bg-surface px-6 py-3 shadow-[0_1px_0_rgba(15,23,42,0.04)]"
+    >
       <div class="flex gap-1 rounded-full border border-border p-0.5 text-xs font-medium">
         <button
           type="button"
@@ -98,7 +102,7 @@
         <img [src]="photo" alt="" class="size-7 rounded-full" />
       } @else {
         <span
-          class="flex size-7 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700"
+          class="flex size-7 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 ring-2 ring-brand-50"
         >
           {{ (auth.user()?.displayName ?? auth.user()?.email ?? '?').charAt(0).toUpperCase() }}
         </span>
