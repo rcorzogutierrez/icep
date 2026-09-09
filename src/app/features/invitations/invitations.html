@@ -57,6 +57,7 @@
           <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colRole') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colStatus') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colCreated') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colExpires') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('invitationsPage', 'colActions') }}</th>
         </tr>
       </thead>
@@ -83,13 +84,18 @@
               }}
             </td>
             <td class="px-4 py-3">
-              <span [class]="statusClass[invitation.status]">{{
-                statusLabel(invitation.status)
-              }}</span>
+              <span [class]="statusClassFor(invitation)">{{ statusLabel(invitation) }}</span>
             </td>
             <td class="px-4 py-3 text-text-muted">
               @if (invitation.createdAt) {
                 {{ invitation.createdAt.toDate() | date: 'short' }}
+              } @else {
+                —
+              }
+            </td>
+            <td class="px-4 py-3 text-text-muted">
+              @if (invitation.expiresAt) {
+                {{ invitation.expiresAt.toDate() | date: 'short' }}
               } @else {
                 —
               }
@@ -150,7 +156,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="5" class="px-4 py-6 text-center text-text-muted">
+            <td colspan="6" class="px-4 py-6 text-center text-text-muted">
               @if (invitationsService.loading()) {
                 …
               } @else {

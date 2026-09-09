@@ -10,6 +10,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
 } from 'firebase/firestore';
@@ -22,6 +23,9 @@ import type { Invitation, InvitableRole } from './invitations.model';
 /** Alfabeto sin caracteres ambiguos (sin 0/O, 1/I/L) para que el código se pueda leer/tipear a mano. */
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 8;
+
+/** Vencimiento de una invitación pendiente: 7 días desde su creación (ver B-04 del audit). */
+const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function generateCode(): string {
   const randomValues = new Uint32Array(CODE_LENGTH);
@@ -104,6 +108,7 @@ export class InvitationsService {
       status: 'pending',
       createdBy: user.uid,
       createdAt: serverTimestamp(),
+      expiresAt: Timestamp.fromMillis(Date.now() + INVITATION_TTL_MS),
       usedByUid: null,
       usedAt: null,
     });
@@ -113,12 +118,12 @@ export class InvitationsService {
   /**
    * Canjea un código para el uid dado: marca la invitación como usada y
    * devuelve su rol y materias asignadas, o null si el código no existe, ya
-   * fue usado, o el email de la sesión actual no coincide con el de la
-   * invitación (firestore.rules solo deja leer/canjear al dueño de ese
-   * email o a staff; acá se trata como "no existe" en vez de dejar
-   * propagar el permission-denied). El orden (canjear primero, crear el
-   * perfil después) importa: firestore.rules valida la creación de
-   * users/{uid} contra la invitación ya comprometida.
+   * fue usado, venció, o el email de la sesión actual no coincide con el de
+   * la invitación (firestore.rules solo deja leer/canjear al dueño de ese
+   * email o a staff, y rechaza canjes vencidos; acá se trata todo eso como
+   * "no existe" en vez de dejar propagar el permission-denied). El orden
+   * (canjear primero, crear el perfil después) importa: firestore.rules
+   * valida la creación de users/{uid} contra la invitación ya comprometida.
    */
   async redeem(
     code: string,
@@ -132,6 +137,10 @@ export class InvitationsService {
       return null;
     }
     if (!snapshot.exists() || snapshot.data()['status'] !== 'pending') {
+      return null;
+    }
+    const expiresAt = snapshot.data()['expiresAt'] as Timestamp | undefined;
+    if (expiresAt && expiresAt.toMillis() < Date.now()) {
       return null;
     }
 

@@ -14,6 +14,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
+    // Invitaciones creadas antes de que existiera "expiresAt" no lo tienen
+    // (.get con default null) y se tratan como sin vencimiento.
+    function isInvitationExpired(data) {
+      return data.get('expiresAt', null) != null && data.get('expiresAt', null) < request.time;
+    }
+
     // users/{uid}: perfil de acceso. El registro es SOLO por invitación: el
     // alta se crea recién al canjear una invitación (ver invitations/{code}
     // más abajo), nunca libremente. Un usuario nunca puede auto-asignarse
@@ -43,31 +49,38 @@ service cloud.firestore {
     // solo puede invitar con rol "student"; el admin puede invitar
     // "student" o "teacher".
     match /invitations/{code} {
-      // Leer una invitación puntual: staff, quien ya la canjeó, o el dueño
-      // del email al que fue dirigida (necesario para poder canjearla).
-      // Que cualquier autenticado pudiera leer cualquier código habilitaba
+      // Leer una invitación puntual: staff (siempre, incluso vencidas — para
+      // poder verlas/limpiarlas), quien ya la canjeó, o el dueño del email
+      // al que fue dirigida mientras no haya vencido. Que cualquier
+      // autenticado pudiera leer cualquier código habilitaba
       // adivinar/enumerar invitaciones ajenas.
       allow get: if request.auth != null
         && (isAdmin() || isTeacher()
             || resource.data.usedByUid == request.auth.uid
-            || request.auth.token.email.lower() == resource.data.email);
+            || (request.auth.token.email.lower() == resource.data.email
+                && !isInvitationExpired(resource.data)));
       allow list: if request.auth != null && (isAdmin() || isTeacher());
 
       allow create: if request.auth != null
         && request.resource.data.status == 'pending'
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.subjectIds is list
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt < request.time + duration.value(30, 'd')
         && ((isAdmin() && request.resource.data.role in ['student', 'teacher'])
             || (isTeacher() && request.resource.data.role == 'student'));
 
-      // Canjear: solo el dueño del email al que se dirigió la invitación
-      // puede marcarse a sí mismo como quien la usó. Sin este chequeo, el
-      // código funcionaba como un bearer token: cualquiera que lo
-      // consiguiera (link reenviado, filtrado, adivinado) podía canjearlo
-      // con su propia cuenta y quedarse con el rol/materias de otra
-      // persona.
+      // Canjear: solo el dueño del email al que se dirigió la invitación,
+      // mientras no haya vencido, puede marcarse a sí mismo como quien la
+      // usó. Sin el chequeo de email, el código funcionaba como un bearer
+      // token: cualquiera que lo consiguiera (link reenviado, filtrado,
+      // adivinado) podía canjearlo con su propia cuenta y quedarse con el
+      // rol/materias de otra persona; sin vencimiento, esa ventana quedaba
+      // abierta indefinidamente.
       allow update: if request.auth != null
         && resource.data.status == 'pending'
+        && !isInvitationExpired(resource.data)
         && request.resource.data.status == 'used'
         && request.resource.data.usedByUid == request.auth.uid
         && request.auth.token.email.lower() == resource.data.email
