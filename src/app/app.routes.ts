@@ -60,7 +60,7 @@ export const routes: Routes = [
       },
       {
         path: 'admin/courses',
-        canActivate: [adminGuard],
+        canActivate: [staffGuard],
         loadComponent: () => import('./features/admin/courses/courses').then((m) => m.AdminCourses),
       },
       {

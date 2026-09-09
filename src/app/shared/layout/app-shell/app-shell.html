@@ -39,6 +39,14 @@
           <svg lucideUserPlus [size]="18" aria-hidden="true"></svg>
           {{ i18n.t('dashboard', 'invitations') }}
         </a>
+        <a
+          routerLink="/admin/courses"
+          routerLinkActive="bg-brand-50 text-brand-700"
+          class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
+        >
+          <svg lucideLayers [size]="18" aria-hidden="true"></svg>
+          {{ i18n.t('shell', 'coursesLink') }}
+        </a>
         @if (userProfileService.isAdmin()) {
           <a
             routerLink="/admin/subjects"
@@ -47,14 +55,6 @@
           >
             <svg lucideBookOpen [size]="18" aria-hidden="true"></svg>
             {{ i18n.t('dashboard', 'subjectsLink') }}
-          </a>
-          <a
-            routerLink="/admin/courses"
-            routerLinkActive="bg-brand-50 text-brand-700"
-            class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
-          >
-            <svg lucideLayers [size]="18" aria-hidden="true"></svg>
-            {{ i18n.t('shell', 'coursesLink') }}
           </a>
           <a
             routerLink="/admin/users"
