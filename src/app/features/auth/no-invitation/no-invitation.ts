@@ -90,7 +90,8 @@ export class NoInvitation {
     }
   }
 
-  protected onSignOut(): void {
-    void this.auth.signOut();
+  protected async onSignOut(): Promise<void> {
+    await this.auth.signOut();
+    await this.router.navigateByUrl('/login');
   }
 }

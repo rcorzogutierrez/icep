@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { Button } from '../../../shared/components/button/button';
@@ -25,9 +26,11 @@ import { Button } from '../../../shared/components/button/button';
 })
 export class Rejected {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   protected readonly i18n = inject(I18nService);
 
-  protected onSignOut(): void {
-    void this.auth.signOut();
+  protected async onSignOut(): Promise<void> {
+    await this.auth.signOut();
+    await this.router.navigateByUrl('/login');
   }
 }
