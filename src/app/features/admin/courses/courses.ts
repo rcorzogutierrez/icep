@@ -125,12 +125,13 @@ export class AdminCourses {
 
   /**
    * Crea el curso Y, en el mismo paso, su código de invitación — nada que
-   * generar aparte después. Son dos escrituras separadas a propósito: si
-   * la primera (el curso) falla, no hay nada más que hacer. Si falla la
-   * segunda (el código), el curso YA quedó creado — avisar eso puntual en
-   * vez de un error genérico que sugiera "no pasó nada, probá de nuevo"
-   * (el código siempre se puede generar después desde el botón "Código" de
-   * su fila, así que esto no bloquea nada).
+   * generar aparte después. No abre el panel automáticamente: se ve
+   * clickeando "Código" en la fila, cuando el usuario lo pida. Son dos
+   * escrituras separadas a propósito: si la primera (el curso) falla, no
+   * hay nada más que hacer. Si falla la segunda (el código), el curso YA
+   * quedó creado — avisar eso puntual en vez de un error genérico que
+   * sugiera "no pasó nada, probá de nuevo" (el botón "Código" ofrece
+   * "Generar" si todavía no hay uno, así que esto no bloquea nada).
    */
   protected async onCreate(): Promise<void> {
     const start = this.startDate();
@@ -154,7 +155,6 @@ export class AdminCourses {
       return;
     }
 
-    this.selectedCourseId.set(courseId);
     try {
       await this.courseInvitationsService.create(courseId, name);
     } catch {
