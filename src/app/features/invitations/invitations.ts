@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { I18nService } from '../../core/i18n/i18n.service';
 import type {
   InvitableRole,
@@ -11,6 +12,7 @@ import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
+import { IconInfo } from '../../shared/icons/icons';
 import { ToastService } from '../../shared/toast/toast.service';
 
 const STATUS_CLASS: Record<InvitationStatus, string> = {
@@ -25,7 +27,7 @@ const EXPIRED_CLASS = STATUS_CLASS.revoked;
 @Component({
   selector: 'app-invitations',
   standalone: true,
-  imports: [Button, Select, DatePipe],
+  imports: [Button, Select, DatePipe, RouterLink, IconInfo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invitations.html',
 })

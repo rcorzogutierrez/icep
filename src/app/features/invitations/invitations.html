@@ -46,6 +46,15 @@
           {{ copied() ? i18n.t('common', 'copied') : i18n.t('common', 'copy') }}
         </app-button>
       </div>
+      <p class="flex items-start gap-2 text-sm text-text-muted">
+        <svg lucideInfo [size]="16" class="mt-0.5 shrink-0 text-brand-600" aria-hidden="true"></svg>
+        <span>
+          {{ i18n.t('invitationsPage', 'courseReminder') }}
+          <a routerLink="/admin/courses" class="font-medium text-brand-700 hover:underline">{{
+            i18n.t('invitationsPage', 'courseReminderLink')
+          }}</a>
+        </span>
+      </p>
     }
   </section>
 

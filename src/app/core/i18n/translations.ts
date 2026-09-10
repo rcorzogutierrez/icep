@@ -114,6 +114,9 @@ export const translations = {
       roleTeacher: 'Profesor',
       generate: 'Generar invitación',
       linkGenerated: 'Invitación creada. Compartí este link:',
+      courseReminder:
+        'Esta cuenta todavía no está en ningún curso — no va a ver ni calificar materias hasta que la agregues en',
+      courseReminderLink: 'Cursos',
       colEmail: 'Email',
       colRole: 'Rol',
       colStatus: 'Estado',
@@ -385,6 +388,9 @@ export const translations = {
       roleTeacher: 'Teacher',
       generate: 'Generate invitation',
       linkGenerated: 'Invitation created. Share this link:',
+      courseReminder:
+        "This account isn't in any course yet — they won't see or grade subjects until you add them in",
+      courseReminderLink: 'Courses',
       colEmail: 'Email',
       colRole: 'Role',
       colStatus: 'Status',
