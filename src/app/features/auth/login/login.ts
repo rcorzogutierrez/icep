@@ -24,6 +24,15 @@ const emailFormSchema = schema<EmailFormModel>((p) => {
   minLength(p.password, 6);
 });
 
+/**
+ * El login con Google es un redirect (ver AuthService.signInWithGoogle):
+ * la página se recarga entera al volver, así que un código tipeado a mano
+ * en `manualCode` (a diferencia del de la URL /invite/:code, que sí
+ * sobrevive por estar en el path) se perdería si no se guarda acá antes
+ * de salir.
+ */
+const PENDING_INVITE_CODE_KEY = 'icep-pending-invite-code';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -75,23 +84,52 @@ export class Login {
       : this.i18n.t('login', 'passwordRequired');
   });
 
+  constructor() {
+    void this.checkGoogleRedirectResult();
+  }
+
   protected setMode(mode: AuthMode): void {
     this.modeOverride.set(mode);
     this.errorMessage.set(null);
+  }
+
+  /** Se llama una vez al cargar: recoge el resultado si esta carga es la vuelta de un redirect de Google. */
+  private async checkGoogleRedirectResult(): Promise<void> {
+    try {
+      const credential = await this.auth.consumeGoogleRedirectResult();
+      if (!credential) {
+        return;
+      }
+      this.signingInGoogle.set(true);
+      try {
+        const storedCode = sessionStorage.getItem(PENDING_INVITE_CODE_KEY);
+        sessionStorage.removeItem(PENDING_INVITE_CODE_KEY);
+        if (storedCode) {
+          this.manualCode.set(storedCode);
+        }
+      } catch {
+        // Ignorar si sessionStorage no está disponible.
+      }
+      await this.afterAuth(credential.user);
+    } catch {
+      this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
+    } finally {
+      this.signingInGoogle.set(false);
+    }
   }
 
   protected async onGoogleSignIn(): Promise<void> {
     this.signingInGoogle.set(true);
     this.errorMessage.set(null);
     try {
-      const credential = await this.auth.signInWithGoogle();
-      await this.afterAuth(credential.user);
-    } catch (error) {
-      // El usuario puede cerrar el popup sin elegir cuenta; no es un error real.
-      if ((error as { code?: string }).code !== 'auth/popup-closed-by-user') {
-        this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
-      }
-    } finally {
+      sessionStorage.setItem(PENDING_INVITE_CODE_KEY, this.manualCode().trim());
+    } catch {
+      // Ignorar si sessionStorage no está disponible.
+    }
+    try {
+      await this.auth.signInWithGoogle();
+    } catch {
+      this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
       this.signingInGoogle.set(false);
     }
   }
