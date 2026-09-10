@@ -17,6 +17,8 @@ import { CourseStudentsService } from '../../core/courses/course-students.servic
 import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UsersService } from '../../core/users/users.service';
+import { Page } from '../../shared/layout/page/page';
+import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
   IconCalendar,
   IconCheck,
@@ -50,6 +52,8 @@ interface TaskOption {
   selector: 'app-assignment-review',
   standalone: true,
   imports: [
+    Page,
+    PageHeader,
     IconCalendar,
     IconCheck,
     IconChevronDown,

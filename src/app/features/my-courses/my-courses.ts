@@ -5,6 +5,8 @@ import { CourseStudentsService } from '../../core/courses/course-students.servic
 import { CourseSubjectTeachersService } from '../../core/courses/course-subject-teachers.service';
 import { CoursesService } from '../../core/courses/courses.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { Page } from '../../shared/layout/page/page';
+import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
   IconBookOpen,
   IconChevronRight,
@@ -30,7 +32,16 @@ interface MyCourseRow {
 @Component({
   selector: 'app-my-courses',
   standalone: true,
-  imports: [RouterLink, IconBookOpen, IconChevronRight, IconLayers, IconSearch, IconUsers],
+  imports: [
+    RouterLink,
+    Page,
+    PageHeader,
+    IconBookOpen,
+    IconChevronRight,
+    IconLayers,
+    IconSearch,
+    IconUsers,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './my-courses.html',
 })

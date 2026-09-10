@@ -18,6 +18,8 @@ import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Drawer } from '../../shared/components/drawer/drawer';
 import { Select, type SelectOption } from '../../shared/components/select/select';
+import { Page } from '../../shared/layout/page/page';
+import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
   IconArrowUpRight,
   IconCheck,
@@ -79,6 +81,8 @@ function gradeBand(grade: number | null): GradeBand {
     Button,
     Drawer,
     Select,
+    Page,
+    PageHeader,
     DecimalPipe,
     IconArrowUpRight,
     IconCheck,

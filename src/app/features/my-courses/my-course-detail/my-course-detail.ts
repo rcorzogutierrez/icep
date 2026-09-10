@@ -1,6 +1,6 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import type { Assignment } from '../../../core/grades/assignments.model';
 import { AssignmentsService } from '../../../core/grades/assignments.service';
@@ -16,8 +16,9 @@ import { SubjectsService } from '../../../core/subjects/subjects.service';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { Drawer } from '../../../shared/components/drawer/drawer';
+import { Page } from '../../../shared/layout/page/page';
+import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import {
-  IconArrowLeft,
   IconArrowUpRight,
   IconCheck,
   IconChevronRight,
@@ -74,9 +75,9 @@ function gradeBand(grade: number | null): GradeBand {
   imports: [
     Button,
     Drawer,
-    RouterLink,
+    Page,
+    PageHeader,
     DecimalPipe,
-    IconArrowLeft,
     IconArrowUpRight,
     IconCheck,
     IconChevronRight,
@@ -286,5 +287,9 @@ export class MyCourseDetail {
     this.router.navigate(['/subjects', subjectId, 'gradebook'], {
       queryParams: { courseId: this.courseId() },
     });
+  }
+
+  protected goBack(): void {
+    this.router.navigate(['/my-courses']);
   }
 }

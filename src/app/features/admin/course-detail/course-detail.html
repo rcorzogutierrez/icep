@@ -1,16 +1,8 @@
 @if (course(); as c) {
-  <div class="mx-auto flex max-w-4xl flex-col gap-5">
-    <div>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1 text-sm text-brand-700 hover:text-brand-800 hover:underline"
-        (click)="goBack()"
-      >
-        <svg lucideArrowLeft [size]="14" aria-hidden="true"></svg>
-        {{ i18n.t('adminCourses', 'backToCourses') }}
-      </button>
-      <h1 class="mt-2 text-2xl font-bold tracking-tight text-text">{{ c.name }}</h1>
-    </div>
+  <app-page>
+    <app-page-header [backLabel]="i18n.t('adminCourses', 'backToCourses')" (back)="goBack()">
+      <span pageTitle>{{ c.name }}</span>
+    </app-page-header>
 
     <div class="flex gap-6 border-b border-border-soft text-sm font-semibold text-text-muted">
       <button
@@ -227,7 +219,7 @@
         </section>
       }
     }
-  </div>
+  </app-page>
 } @else {
   <p class="text-sm text-text-muted">{{ i18n.t('adminCourses', 'courseNotFound') }}</p>
 }

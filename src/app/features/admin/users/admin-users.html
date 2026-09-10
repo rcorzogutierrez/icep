@@ -1,8 +1,7 @@
-<div class="mx-auto flex max-w-5xl flex-col gap-6">
-  <header>
-    <h1 class="text-2xl font-bold tracking-tight text-text">{{ i18n.t('adminUsers', 'title') }}</h1>
-    <p class="text-sm text-text-muted">{{ i18n.t('adminUsers', 'subtitle') }}</p>
-  </header>
+<app-page>
+  <app-page-header [subtitle]="i18n.t('adminUsers', 'subtitle')">
+    <span pageTitle>{{ i18n.t('adminUsers', 'title') }}</span>
+  </app-page-header>
 
   <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
     <table class="w-full text-left text-sm">
@@ -107,4 +106,4 @@
       </tbody>
     </table>
   </div>
-</div>
+</app-page>

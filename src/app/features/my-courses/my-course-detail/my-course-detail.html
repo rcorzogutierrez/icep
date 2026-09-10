@@ -1,16 +1,12 @@
 @if (course(); as c) {
-  <div class="mx-auto flex max-w-5xl flex-col gap-6">
-    <header>
-      <a
-        routerLink="/my-courses"
-        class="inline-flex items-center gap-1 text-sm text-brand-700 hover:text-brand-800 hover:underline"
-      >
-        <svg lucideArrowLeft [size]="14" aria-hidden="true"></svg>
-        {{ i18n.t('myCourses', 'backToCourses') }}
-      </a>
-      <h1 class="mt-2 text-2xl font-bold tracking-tight text-text">{{ c.name }}</h1>
-      <p class="mt-1 text-sm text-text-muted">{{ i18n.t('myCourses', 'detailSubtitle') }}</p>
-    </header>
+  <app-page>
+    <app-page-header
+      [subtitle]="i18n.t('myCourses', 'detailSubtitle')"
+      [backLabel]="i18n.t('myCourses', 'backToCourses')"
+      (back)="goBack()"
+    >
+      <span pageTitle>{{ c.name }}</span>
+    </app-page-header>
 
     <div class="flex flex-wrap items-center gap-3">
       <div class="relative max-w-xs min-w-56 flex-1">
@@ -114,7 +110,7 @@
         </tbody>
       </table>
     </div>
-  </div>
+  </app-page>
 
   @if (openStudent(); as student) {
     <app-drawer
@@ -195,7 +191,7 @@
                       type="number"
                       min="0"
                       [max]="assignment.pointsPossible"
-                      class="h-7 w-14 rounded-lg border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      class="h-7 w-14 rounded-xl border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                       [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
                       (input)="onScoreInput(assignment.id, $any($event.target).value)"
                     />

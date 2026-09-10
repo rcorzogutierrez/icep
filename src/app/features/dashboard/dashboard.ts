@@ -22,6 +22,8 @@ import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
+import { Page } from '../../shared/layout/page/page';
+import { PageHeader } from '../../shared/layout/page-header/page-header';
 import { IconBookOpen, IconGraduationCap, IconUserPlus, IconUsers } from '../../shared/icons/icons';
 
 type StatIcon = 'users' | 'book' | 'mail' | 'graduation';
@@ -36,7 +38,7 @@ interface StatCard {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [Button, IconUsers, IconBookOpen, IconUserPlus, IconGraduationCap],
+  imports: [Button, Page, PageHeader, IconUsers, IconBookOpen, IconUserPlus, IconGraduationCap],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',
 })
