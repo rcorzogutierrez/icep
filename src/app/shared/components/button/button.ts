@@ -5,11 +5,13 @@ export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'su
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 /**
- * `warning`/`success` reutilizan los mismos tokens de estado que ya usan
- * los chips (aprobado/pendiente/rechazado) y las bandas de nota — no son
- * colores nuevos. Pensados para diferenciar severidad entre acciones
- * parecidas (ej. revocar acceso, reversible, vs. borrar, que no lo es) sin
- * que todo lo "peligroso" se vea con el mismo rojo agresivo.
+ * `warning`/`success` son variantes "suaves": mismo fondo con borde que
+ * `secondary`, solo el texto toma el color de estado (los mismos tokens que
+ * ya usan los chips de aprobado/pendiente/rechazado y las bandas de nota,
+ * no colores nuevos). A propósito NO son un fondo sólido — reservado eso
+ * para `danger`, así una acción reversible (ej. revocar acceso) no se ve
+ * tan grave como una irreversible (ej. borrar), en vez de que ambas griten
+ * el mismo rojo fuerte.
  */
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
@@ -19,9 +21,9 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   danger:
     'bg-status-expired text-white shadow-sm hover:brightness-90 active:brightness-75 focus-visible:ring-status-expired',
   warning:
-    'bg-status-paused text-white shadow-sm hover:brightness-90 active:brightness-75 focus-visible:ring-status-paused',
+    'bg-surface text-status-paused border border-border shadow-sm hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-status-paused',
   success:
-    'bg-status-active text-white shadow-sm hover:brightness-90 active:brightness-75 focus-visible:ring-status-active',
+    'bg-surface text-status-active border border-border shadow-sm hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-status-active',
   ghost:
     'bg-transparent text-text hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-brand-500',
 };
