@@ -208,6 +208,7 @@ export const translations = {
       inviteCardSubtitle:
         'Cualquiera con este código, link o QR se puede sumar como estudiante — sin aprobar uno por uno.',
       generateInvite: 'Generar código',
+      regenerateInvite: 'Regenerar',
       viewInvite: 'Código',
       revokeInvite: 'Revocar',
       inviteRedemptionsLabel: 'se unieron con este código',
@@ -517,6 +518,7 @@ export const translations = {
       inviteCardSubtitle:
         'Anyone with this code, link, or QR can join as a student — no approving one by one.',
       generateInvite: 'Generate code',
+      regenerateInvite: 'Regenerate',
       viewInvite: 'Code',
       revokeInvite: 'Revoke',
       inviteRedemptionsLabel: 'joined with this code',

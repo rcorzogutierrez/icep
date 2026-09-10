@@ -108,7 +108,11 @@
                   (pressed)="onGenerateInvitation()"
                 >
                   <svg lucidePlus [size]="14" aria-hidden="true"></svg>
-                  {{ i18n.t('adminCourses', 'generateInvite') }}
+                  @if (hasInvitationHistory()) {
+                    {{ i18n.t('adminCourses', 'regenerateInvite') }}
+                  } @else {
+                    {{ i18n.t('adminCourses', 'generateInvite') }}
+                  }
                 </app-button>
               }
             </div>

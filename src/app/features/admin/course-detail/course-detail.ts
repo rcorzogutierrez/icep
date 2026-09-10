@@ -64,6 +64,11 @@ export class CourseDetail {
       .find((inv) => inv.status === 'active' && inv.expiresAt.toMillis() > Date.now()),
   );
 
+  /** true si el curso ya tuvo algún código (aunque esté vencido/revocado) — decide "Regenerar" vs "Generar". */
+  protected readonly hasInvitationHistory = computed(
+    () => this.courseInvitationsService.forCourse(this.courseId()).length > 0,
+  );
+
   protected async onGenerateInvitation(): Promise<void> {
     const course = this.course();
     if (!course) {

@@ -75,22 +75,30 @@ export class AdminCourses {
    * sin entrar a Gestionar).
    */
   protected readonly selectedCourseId = signal<string | null>(null);
-  protected readonly generatingSelected = signal(false);
+  /** Curso cuyo código se está generando/regenerando ahora mismo (fila o panel, comparten este estado). */
+  protected readonly regeneratingCourseId = signal<string | null>(null);
   protected readonly revokingSelectedCode = signal<string | null>(null);
 
   protected readonly selectedCourse = computed(() =>
     this.coursesService.courses().find((c) => c.id === this.selectedCourseId()),
   );
 
-  /** El código vigente (activo y no vencido) del curso seleccionado, si hay uno. */
-  protected readonly selectedInvitation = computed<CourseInvitation | undefined>(() => {
-    const courseId = this.selectedCourseId();
-    if (!courseId) {
-      return undefined;
-    }
+  /** El código vigente (activo y no vencido) de un curso, si hay uno — usado por cada fila y por el panel. */
+  protected activeInvitationFor(courseId: string): CourseInvitation | undefined {
     return this.courseInvitationsService
       .forCourse(courseId)
       .find((inv) => inv.status === 'active' && inv.expiresAt.toMillis() > Date.now());
+  }
+
+  /** true si el curso ya tuvo algún código (aunque esté vencido/revocado) — decide "Regenerar" vs "Generar". */
+  protected hasInvitationHistory(courseId: string): boolean {
+    return this.courseInvitationsService.forCourse(courseId).length > 0;
+  }
+
+  /** El código vigente del curso seleccionado, si hay uno. */
+  protected readonly selectedInvitation = computed<CourseInvitation | undefined>(() => {
+    const courseId = this.selectedCourseId();
+    return courseId ? this.activeInvitationFor(courseId) : undefined;
   });
 
   protected readonly editingId = signal<string | null>(null);
@@ -164,23 +172,35 @@ export class AdminCourses {
     }
   }
 
-  /** Selecciona este curso en el panel de abajo — el código se resuelve reactivo (selectedInvitation), no hace falta buscarlo acá. */
-  protected onViewInvitation(course: Course): void {
+  /**
+   * Selecciona este curso en el panel de abajo. Si ya tiene un código
+   * vigente, con eso alcanza (el panel lo muestra solo, reactivo). Si no
+   * (nunca tuvo uno, o el que tenía venció/fue revocado), lo genera de una
+   * — un solo clic, no "abrir el panel y después apretar Generar".
+   */
+  protected async onViewInvitation(course: Course): Promise<void> {
     this.selectedCourseId.set(course.id);
+    if (this.activeInvitationFor(course.id)) {
+      return;
+    }
+    await this.generateInvitation(course);
   }
 
   protected async onGenerateForSelected(): Promise<void> {
     const course = this.selectedCourse();
-    if (!course) {
-      return;
+    if (course) {
+      await this.generateInvitation(course);
     }
-    this.generatingSelected.set(true);
+  }
+
+  private async generateInvitation(course: Course): Promise<void> {
+    this.regeneratingCourseId.set(course.id);
     try {
       await this.courseInvitationsService.create(course.id, course.name);
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {
-      this.generatingSelected.set(false);
+      this.regeneratingCourseId.set(null);
     }
   }
 

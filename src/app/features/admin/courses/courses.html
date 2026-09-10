@@ -96,11 +96,15 @@
             </div>
             <app-button
               size="sm"
-              [loading]="generatingSelected()"
+              [loading]="regeneratingCourseId() === course.id"
               (pressed)="onGenerateForSelected()"
             >
               <svg lucidePlus [size]="14" aria-hidden="true"></svg>
-              {{ i18n.t('adminCourses', 'generateInvite') }}
+              @if (hasInvitationHistory(course.id)) {
+                {{ i18n.t('adminCourses', 'regenerateInvite') }}
+              } @else {
+                {{ i18n.t('adminCourses', 'generateInvite') }}
+              }
             </app-button>
           </div>
         }
@@ -189,9 +193,20 @@
               {{ i18n.t('adminCourses', 'manage') }}
               <svg lucideArrowRight [size]="14" aria-hidden="true"></svg>
             </app-button>
-            <app-button variant="secondary" size="sm" (pressed)="onViewInvitation(course)">
+            <app-button
+              variant="secondary"
+              size="sm"
+              [loading]="regeneratingCourseId() === course.id"
+              (pressed)="onViewInvitation(course)"
+            >
               <svg lucideQrCode [size]="14" aria-hidden="true"></svg>
-              {{ i18n.t('adminCourses', 'viewInvite') }}
+              @if (activeInvitationFor(course.id)) {
+                {{ i18n.t('adminCourses', 'viewInvite') }}
+              } @else if (hasInvitationHistory(course.id)) {
+                {{ i18n.t('adminCourses', 'regenerateInvite') }}
+              } @else {
+                {{ i18n.t('adminCourses', 'generateInvite') }}
+              }
             </app-button>
             <app-button variant="secondary" size="sm" (pressed)="startEdit(course)">
               {{ i18n.t('adminCourses', 'edit') }}
