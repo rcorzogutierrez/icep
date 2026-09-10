@@ -24,24 +24,6 @@ const emailFormSchema = schema<EmailFormModel>((p) => {
   minLength(p.password, 6);
 });
 
-/**
- * El login con Google es un redirect (ver AuthService.signInWithGoogle):
- * la página se recarga entera al volver, así que un código tipeado a mano
- * en `manualCode` (a diferencia del de la URL /invite/:code, que sí
- * sobrevive por estar en el path) se perdería si no se guarda acá antes
- * de salir.
- */
-const PENDING_INVITE_CODE_KEY = 'icep-pending-invite-code';
-
-/**
- * Marca que "salimos a Google y todavía no volvimos", para distinguir una
- * carga normal de /login (consumeGoogleRedirectResult() da null siempre,
- * no es un error) de una vuelta real del redirect sin resultado (el
- * navegador bloqueó el storage que Firebase necesita para recordar la
- * operación pendiente — ahí sí hay que avisar en vez de quedarse mudo).
- */
-const GOOGLE_SIGNIN_PENDING_KEY = 'icep-google-signin-pending';
-
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -93,77 +75,31 @@ export class Login {
       : this.i18n.t('login', 'passwordRequired');
   });
 
-  constructor() {
-    void this.checkGoogleRedirectResult();
-  }
-
   protected setMode(mode: AuthMode): void {
     this.modeOverride.set(mode);
     this.errorMessage.set(null);
-  }
-
-  /**
-   * Se llama una vez al cargar: recoge el resultado si esta carga es la
-   * vuelta de un redirect de Google. Diagnosticado (ver commits de
-   * "revisar login con Google en blanco"): cuando esto falla, es porque
-   * Chrome bloquea el storage de terceros que Firebase necesita para
-   * recuperar la operación pendiente a través de authDomain
-   * (icep-44c27.firebaseapp.com, un sitio distinto de icep.web.app) — no
-   * hay forma de evitarlo desde el código sin un dominio propio para el
-   * login, así que acá solo se avisa con un mensaje que sugiere el
-   * camino alternativo (email/contraseña), que no depende de esto.
-   */
-  private async checkGoogleRedirectResult(): Promise<void> {
-    let wasPending = false;
-    try {
-      wasPending = sessionStorage.getItem(GOOGLE_SIGNIN_PENDING_KEY) === '1';
-      sessionStorage.removeItem(GOOGLE_SIGNIN_PENDING_KEY);
-    } catch {
-      // Ignorar si sessionStorage no está disponible.
-    }
-
-    try {
-      const credential = await this.auth.consumeGoogleRedirectResult();
-      if (!credential) {
-        // Carga normal de /login (no venimos de Google): no es un error, no avisar.
-        if (wasPending) {
-          this.errorMessage.set(this.i18n.t('login', 'errorGoogleRedirect'));
-        }
-        return;
-      }
-      this.signingInGoogle.set(true);
-      try {
-        const storedCode = sessionStorage.getItem(PENDING_INVITE_CODE_KEY);
-        sessionStorage.removeItem(PENDING_INVITE_CODE_KEY);
-        if (storedCode) {
-          this.manualCode.set(storedCode);
-        }
-      } catch {
-        // Ignorar si sessionStorage no está disponible.
-      }
-      await this.afterAuth(credential.user);
-    } catch (error) {
-      console.error('Google sign-in: error al volver del redirect.', error);
-      this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
-    } finally {
-      this.signingInGoogle.set(false);
-    }
   }
 
   protected async onGoogleSignIn(): Promise<void> {
     this.signingInGoogle.set(true);
     this.errorMessage.set(null);
     try {
-      sessionStorage.setItem(GOOGLE_SIGNIN_PENDING_KEY, '1');
-      sessionStorage.setItem(PENDING_INVITE_CODE_KEY, this.manualCode().trim());
-    } catch {
-      // Ignorar si sessionStorage no está disponible.
-    }
-    try {
-      await this.auth.signInWithGoogle();
+      const credential = await this.auth.signInWithGoogle();
+      await this.afterAuth(credential.user);
     } catch (error) {
-      console.error('Google sign-in: error al iniciar el redirect.', error);
-      this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
+      const code = (error as { code?: string }).code;
+      // El usuario cerró el popup o disparó el sign-in dos veces seguidas:
+      // no es un error, no hay nada que avisar (recomendación de Firebase).
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        return;
+      }
+      console.error('Google sign-in: error con el popup.', error);
+      this.errorMessage.set(
+        code === 'auth/popup-blocked'
+          ? this.i18n.t('login', 'errorPopupBlocked')
+          : this.i18n.t('login', 'errorGeneric'),
+      );
+    } finally {
       this.signingInGoogle.set(false);
     }
   }

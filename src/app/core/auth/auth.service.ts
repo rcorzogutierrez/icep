@@ -2,10 +2,9 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
-  getRedirectResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signInWithRedirect,
+  signInWithPopup,
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
@@ -43,19 +42,17 @@ export class AuthService {
   }
 
   /**
-   * Redirect en vez de popup: un popup de Google bloqueado, con cookies de
-   * terceros restringidas, o con un adblocker/extensión de privacidad
-   * puede quedar en blanco sin ningún error visible. El redirect navega
-   * de verdad a Google y vuelve, evitando esa categoría de fallas — el
-   * resultado se recoge después con consumeGoogleRedirectResult().
+   * Popup, no redirect: sin dominio propio para `authDomain` (seguimos en
+   * el *.firebaseapp.com por defecto), el redirect depende de storage
+   * entre-sitios que Chrome/Firefox/Safari bloquean por defecto y el login
+   * queda colgado sin error (confirmado en producción). El popup evita ese
+   * problema porque el resultado vuelve por un canal en memoria, no por
+   * storage compartido — es la opción que la propia guía de Firebase
+   * recomienda para este caso (ver /docs/auth/web/redirect-best-practices,
+   * "Option 2: signInWithPopup").
    */
   signInWithGoogle() {
-    return signInWithRedirect(this.auth, googleProvider);
-  }
-
-  /** Resultado del login con Google tras volver del redirect; null si esta carga no viene de ahí. */
-  consumeGoogleRedirectResult() {
-    return getRedirectResult(this.auth);
+    return signInWithPopup(this.auth, googleProvider);
   }
 
   signInWithEmail(email: string, password: string) {
