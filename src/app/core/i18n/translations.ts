@@ -210,6 +210,8 @@ export const translations = {
       inviteRedemptionsLabel: 'se unieron con este código',
       inviteExpiresOn: 'Vence el',
       inviteNoActive: 'Todavía no hay un código activo para este curso.',
+      errorInviteGeneric:
+        'El curso se creó, pero no pudimos generar su código de invitación. Podés generarlo desde Gestionar → Estudiantes.',
     },
     gradebook: {
       title: 'Calificaciones',
@@ -514,6 +516,8 @@ export const translations = {
       inviteRedemptionsLabel: 'joined with this code',
       inviteExpiresOn: 'Expires on',
       inviteNoActive: "There's no active code for this course yet.",
+      errorInviteGeneric:
+        "The course was created, but we couldn't generate its invite code. You can generate it from Manage → Students.",
     },
     gradebook: {
       title: 'Grades',

@@ -100,7 +100,15 @@ export class AdminCourses {
     setTimeout(() => this.copiedInviteLink.set(false), 2000);
   }
 
-  /** Crea el curso Y, en el mismo paso, su código de invitación — nada que generar aparte después. */
+  /**
+   * Crea el curso Y, en el mismo paso, su código de invitación — nada que
+   * generar aparte después. Son dos escrituras separadas a propósito: si
+   * la primera (el curso) falla, no hay nada más que hacer. Si falla la
+   * segunda (el código), el curso YA quedó creado — avisar eso puntual en
+   * vez de un error genérico que sugiera "no pasó nada, probá de nuevo"
+   * (el código siempre se puede generar después desde Gestionar →
+   * Estudiantes, así que esto no bloquea nada).
+   */
   protected async onCreate(): Promise<void> {
     const start = this.startDate();
     const end = this.endDate();
@@ -111,21 +119,26 @@ export class AdminCourses {
     this.creating.set(true);
     this.createdInvitationCode.set(null);
     this.qrDataUrl.set(null);
+
+    let courseId: string;
     try {
-      const courseId = await this.coursesService.create(
-        name,
-        parseLocalDate(start),
-        parseLocalDate(end),
-      );
-      const code = await this.courseInvitationsService.create(courseId, name);
-      this.createdInvitationCode.set(code);
+      courseId = await this.coursesService.create(name, parseLocalDate(start), parseLocalDate(end));
       this.name.set('');
       this.startDate.set('');
       this.endDate.set('');
       this.toast.success(this.i18n.t('adminCourses', 'created'));
-      generateQrDataUrl(this.inviteLink(code)).then((url) => this.qrDataUrl.set(url));
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
+      this.creating.set(false);
+      return;
+    }
+
+    try {
+      const code = await this.courseInvitationsService.create(courseId, name);
+      this.createdInvitationCode.set(code);
+      generateQrDataUrl(this.inviteLink(code)).then((url) => this.qrDataUrl.set(url));
+    } catch {
+      this.toast.error(this.i18n.t('adminCourses', 'errorInviteGeneric'));
     } finally {
       this.creating.set(false);
     }

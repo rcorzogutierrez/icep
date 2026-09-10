@@ -22,8 +22,16 @@ import { UserProfileService } from '../users/user-profile.service';
 import type { CourseInvitation } from './course-invitations.model';
 import { generateInvitationCode } from './invitation-code';
 
-/** Vencimiento: 30 días desde la creación (mismo tope máximo que valida firestore.rules). */
-const COURSE_INVITATION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+/**
+ * Vencimiento: 29 días desde la creación — no 30 exactos, a propósito: las
+ * reglas topean en 30 días contra `request.time` (el reloj del servidor),
+ * pero acá calculamos con el reloj del navegador. Con el mismo valor
+ * exacto, cualquier mínimo desfase de reloj entre cliente y servidor
+ * (normal, no necesariamente un reloj mal configurado) hace que el create
+ * quede justo del otro lado del tope y falle con permission-denied. Un día
+ * de margen lo evita sin que se note en la fecha mostrada.
+ */
+const COURSE_INVITATION_TTL_MS = 29 * 24 * 60 * 60 * 1000;
 
 /**
  * Códigos de invitación por curso (ver course-invitations.model.ts para el
