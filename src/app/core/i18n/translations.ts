@@ -12,6 +12,8 @@ export const translations = {
       copied: '¡Copiado!',
       close: 'Cerrar',
       notifications: 'Notificaciones',
+      downloadQr: 'Descargar QR',
+      enlargeQr: 'Ampliar QR',
     },
     login: {
       title: 'Iniciá sesión',
@@ -318,6 +320,8 @@ export const translations = {
       copied: 'Copied!',
       close: 'Close',
       notifications: 'Notifications',
+      downloadQr: 'Download QR',
+      enlargeQr: 'Enlarge QR',
     },
     login: {
       title: 'Sign in',

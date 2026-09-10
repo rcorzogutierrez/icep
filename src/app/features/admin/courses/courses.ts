@@ -10,6 +10,7 @@ import { CoursesService } from '../../../core/courses/courses.service';
 import type { Course } from '../../../core/courses/courses.model';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { Button } from '../../../shared/components/button/button';
+import { InviteCodeCard } from '../../../shared/components/invite-code-card/invite-code-card';
 import {
   IconArrowRight,
   IconBookOpen,
@@ -18,7 +19,6 @@ import {
   IconUsers,
 } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
-import { generateQrDataUrl } from '../../../shared/utils/qr-code';
 
 /**
  * `new Date('2026-06-01')` (sin hora) se interpreta como medianoche UTC, no
@@ -35,7 +35,16 @@ function parseLocalDate(dateStr: string): Date {
 @Component({
   selector: 'app-admin-courses',
   standalone: true,
-  imports: [Button, DatePipe, IconArrowRight, IconBookOpen, IconGraduationCap, IconPlus, IconUsers],
+  imports: [
+    Button,
+    DatePipe,
+    InviteCodeCard,
+    IconArrowRight,
+    IconBookOpen,
+    IconGraduationCap,
+    IconPlus,
+    IconUsers,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './courses.html',
 })
@@ -57,8 +66,8 @@ export class AdminCourses {
 
   /** Código de invitación del curso recién creado, para mostrarlo ahí mismo (mismo patrón que Invitations.createdCode). */
   protected readonly createdInvitationCode = signal<string | null>(null);
-  protected readonly qrDataUrl = signal<string | null>(null);
-  protected readonly copiedInviteLink = signal(false);
+  /** Nombre del curso al que pertenece `createdInvitationCode` — si se crean varios seguidos, deja claro cuál es cuál. */
+  protected readonly createdCourseName = signal<string | null>(null);
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly editName = signal('');
@@ -90,16 +99,6 @@ export class AdminCourses {
     return true;
   }
 
-  protected inviteLink(code: string): string {
-    return `${location.origin}/invite/${code}`;
-  }
-
-  protected async onCopyInviteLink(code: string): Promise<void> {
-    await navigator.clipboard.writeText(this.inviteLink(code));
-    this.copiedInviteLink.set(true);
-    setTimeout(() => this.copiedInviteLink.set(false), 2000);
-  }
-
   /**
    * Crea el curso Y, en el mismo paso, su código de invitación — nada que
    * generar aparte después. Son dos escrituras separadas a propósito: si
@@ -118,7 +117,7 @@ export class AdminCourses {
     }
     this.creating.set(true);
     this.createdInvitationCode.set(null);
-    this.qrDataUrl.set(null);
+    this.createdCourseName.set(null);
 
     let courseId: string;
     try {
@@ -136,7 +135,7 @@ export class AdminCourses {
     try {
       const code = await this.courseInvitationsService.create(courseId, name);
       this.createdInvitationCode.set(code);
-      generateQrDataUrl(this.inviteLink(code)).then((url) => this.qrDataUrl.set(url));
+      this.createdCourseName.set(name);
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorInviteGeneric'));
     } finally {

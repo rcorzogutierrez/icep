@@ -1,13 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CourseInvitationsService } from '../../../core/invitations/course-invitations.service';
 import type { CourseInvitation } from '../../../core/invitations/course-invitations.model';
@@ -21,11 +13,11 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
+import { InviteCodeCard } from '../../../shared/components/invite-code-card/invite-code-card';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
 import { TransferList } from '../../../shared/components/transfer-list/transfer-list';
 import { IconArrowLeft, IconPlus, IconX } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
-import { generateQrDataUrl } from '../../../shared/utils/qr-code';
 
 type Tab = 'subjects' | 'students' | 'teachers' | 'assignments';
 
@@ -37,7 +29,7 @@ type Tab = 'subjects' | 'students' | 'teachers' | 'assignments';
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [TransferList, Select, Button, DatePipe, IconArrowLeft, IconPlus, IconX],
+  imports: [TransferList, Select, Button, InviteCodeCard, DatePipe, IconArrowLeft, IconPlus, IconX],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './course-detail.html',
 })
@@ -64,8 +56,6 @@ export class CourseDetail {
 
   protected readonly generatingInvitation = signal(false);
   protected readonly revokingInvitationCode = signal<string | null>(null);
-  protected readonly copiedInviteLink = signal(false);
-  protected readonly qrDataUrl = signal<string | null>(null);
 
   /** El código de curso vigente (activo y no vencido), si hay uno. Puede haber revocados/vencidos en el historial, no se muestran acá. */
   protected readonly activeCourseInvitation = computed<CourseInvitation | undefined>(() =>
@@ -73,23 +63,6 @@ export class CourseDetail {
       .forCourse(this.courseId())
       .find((inv) => inv.status === 'active' && inv.expiresAt.toMillis() > Date.now()),
   );
-
-  constructor() {
-    // El QR se genera de forma asíncrona (no se puede hacer dentro de un
-    // computed): un effect lo recalcula cada vez que cambia el código activo.
-    effect(() => {
-      const invitation = this.activeCourseInvitation();
-      if (!invitation) {
-        this.qrDataUrl.set(null);
-        return;
-      }
-      generateQrDataUrl(this.inviteLink(invitation.code)).then((url) => this.qrDataUrl.set(url));
-    });
-  }
-
-  protected inviteLink(code: string): string {
-    return `${location.origin}/invite/${code}`;
-  }
 
   protected async onGenerateInvitation(): Promise<void> {
     const course = this.course();
@@ -115,12 +88,6 @@ export class CourseDetail {
     } finally {
       this.revokingInvitationCode.set(null);
     }
-  }
-
-  protected async onCopyInviteLink(code: string): Promise<void> {
-    await navigator.clipboard.writeText(this.inviteLink(code));
-    this.copiedInviteLink.set(true);
-    setTimeout(() => this.copiedInviteLink.set(false), 2000);
   }
 
   private readonly students = computed(() =>

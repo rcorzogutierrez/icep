@@ -1,0 +1,58 @@
+<div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+  <button
+    type="button"
+    class="shrink-0 self-start rounded-xl border border-border bg-surface p-1 transition-colors hover:border-brand-200"
+    [attr.aria-label]="i18n.t('common', 'enlargeQr')"
+    (click)="zoomed.set(true)"
+  >
+    @if (qrDataUrl(); as qr) {
+      <img [src]="qr" alt="" class="size-32" />
+    } @else {
+      <div class="flex size-32 items-center justify-center text-xs text-text-muted">…</div>
+    }
+  </button>
+
+  <div class="flex min-w-0 flex-1 flex-col gap-2">
+    @if (label(); as l) {
+      <p class="text-sm font-semibold text-text">{{ l }}</p>
+    }
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class="truncate font-mono text-sm text-text">{{ link() }}</p>
+      <div class="flex shrink-0 gap-2">
+        <app-button variant="secondary" size="sm" (pressed)="onCopy()">
+          {{ copied() ? i18n.t('common', 'copied') : i18n.t('common', 'copy') }}
+        </app-button>
+        @if (qrDataUrl(); as qr) {
+          <a
+            [href]="qr"
+            [download]="downloadName()"
+            class="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-text shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+          >
+            {{ i18n.t('common', 'downloadQr') }}
+          </a>
+        }
+      </div>
+    </div>
+    <ng-content />
+  </div>
+</div>
+
+@if (zoomed()) {
+  <app-modal [open]="true" [title]="label()" (closed)="zoomed.set(false)">
+    <div class="flex flex-col items-center gap-4 py-2">
+      @if (qrDataUrl(); as qr) {
+        <img [src]="qr" alt="" class="size-72" />
+      }
+      <p class="font-mono text-sm text-text">{{ link() }}</p>
+      @if (qrDataUrl(); as qr) {
+        <a
+          [href]="qr"
+          [download]="downloadName()"
+          class="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-4 text-sm font-medium text-text shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+        >
+          {{ i18n.t('common', 'downloadQr') }}
+        </a>
+      }
+    </div>
+  </app-modal>
+}
