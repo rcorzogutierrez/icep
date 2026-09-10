@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
-import type { UserProfile } from './users.model';
+import type { UserProfile, UserRole } from './users.model';
 
 /**
  * Listado en vivo de todos los usuarios (users/*), para el panel de admin.
@@ -71,6 +71,17 @@ export class UsersService {
   private setStatus(uid: string, status: 'approved' | 'rejected') {
     return updateDoc(doc(this.firestore, 'users', uid), {
       status,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * No toca `enrolledSubjectIds`: si un estudiante pasa a profesor ese
+   * campo queda huérfano pero inofensivo (nada lo lee para un no-estudiante).
+   */
+  updateRole(uid: string, role: UserRole) {
+    return updateDoc(doc(this.firestore, 'users', uid), {
+      role,
       updatedAt: serverTimestamp(),
     });
   }

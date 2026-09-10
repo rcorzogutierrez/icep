@@ -1,10 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import type { UserProfile, UserRole, UserStatus } from '../../../core/users/users.model';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
+import { Select, type SelectOption } from '../../../shared/components/select/select';
 
 /** Chip de estado relleno (fondo + texto), mismo patrón que el resto de la app. */
 const STATUS_CLASS: Record<UserStatus, string> = {
@@ -17,7 +18,7 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [Button, DatePipe],
+  imports: [Button, Select, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-users.html',
 })
@@ -30,6 +31,13 @@ export class AdminUsers {
 
   protected readonly pendingActionUid = signal<string | null>(null);
   protected readonly removingUid = signal<string | null>(null);
+  protected readonly changingRoleUid = signal<string | null>(null);
+
+  protected readonly roleOptions = computed<SelectOption<UserRole>[]>(() => [
+    { value: 'student', label: this.i18n.t('adminUsers', 'roleStudent') },
+    { value: 'teacher', label: this.i18n.t('adminUsers', 'roleTeacher') },
+    { value: 'admin', label: this.i18n.t('adminUsers', 'roleAdmin') },
+  ]);
 
   protected roleLabel(role: UserRole): string {
     switch (role) {
@@ -72,6 +80,22 @@ export class AdminUsers {
       await this.usersService.approve(user.uid);
     } finally {
       this.pendingActionUid.set(null);
+    }
+  }
+
+  /**
+   * Sin guard explícito contra auto-degradarse: el botón/select ya está
+   * oculto para la propia fila (ver isSelf), mismo criterio que "Borrar".
+   */
+  protected async onChangeRole(user: UserProfile, role: UserRole | undefined): Promise<void> {
+    if (!role || role === user.role) {
+      return;
+    }
+    this.changingRoleUid.set(user.uid);
+    try {
+      await this.usersService.updateRole(user.uid, role);
+    } finally {
+      this.changingRoleUid.set(null);
     }
   }
 

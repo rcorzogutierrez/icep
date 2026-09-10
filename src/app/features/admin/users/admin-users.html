@@ -1,4 +1,4 @@
-<div class="mx-auto flex max-w-4xl flex-col gap-6">
+<div class="mx-auto flex max-w-5xl flex-col gap-6">
   <header>
     <h1 class="text-2xl font-bold tracking-tight text-text">{{ i18n.t('adminUsers', 'title') }}</h1>
     <p class="text-sm text-text-muted">{{ i18n.t('adminUsers', 'subtitle') }}</p>
@@ -38,7 +38,19 @@
                 —
               }
             </td>
-            <td class="px-4 py-3 text-text-muted">{{ roleLabel(user.role) }}</td>
+            <td class="px-4 py-3">
+              @if (isSelf(user)) {
+                <span class="text-text-muted">{{ roleLabel(user.role) }}</span>
+              } @else {
+                <app-select
+                  class="block w-36"
+                  [options]="roleOptions()"
+                  [value]="user.role"
+                  [disabled]="changingRoleUid() === user.uid"
+                  (valueChange)="onChangeRole(user, $event)"
+                />
+              }
+            </td>
             <td class="px-4 py-3">
               <span
                 class="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
@@ -51,7 +63,7 @@
               <div class="flex flex-wrap gap-2">
                 @if (user.status === 'approved') {
                   <app-button
-                    variant="danger"
+                    variant="warning"
                     size="sm"
                     [loading]="pendingActionUid() === user.uid"
                     (pressed)="onRevoke(user)"
@@ -60,6 +72,7 @@
                   </app-button>
                 } @else if (user.status === 'rejected') {
                   <app-button
+                    variant="success"
                     size="sm"
                     [loading]="pendingActionUid() === user.uid"
                     (pressed)="onReinstate(user)"

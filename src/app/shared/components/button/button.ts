@@ -1,9 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { IconLoaderCircle } from '../../icons/icons';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
+/**
+ * `warning`/`success` reutilizan los mismos tokens de estado que ya usan
+ * los chips (aprobado/pendiente/rechazado) y las bandas de nota — no son
+ * colores nuevos. Pensados para diferenciar severidad entre acciones
+ * parecidas (ej. revocar acceso, reversible, vs. borrar, que no lo es) sin
+ * que todo lo "peligroso" se vea con el mismo rojo agresivo.
+ */
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
     'bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-500',
@@ -11,6 +18,10 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
     'bg-surface text-text border border-border shadow-sm hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-brand-500',
   danger:
     'bg-status-expired text-white shadow-sm hover:brightness-90 active:brightness-75 focus-visible:ring-status-expired',
+  warning:
+    'bg-status-paused text-white shadow-sm hover:brightness-90 active:brightness-75 focus-visible:ring-status-paused',
+  success:
+    'bg-status-active text-white shadow-sm hover:brightness-90 active:brightness-75 focus-visible:ring-status-active',
   ghost:
     'bg-transparent text-text hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-brand-500',
 };
