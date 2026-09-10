@@ -9,6 +9,7 @@ import { GradesService } from '../../core/grades/grades.service';
 import type { GradeCategory } from '../../core/grades/grades.model';
 import { computeCategoryPercent, computeFinalGrade } from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { CoursesService } from '../../core/courses/courses.service';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
 import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import { SubjectAssignmentsService } from '../../core/subjects/subject-assignments.service';
@@ -39,6 +40,8 @@ interface StudentRow {
   uid: string;
   displayName: string;
   email: string;
+  /** Cursos en los que está el estudiante (puede ser más de uno: ver CourseStudent). */
+  courseNames: string[];
   subjects: SubjectProgress[];
 }
 
@@ -89,6 +92,7 @@ export class MyStudents {
   private readonly authService = inject(AuthService);
   private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
   protected readonly subjectsService = inject(SubjectsService);
+  private readonly coursesService = inject(CoursesService);
   private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly courseStudentsService = inject(CourseStudentsService);
   protected readonly usersService = inject(UsersService);
@@ -111,6 +115,7 @@ export class MyStudents {
     () =>
       this.subjectAssignmentsService.loading() ||
       this.subjectsService.loading() ||
+      this.coursesService.loading() ||
       this.courseSubjectsService.loading() ||
       this.courseStudentsService.loading() ||
       this.usersService.loading() ||
@@ -146,6 +151,9 @@ export class MyStudents {
   /** Todos los estudiantes del profesor, con su progreso en cada materia compartida. */
   protected readonly studentRows = computed<StudentRow[]>(() => {
     const rowsByUid = new Map<string, StudentRow>();
+    // Un estudiante puede estar en más de un curso a la vez (ver CourseStudent);
+    // se acumula acá para no perderlo al reducir a studentUids más abajo.
+    const courseIdsByUid = new Map<string, Set<string>>();
 
     for (const subjectId of this.mySubjectIds()) {
       const subject = this.subjectsService.subjects().find((s) => s.id === subjectId);
@@ -154,9 +162,14 @@ export class MyStudents {
       }
 
       const courseIds = this.courseSubjectsService.forSubject(subjectId).map((cs) => cs.courseId);
-      const studentUids = new Set(
-        this.courseStudentsService.forCourseIds(courseIds).map((cs) => cs.studentUid),
-      );
+      const courseStudents = this.courseStudentsService.forCourseIds(courseIds);
+      const studentUids = new Set(courseStudents.map((cs) => cs.studentUid));
+
+      for (const cs of courseStudents) {
+        const ids = courseIdsByUid.get(cs.studentUid) ?? new Set<string>();
+        ids.add(cs.courseId);
+        courseIdsByUid.set(cs.studentUid, ids);
+      }
 
       const categories = this.gradeCategoriesService.forSubject(subjectId);
       const assignments = this.assignmentsService.forSubject(subjectId);
@@ -177,6 +190,7 @@ export class MyStudents {
           uid: studentUid,
           displayName: user.displayName ?? user.email ?? studentUid,
           email: user.email ?? '',
+          courseNames: [],
           subjects: [],
         };
         row.subjects.push({
@@ -187,6 +201,13 @@ export class MyStudents {
         });
         rowsByUid.set(studentUid, row);
       }
+    }
+
+    const courseNameById = new Map(this.coursesService.courses().map((c) => [c.id, c.name]));
+    for (const row of rowsByUid.values()) {
+      row.courseNames = [...(courseIdsByUid.get(row.uid) ?? [])]
+        .map((id) => courseNameById.get(id) ?? id)
+        .sort((a, b) => a.localeCompare(b));
     }
 
     return [...rowsByUid.values()].sort((a, b) => a.displayName.localeCompare(b.displayName));

@@ -45,6 +45,7 @@
       <thead class="border-b border-border bg-slate-50 text-text-muted">
         <tr>
           <th class="px-4 py-2 font-medium">{{ i18n.t('myStudents', 'colStudent') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('myStudents', 'colCourse') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('myStudents', 'colProgress') }}</th>
           <th class="px-4 py-2 font-medium"></th>
         </tr>
@@ -63,6 +64,19 @@
                   <div class="truncate font-medium text-text">{{ row.displayName }}</div>
                   <div class="truncate text-xs text-text-muted">{{ row.email }}</div>
                 </div>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-1">
+                @for (courseName of row.courseNames; track courseName) {
+                  <span
+                    class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-text-muted"
+                  >
+                    {{ courseName }}
+                  </span>
+                } @empty {
+                  <span class="text-xs text-text-muted">—</span>
+                }
               </div>
             </td>
             <td class="px-4 py-3">
@@ -102,7 +116,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="3" class="px-4 py-6 text-center text-text-muted">
+            <td colspan="4" class="px-4 py-6 text-center text-text-muted">
               @if (loading()) {
                 …
               } @else {
