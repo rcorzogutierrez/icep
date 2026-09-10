@@ -18,24 +18,11 @@ import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import type { Locale } from '../i18n/translations';
 import { UserProfileService } from '../users/user-profile.service';
+import { generateInvitationCode } from './invitation-code';
 import type { Invitation, InvitableRole } from './invitations.model';
-
-/** Alfabeto sin caracteres ambiguos (sin 0/O, 1/I/L) para que el código se pueda leer/tipear a mano. */
-const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const CODE_LENGTH = 8;
 
 /** Vencimiento de una invitación pendiente: 7 días desde su creación (ver B-04 del audit). */
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-function generateCode(): string {
-  const randomValues = new Uint32Array(CODE_LENGTH);
-  crypto.getRandomValues(randomValues);
-  let code = '';
-  for (let i = 0; i < CODE_LENGTH; i++) {
-    code += CODE_ALPHABET[randomValues[i] % CODE_ALPHABET.length];
-  }
-  return code;
-}
 
 @Injectable({ providedIn: 'root' })
 export class InvitationsService {
@@ -99,7 +86,7 @@ export class InvitationsService {
       throw new Error('No hay sesión activa.');
     }
 
-    const code = generateCode();
+    const code = generateInvitationCode();
     await setDoc(doc(this.firestore, 'invitations', code), {
       code,
       email: email.trim().toLowerCase(),

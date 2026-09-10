@@ -3,9 +3,7 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "schematicCollections": [
-      "angular-eslint"
-    ],
+    "schematicCollections": ["angular-eslint"],
     "analytics": "5cd1bed0-9fb2-4caa-abc0-a96ce6a2528f"
   },
   "newProjectRoot": "projects",
@@ -28,7 +26,8 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": ["src/styles.css"],
+            "allowedCommonJsDependencies": ["qrcode"]
           },
           "configurations": {
             "production": {

@@ -90,15 +90,91 @@
         </section>
       }
       @case ('students') {
-        <section class="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-          <app-transfer-list
-            [availableItems]="availableStudentOptions()"
-            [selectedItems]="selectedStudentOptions()"
-            [availableLabel]="i18n.t('adminCourses', 'available')"
-            [selectedLabel]="i18n.t('adminCourses', 'inCourse')"
-            (add)="onAddStudents($event)"
-            (remove)="onRemoveStudents($event)"
-          />
+        <section class="flex flex-col gap-4">
+          <div class="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="text-sm font-semibold text-text">
+                  {{ i18n.t('adminCourses', 'inviteCardTitle') }}
+                </h3>
+                <p class="mt-0.5 text-sm text-text-muted">
+                  {{ i18n.t('adminCourses', 'inviteCardSubtitle') }}
+                </p>
+              </div>
+              @if (!activeCourseInvitation()) {
+                <app-button
+                  size="sm"
+                  [loading]="generatingInvitation()"
+                  (pressed)="onGenerateInvitation()"
+                >
+                  <svg lucidePlus [size]="14" aria-hidden="true"></svg>
+                  {{ i18n.t('adminCourses', 'generateInvite') }}
+                </app-button>
+              }
+            </div>
+
+            @if (activeCourseInvitation(); as invitation) {
+              <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
+                @if (qrDataUrl(); as qr) {
+                  <img
+                    [src]="qr"
+                    alt=""
+                    class="size-36 shrink-0 rounded-xl border border-border p-1"
+                  />
+                }
+                <div class="flex min-w-0 flex-1 flex-col gap-3">
+                  <div
+                    class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-slate-50 p-3"
+                  >
+                    <div class="min-w-0">
+                      <p class="truncate font-mono text-sm text-text">
+                        {{ inviteLink(invitation.code) }}
+                      </p>
+                      <p class="text-xs text-text-muted">
+                        {{ invitation.redemptionCount }}
+                        {{ i18n.t('adminCourses', 'inviteRedemptionsLabel') }}
+                        · {{ i18n.t('adminCourses', 'inviteExpiresOn') }}
+                        {{ invitation.expiresAt.toDate() | date: 'mediumDate' }}
+                      </p>
+                    </div>
+                    <app-button
+                      variant="secondary"
+                      size="sm"
+                      (pressed)="onCopyInviteLink(invitation.code)"
+                    >
+                      {{
+                        copiedInviteLink() ? i18n.t('common', 'copied') : i18n.t('common', 'copy')
+                      }}
+                    </app-button>
+                  </div>
+                  <app-button
+                    variant="warning"
+                    size="sm"
+                    class="w-fit"
+                    [loading]="revokingInvitationCode() === invitation.code"
+                    (pressed)="onRevokeInvitation(invitation)"
+                  >
+                    {{ i18n.t('adminCourses', 'revokeInvite') }}
+                  </app-button>
+                </div>
+              </div>
+            } @else {
+              <p class="mt-4 text-sm text-text-muted">
+                {{ i18n.t('adminCourses', 'inviteNoActive') }}
+              </p>
+            }
+          </div>
+
+          <div class="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <app-transfer-list
+              [availableItems]="availableStudentOptions()"
+              [selectedItems]="selectedStudentOptions()"
+              [availableLabel]="i18n.t('adminCourses', 'available')"
+              [selectedLabel]="i18n.t('adminCourses', 'inCourse')"
+              (add)="onAddStudents($event)"
+              (remove)="onRemoveStudents($event)"
+            />
+          </div>
         </section>
       }
       @case ('teachers') {

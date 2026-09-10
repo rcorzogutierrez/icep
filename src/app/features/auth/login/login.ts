@@ -3,6 +3,7 @@ import { email, form, minLength, required, schema, submit } from '@angular/forms
 import { Router } from '@angular/router';
 import type { User } from 'firebase/auth';
 import { AuthService } from '../../../core/auth/auth.service';
+import { CourseInvitationsService } from '../../../core/invitations/course-invitations.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { InvitationsService } from '../../../core/invitations/invitations.service';
 import { UserProfileService } from '../../../core/users/user-profile.service';
@@ -35,6 +36,7 @@ export class Login {
   private readonly auth = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
   private readonly invitationsService = inject(InvitationsService);
+  private readonly courseInvitationsService = inject(CourseInvitationsService);
   private readonly router = inject(Router);
   protected readonly i18n = inject(I18nService);
 
@@ -138,11 +140,20 @@ export class Login {
       return;
     }
 
-    const redeemed = await this.invitationsService.redeemAndCreateProfile(
-      inviteCode,
-      user,
-      this.i18n.locale(),
-    );
+    // Primero la invitación individual (atada a email, un solo uso); si no
+    // aplica, el código puede ser uno de curso (multi-uso, sin email — ver
+    // CourseInvitationsService).
+    const redeemed =
+      (await this.invitationsService.redeemAndCreateProfile(
+        inviteCode,
+        user,
+        this.i18n.locale(),
+      )) ||
+      (await this.courseInvitationsService.redeemAndCreateProfile(
+        inviteCode,
+        user,
+        this.i18n.locale(),
+      ));
     await this.router.navigateByUrl(redeemed ? '/dashboard' : '/no-invitation');
   }
 

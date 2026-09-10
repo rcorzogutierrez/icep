@@ -15,9 +15,22 @@ service cloud.firestore {
     }
 
     // Invitaciones creadas antes de que existiera "expiresAt" no lo tienen
-    // (.get con default null) y se tratan como sin vencimiento.
+    // (.get con default null) y se tratan como sin vencimiento. Sirve tanto
+    // para invitations/{code} como para courseInvitations/{code} (mismo
+    // campo, mismo significado).
     function isInvitationExpired(data) {
       return data.get('expiresAt', null) != null && data.get('expiresAt', null) < request.time;
+    }
+
+    // Alta propia (self-serve) vía código de curso: ¿el invitationCode del
+    // PERFIL de `uid` (ya creado, ver users/{userId} más abajo) apunta a un
+    // código de curso activo y vigente para justo `courseId`? Evita que un
+    // estudiante recién dado de alta por un código de curso A se matricule
+    // a mano en un curso B ajeno con el mismo mecanismo.
+    function isActiveCourseInvitationFor(courseId, uid) {
+      let code = get(/databases/$(database)/documents/users/$(uid)).data.invitationCode;
+      let inv = get(/databases/$(database)/documents/courseInvitations/$(code)).data;
+      return inv.status == 'active' && inv.courseId == courseId && !isInvitationExpired(inv);
     }
 
     // users/{uid}: perfil de acceso. El registro es SOLO por invitación: el
@@ -35,6 +48,19 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationCode)).data.usedByUid == request.auth.uid
         && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationCode)).data.role == request.resource.data.role
         && request.resource.data.enrolledSubjectIds == get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationCode)).data.subjectIds;
+
+      // Alta vía código de curso (ver courseInvitations/{code} más abajo):
+      // multi-uso y sin email, por eso no hay un "usedByUid" que chequear
+      // acá — el código en sí, activo y vigente, es la autorización. Rol
+      // siempre "student", sin materias sueltas (las da el curso al
+      // matricularse, ver courseStudents).
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.status == 'approved'
+        && request.resource.data.role == 'student'
+        && request.resource.data.invitationCode is string
+        && request.resource.data.enrolledSubjectIds == []
+        && get(/databases/$(database)/documents/courseInvitations/$(request.resource.data.invitationCode)).data.status == 'active'
+        && !isInvitationExpired(get(/databases/$(database)/documents/courseInvitations/$(request.resource.data.invitationCode)).data);
 
       allow update: if request.auth != null && isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'role', 'enrolledSubjectIds', 'updatedAt']);
@@ -100,6 +126,47 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email']);
 
       // Borrar del historial: quien la creó, o un admin (cualquier estado).
+      allow delete: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid);
+    }
+
+    // courseInvitations/{code}: código de invitación multi-uso para
+    // sumarse a UN curso como estudiante. A diferencia de invitations/{code}
+    // NO está atado a un email — cualquiera con el código/link se puede
+    // unir; es deliberado (mismo modelo que un código de clase de Google
+    // Classroom). El código en sí (8 caracteres al azar) es el secreto, por
+    // eso "get" es abierto a cualquier autenticado (hace falta para
+    // canjearlo sin ser todavía staff) — pero "list" sigue restringido a
+    // staff para no poder enumerar todos los códigos existentes.
+    match /courseInvitations/{code} {
+      allow get: if request.auth != null;
+      allow list: if request.auth != null && (isAdmin() || isTeacher());
+
+      allow create: if request.auth != null && (isAdmin() || isTeacher())
+        && request.resource.data.status == 'active'
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.courseId is string
+        && request.resource.data.redemptionCount == 0
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt < request.time + duration.value(30, 'd');
+
+      // Canjear: cualquier autenticado puede sumar +1 a redemptionCount —
+      // sin chequeo de email, el código mismo es la autorización. El alta
+      // real (perfil + matrícula) pasa por users/{uid} y courseStudents/{id}
+      // más arriba; esto solo lleva la cuenta de cuántos se unieron.
+      allow update: if request.auth != null
+        && resource.data.status == 'active'
+        && !isInvitationExpired(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['redemptionCount'])
+        && request.resource.data.redemptionCount == resource.data.redemptionCount + 1;
+
+      // Revocar: quien lo creó, o un admin.
+      allow update: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid)
+        && resource.data.status == 'active'
+        && request.resource.data.status == 'revoked'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+
+      // Borrar del historial: quien lo creó, o un admin (cualquier estado).
       allow delete: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid);
     }
 
@@ -206,6 +273,15 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if (isAdmin() || isTeacher())
         && id == request.resource.data.courseId + '_' + request.resource.data.studentUid;
+
+      // Alta propia vía código de curso: el estudiante recién creado (ver
+      // users/{userId} arriba) se matricula a sí mismo, siempre que su
+      // invitationCode apunte a un código activo y vigente de ESTE curso.
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.studentUid
+        && id == request.resource.data.courseId + '_' + request.resource.data.studentUid
+        && isActiveCourseInvitationFor(request.resource.data.courseId, request.auth.uid);
+
       allow delete: if isAdmin() || isTeacher();
     }
 

@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
+import { toDataURL } from 'qrcode';
+import { CourseInvitationsService } from '../../../core/invitations/course-invitations.service';
+import type { CourseInvitation } from '../../../core/invitations/course-invitations.model';
 import { CourseStudentsService } from '../../../core/courses/course-students.service';
 import { CourseSubjectTeachersService } from '../../../core/courses/course-subject-teachers.service';
 import { CourseSubjectsService } from '../../../core/courses/course-subjects.service';
@@ -9,9 +21,10 @@ import type { CourseSubjectTeacher } from '../../../core/courses/courses.model';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import { UsersService } from '../../../core/users/users.service';
+import { Button } from '../../../shared/components/button/button';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
 import { TransferList } from '../../../shared/components/transfer-list/transfer-list';
-import { IconArrowLeft, IconX } from '../../../shared/icons/icons';
+import { IconArrowLeft, IconPlus, IconX } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
 
 type Tab = 'subjects' | 'students' | 'teachers' | 'assignments';
@@ -24,7 +37,7 @@ type Tab = 'subjects' | 'students' | 'teachers' | 'assignments';
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [TransferList, Select, IconArrowLeft, IconX],
+  imports: [TransferList, Select, Button, DatePipe, IconArrowLeft, IconPlus, IconX],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './course-detail.html',
 })
@@ -36,6 +49,7 @@ export class CourseDetail {
   protected readonly courseStudentsService = inject(CourseStudentsService);
   protected readonly courseTeachersService = inject(CourseTeachersService);
   protected readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
+  protected readonly courseInvitationsService = inject(CourseInvitationsService);
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
@@ -47,6 +61,69 @@ export class CourseDetail {
   protected readonly course = computed(() =>
     this.coursesService.courses().find((c) => c.id === this.courseId()),
   );
+
+  protected readonly generatingInvitation = signal(false);
+  protected readonly revokingInvitationCode = signal<string | null>(null);
+  protected readonly copiedInviteLink = signal(false);
+  protected readonly qrDataUrl = signal<string | null>(null);
+
+  /** El código de curso vigente (activo y no vencido), si hay uno. Puede haber revocados/vencidos en el historial, no se muestran acá. */
+  protected readonly activeCourseInvitation = computed<CourseInvitation | undefined>(() =>
+    this.courseInvitationsService
+      .forCourse(this.courseId())
+      .find((inv) => inv.status === 'active' && inv.expiresAt.toMillis() > Date.now()),
+  );
+
+  constructor() {
+    // El QR se genera de forma asíncrona (no se puede hacer dentro de un
+    // computed): un effect lo recalcula cada vez que cambia el código activo.
+    effect(() => {
+      const invitation = this.activeCourseInvitation();
+      if (!invitation) {
+        this.qrDataUrl.set(null);
+        return;
+      }
+      toDataURL(this.inviteLink(invitation.code), { width: 220, margin: 1 })
+        .then((url) => this.qrDataUrl.set(url))
+        .catch(() => this.qrDataUrl.set(null));
+    });
+  }
+
+  protected inviteLink(code: string): string {
+    return `${location.origin}/invite/${code}`;
+  }
+
+  protected async onGenerateInvitation(): Promise<void> {
+    const course = this.course();
+    if (!course) {
+      return;
+    }
+    this.generatingInvitation.set(true);
+    try {
+      await this.courseInvitationsService.create(course.id, course.name);
+    } catch {
+      this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
+    } finally {
+      this.generatingInvitation.set(false);
+    }
+  }
+
+  protected async onRevokeInvitation(invitation: CourseInvitation): Promise<void> {
+    this.revokingInvitationCode.set(invitation.code);
+    try {
+      await this.courseInvitationsService.revoke(invitation.code);
+    } catch {
+      this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
+    } finally {
+      this.revokingInvitationCode.set(null);
+    }
+  }
+
+  protected async onCopyInviteLink(code: string): Promise<void> {
+    await navigator.clipboard.writeText(this.inviteLink(code));
+    this.copiedInviteLink.set(true);
+    setTimeout(() => this.copiedInviteLink.set(false), 2000);
+  }
 
   private readonly students = computed(() =>
     this.usersService.users().filter((user) => user.role === 'student'),

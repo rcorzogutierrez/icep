@@ -202,6 +202,14 @@ export const translations = {
       updated: 'Curso actualizado.',
       deleted: 'Curso eliminado.',
       errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
+      inviteCardTitle: 'Código de invitación al curso',
+      inviteCardSubtitle:
+        'Cualquiera con este código, link o QR se puede sumar como estudiante — sin aprobar uno por uno.',
+      generateInvite: 'Generar código',
+      revokeInvite: 'Revocar',
+      inviteRedemptionsLabel: 'se unieron con este código',
+      inviteExpiresOn: 'Vence el',
+      inviteNoActive: 'Todavía no hay un código activo para este curso.',
     },
     gradebook: {
       title: 'Calificaciones',
@@ -498,6 +506,14 @@ export const translations = {
       updated: 'Course updated.',
       deleted: 'Course deleted.',
       errorGeneric: "We couldn't complete the action. Please try again.",
+      inviteCardTitle: 'Course invite code',
+      inviteCardSubtitle:
+        'Anyone with this code, link, or QR can join as a student — no approving one by one.',
+      generateInvite: 'Generate code',
+      revokeInvite: 'Revoke',
+      inviteRedemptionsLabel: 'joined with this code',
+      inviteExpiresOn: 'Expires on',
+      inviteNoActive: "There's no active code for this course yet.",
     },
     gradebook: {
       title: 'Grades',
