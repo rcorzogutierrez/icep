@@ -12,6 +12,8 @@ import type { Course } from '../../../core/courses/courses.model';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { Button } from '../../../shared/components/button/button';
 import { InviteCodeCard } from '../../../shared/components/invite-code-card/invite-code-card';
+import { Page } from '../../../shared/layout/page/page';
+import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import {
   IconArrowRight,
   IconBookOpen,
@@ -41,6 +43,8 @@ function parseLocalDate(dateStr: string): Date {
     Button,
     DatePipe,
     InviteCodeCard,
+    Page,
+    PageHeader,
     IconArrowRight,
     IconBookOpen,
     IconGraduationCap,

@@ -6,6 +6,8 @@ import type { UserProfile, UserRole, UserStatus } from '../../../core/users/user
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
+import { Page } from '../../../shared/layout/page/page';
+import { PageHeader } from '../../../shared/layout/page-header/page-header';
 
 /** Chip de estado relleno (fondo + texto), mismo patrón que el resto de la app. */
 const STATUS_CLASS: Record<UserStatus, string> = {
@@ -18,7 +20,7 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [Button, Select, DatePipe],
+  imports: [Button, Select, DatePipe, Page, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-users.html',
 })

@@ -16,7 +16,9 @@ import { Button } from '../../../shared/components/button/button';
 import { InviteCodeCard } from '../../../shared/components/invite-code-card/invite-code-card';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
 import { TransferList } from '../../../shared/components/transfer-list/transfer-list';
-import { IconArrowLeft, IconPlus, IconX } from '../../../shared/icons/icons';
+import { Page } from '../../../shared/layout/page/page';
+import { PageHeader } from '../../../shared/layout/page-header/page-header';
+import { IconPlus, IconX } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
 
 type Tab = 'subjects' | 'students' | 'teachers' | 'assignments';
@@ -29,7 +31,17 @@ type Tab = 'subjects' | 'students' | 'teachers' | 'assignments';
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [TransferList, Select, Button, InviteCodeCard, DatePipe, IconArrowLeft, IconPlus, IconX],
+  imports: [
+    TransferList,
+    Select,
+    Button,
+    InviteCodeCard,
+    Page,
+    PageHeader,
+    DatePipe,
+    IconPlus,
+    IconX,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './course-detail.html',
 })

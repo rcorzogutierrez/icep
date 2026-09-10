@@ -1,0 +1,18 @@
+<header class="flex flex-col gap-1">
+  @if (backLabel(); as label) {
+    <button
+      type="button"
+      class="inline-flex items-center gap-1 self-start text-sm text-brand-700 hover:text-brand-800 hover:underline"
+      (click)="back.emit()"
+    >
+      <svg lucideArrowLeft [size]="14" aria-hidden="true"></svg>
+      {{ label }}
+    </button>
+  }
+  <h1 class="text-2xl font-bold tracking-tight text-text">
+    <ng-content select="[pageTitle]" />
+  </h1>
+  @if (subtitle(); as sub) {
+    <p class="text-sm text-text-muted">{{ sub }}</p>
+  }
+</header>

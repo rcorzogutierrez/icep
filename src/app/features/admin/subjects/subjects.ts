@@ -4,13 +4,15 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import type { Subject } from '../../../core/subjects/subjects.model';
 import { Button } from '../../../shared/components/button/button';
+import { Page } from '../../../shared/layout/page/page';
+import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import { ToastService } from '../../../shared/toast/toast.service';
 
 /** Panel de admin: crear/editar materias. Quién las dicta se gestiona desde Cursos, no acá. */
 @Component({
   selector: 'app-admin-subjects',
   standalone: true,
-  imports: [Button],
+  imports: [Button, Page, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './subjects.html',
 })

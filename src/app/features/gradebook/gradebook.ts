@@ -18,6 +18,8 @@ import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
+import { Page } from '../../shared/layout/page/page';
+import { PageHeader } from '../../shared/layout/page-header/page-header';
 import { IconChevronDown, IconPlus } from '../../shared/icons/icons';
 import { ToastService } from '../../shared/toast/toast.service';
 
@@ -25,7 +27,17 @@ import { ToastService } from '../../shared/toast/toast.service';
 @Component({
   selector: 'app-gradebook',
   standalone: true,
-  imports: [Button, Select, RouterLink, IconChevronDown, IconPlus, DecimalPipe, DatePipe],
+  imports: [
+    Button,
+    Select,
+    RouterLink,
+    Page,
+    PageHeader,
+    IconChevronDown,
+    IconPlus,
+    DecimalPipe,
+    DatePipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gradebook.html',
 })

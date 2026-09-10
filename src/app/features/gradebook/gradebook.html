@@ -1,21 +1,17 @@
-<div class="mx-auto flex max-w-5xl flex-col gap-6">
-  <header class="flex flex-col gap-1">
-    <button
-      type="button"
-      class="self-start text-sm text-brand-700 hover:underline"
-      (click)="goBack()"
-    >
-      ← {{ i18n.t('gradebook', 'back') }}
-    </button>
-    <h1 class="text-2xl font-bold tracking-tight text-text">
+<app-page>
+  <app-page-header
+    [subtitle]="i18n.t('gradebook', 'subtitle')"
+    [backLabel]="i18n.t('gradebook', 'back')"
+    (back)="goBack()"
+  >
+    <span pageTitle>
       {{ i18n.t('gradebook', 'title') }}
       @if (subject(); as subject) {
         <span class="font-mono text-text-muted">{{ subject.code }}</span>
         · {{ subject.name }}
       }
-    </h1>
-    <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'subtitle') }}</p>
-  </header>
+    </span>
+  </app-page-header>
 
   <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
     <button
@@ -569,4 +565,4 @@
       </table>
     </div>
   </section>
-</div>
+</app-page>

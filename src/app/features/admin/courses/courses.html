@@ -1,10 +1,7 @@
-<div class="mx-auto flex max-w-4xl flex-col gap-6">
-  <header>
-    <h1 class="text-2xl font-bold tracking-tight text-text">
-      {{ i18n.t('adminCourses', 'title') }}
-    </h1>
-    <p class="text-sm text-text-muted">{{ i18n.t('adminCourses', 'subtitle') }}</p>
-  </header>
+<app-page>
+  <app-page-header [subtitle]="i18n.t('adminCourses', 'subtitle')">
+    <span pageTitle>{{ i18n.t('adminCourses', 'title') }}</span>
+  </app-page-header>
 
   <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
     <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
@@ -232,4 +229,4 @@
       </div>
     }
   </div>
-</div>
+</app-page>

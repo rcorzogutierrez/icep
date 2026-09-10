@@ -6,7 +6,7 @@
 >
   @for (toast of toastService.toasts(); track toast.id) {
     <div
-      class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border bg-surface p-3 shadow-lg"
+      class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border bg-surface p-3 shadow-lg"
       [class.border-status-active]="toast.variant === 'success'"
       [class.border-status-expired]="toast.variant === 'error'"
       [class.border-border]="toast.variant === 'info'"
