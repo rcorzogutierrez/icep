@@ -283,6 +283,8 @@ export class MyCourseDetail {
   }
 
   protected goToGradebook(subjectId: string): void {
-    this.router.navigate(['/subjects', subjectId, 'gradebook']);
+    this.router.navigate(['/subjects', subjectId, 'gradebook'], {
+      queryParams: { courseId: this.courseId() },
+    });
   }
 }

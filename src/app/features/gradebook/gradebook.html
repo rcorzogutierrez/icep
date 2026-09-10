@@ -460,7 +460,22 @@
   </section>
 
   <section class="flex flex-col gap-3">
-    <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'gradesTitle') }}</h2>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'gradesTitle') }}</h2>
+      @if (course(); as c) {
+        <p class="text-xs text-text-muted">
+          {{ i18n.t('gradebook', 'filteredByCourse') }}
+          <span class="font-medium text-text">{{ c.name }}</span>
+          ·
+          <a
+            [routerLink]="['/subjects', subjectId(), 'gradebook']"
+            class="text-brand-700 hover:underline"
+          >
+            {{ i18n.t('gradebook', 'viewAllStudents') }}
+          </a>
+        </p>
+      }
+    </div>
     <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
       <table class="w-full text-left text-sm">
         <thead class="border-b border-border bg-slate-50 text-text-muted">

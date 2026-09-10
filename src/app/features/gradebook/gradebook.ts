@@ -1,8 +1,9 @@
 import { DatePipe, DecimalPipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
 import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
+import { CoursesService } from '../../core/courses/courses.service';
 import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
@@ -21,18 +22,28 @@ import { ToastService } from '../../shared/toast/toast.service';
 @Component({
   selector: 'app-gradebook',
   standalone: true,
-  imports: [Button, Select, IconChevronDown, IconPlus, DecimalPipe, DatePipe],
+  imports: [Button, Select, RouterLink, IconChevronDown, IconPlus, DecimalPipe, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gradebook.html',
 })
 export class Gradebook {
   readonly subjectId = input.required<string>();
+  /**
+   * Opcional, vía ?courseId=... (ver MyCourseDetail.goToGradebook): si
+   * viene, acota la grilla al roster de ESE curso en vez de mostrar toda
+   * la materia — evita que un profesor que entró desde "Mis cursos" se
+   * encuentre de golpe con estudiantes de otros cursos que también cursan
+   * la misma materia (las notas siguen siendo por materia, esto es solo
+   * un filtro de vista).
+   */
+  readonly courseId = input<string | undefined>(undefined);
 
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly categoriesService = inject(GradeCategoriesService);
   protected readonly assignmentsService = inject(AssignmentsService);
   protected readonly gradesService = inject(GradesService);
   protected readonly usersService = inject(UsersService);
+  private readonly coursesService = inject(CoursesService);
   private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly courseStudentsService = inject(CourseStudentsService);
   protected readonly i18n = inject(I18nService);
@@ -65,11 +76,23 @@ export class Gradebook {
     this.multiTaskCategories().map((category) => ({ value: category.id, label: category.name })),
   );
 
-  /** El roster sale de los cursos que incluyen esta materia (ver courses.model.ts), no de una lista suelta por estudiante. */
+  /** Curso que acota la vista actual (ver courseId de arriba), si vinimos de uno. */
+  protected readonly course = computed(() => {
+    const id = this.courseId();
+    return id ? this.coursesService.courses().find((c) => c.id === id) : undefined;
+  });
+
+  /**
+   * El roster sale de los cursos que incluyen esta materia (ver
+   * courses.model.ts), no de una lista suelta por estudiante. Con
+   * `courseId` puesto, se acota a ese curso puntual en vez de sumar todos
+   * los que dictan la materia (ver `course` arriba).
+   */
   protected readonly students = computed(() => {
-    const courseIds = this.courseSubjectsService
-      .forSubject(this.subjectId())
-      .map((cs) => cs.courseId);
+    const courseId = this.courseId();
+    const courseIds = courseId
+      ? [courseId]
+      : this.courseSubjectsService.forSubject(this.subjectId()).map((cs) => cs.courseId);
     const studentUids = new Set(
       this.courseStudentsService.forCourseIds(courseIds).map((cs) => cs.studentUid),
     );
