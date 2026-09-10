@@ -62,7 +62,15 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/courseInvitations/$(request.resource.data.invitationCode)).data.status == 'active'
         && !isInvitationExpired(get(/databases/$(database)/documents/courseInvitations/$(request.resource.data.invitationCode)).data);
 
-      allow update: if request.auth != null && isAdmin()
+      // Nunca sobre la propia cuenta (mismo motivo que el "delete" de abajo:
+      // evita que un admin se autodegrade/autorevoque y quede sin poder
+      // administrar el sistema) — el comentario de arriba ya decía "de OTRO
+      // usuario", pero antes nada lo hacía cumplir. "role" además queda
+      // acotado a un valor válido: sin esto, un typo (ej. "Admin" con
+      // mayúscula) corrompe el campo en silencio y esa cuenta deja de
+      // matchear isAdmin()/isTeacher()/isStudent() en todos lados.
+      allow update: if request.auth != null && isAdmin() && request.auth.uid != userId
+        && request.resource.data.role in ['student', 'teacher', 'admin']
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'role', 'enrolledSubjectIds', 'updatedAt']);
 
       allow update: if request.auth != null && request.auth.uid == userId
