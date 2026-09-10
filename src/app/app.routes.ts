@@ -3,6 +3,7 @@ import {
   adminGuard,
   approvedGuard,
   authGuard,
+  courseAccessGuard,
   staffGuard,
   subjectAccessGuard,
 } from './core/auth/auth.guards';
@@ -46,6 +47,19 @@ export const routes: Routes = [
         path: 'my-students',
         canActivate: [staffGuard],
         loadComponent: () => import('./features/my-students/my-students').then((m) => m.MyStudents),
+      },
+      {
+        path: 'my-courses',
+        canActivate: [staffGuard],
+        loadComponent: () => import('./features/my-courses/my-courses').then((m) => m.MyCourses),
+      },
+      {
+        path: 'my-courses/:courseId',
+        canActivate: [staffGuard, courseAccessGuard],
+        loadComponent: () =>
+          import('./features/my-courses/my-course-detail/my-course-detail').then(
+            (m) => m.MyCourseDetail,
+          ),
       },
       {
         path: 'admin/users',

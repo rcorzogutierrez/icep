@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { type CanActivateFn, Router } from '@angular/router';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
 import { waitForSignal } from '../utils/wait-for-signal';
@@ -89,4 +89,41 @@ export const subjectAccessGuard: CanActivateFn = async (route) => {
 
   const assignment = await getDoc(doc(firestore, 'subjectAssignments', `${subjectId}_${uid}`));
   return assignment.exists() || router.parseUrl('/dashboard');
+};
+
+/**
+ * Admin, o el profesor con al menos una materia asignada en `:courseId`
+ * (para /my-courses/:courseId) — mismo criterio que subjectAccessGuard,
+ * pero a nivel de curso: no alcanza con dictar la materia en algún curso,
+ * tiene que ser específicamente en ESTE.
+ */
+export const courseAccessGuard: CanActivateFn = async (route) => {
+  const userProfileService = inject(UserProfileService);
+  const authService = inject(AuthService);
+  const firestore = inject(FIREBASE_FIRESTORE);
+  const router = inject(Router);
+
+  await waitForSignal(userProfileService.loading, (loading) => !loading);
+
+  if (userProfileService.isAdmin()) {
+    return true;
+  }
+  if (!userProfileService.isTeacher()) {
+    return router.parseUrl('/dashboard');
+  }
+
+  const courseId = route.paramMap.get('courseId');
+  const uid = authService.user()?.uid;
+  if (!courseId || !uid) {
+    return router.parseUrl('/dashboard');
+  }
+
+  const assignments = await getDocs(
+    query(
+      collection(firestore, 'courseSubjectTeachers'),
+      where('courseId', '==', courseId),
+      where('teacherId', '==', uid),
+    ),
+  );
+  return !assignments.empty || router.parseUrl('/my-courses');
 };

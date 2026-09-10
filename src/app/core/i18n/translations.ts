@@ -88,6 +88,7 @@ export const translations = {
       manageSection: 'Gestionar',
       coursesLink: 'Cursos',
       myStudentsLink: 'Mis estudiantes',
+      myCoursesLink: 'Mis cursos',
       openMenu: 'Abrir menú',
     },
     adminUsers: {
@@ -246,6 +247,17 @@ export const translations = {
       invalidScore: 'La nota debe ser un número entre 0 y los puntos posibles de la tarea.',
       errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
     },
+    myCourses: {
+      title: 'Mis cursos',
+      subtitle: 'Elegí un curso para revisar a sus estudiantes.',
+      searchPlaceholder: 'Buscar curso...',
+      studentsLabel: 'estudiantes',
+      subjectsLabel: 'materias',
+      empty: 'Todavía no tenés cursos asignados.',
+      backToCourses: 'Volver a Mis cursos',
+      detailSubtitle: 'Estudiantes de este curso, en las materias que dictás acá.',
+      detailEmpty: 'Todavía no hay estudiantes en tus materias de este curso.',
+    },
     myStudents: {
       title: 'Mis estudiantes',
       subtitle: 'Todos tus estudiantes, en todas tus materias.',
@@ -365,6 +377,7 @@ export const translations = {
       manageSection: 'Manage',
       coursesLink: 'Courses',
       myStudentsLink: 'My students',
+      myCoursesLink: 'My courses',
       openMenu: 'Open menu',
     },
     adminUsers: {
@@ -523,6 +536,17 @@ export const translations = {
       noStudents: 'No students enrolled in this subject yet.',
       invalidScore: "The score must be a number between 0 and the assignment's points possible.",
       errorGeneric: "We couldn't complete the action. Please try again.",
+    },
+    myCourses: {
+      title: 'My courses',
+      subtitle: 'Pick a course to review its students.',
+      searchPlaceholder: 'Search course...',
+      studentsLabel: 'students',
+      subjectsLabel: 'subjects',
+      empty: "You don't have any assigned courses yet.",
+      backToCourses: 'Back to My courses',
+      detailSubtitle: "This course's students, in the subjects you teach here.",
+      detailEmpty: "You don't have students in your subjects in this course yet.",
     },
     myStudents: {
       title: 'My students',

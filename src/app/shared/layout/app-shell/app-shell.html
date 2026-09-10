@@ -21,6 +21,15 @@
         <svg lucideGraduationCap [size]="18" aria-hidden="true"></svg>
         {{ i18n.t('shell', 'myStudentsLink') }}
       </a>
+      <a
+        routerLink="/my-courses"
+        routerLinkActive="bg-brand-50 text-brand-700"
+        class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-slate-100 hover:text-text"
+        (click)="mobileNavOpen.set(false)"
+      >
+        <svg lucideLayers [size]="18" aria-hidden="true"></svg>
+        {{ i18n.t('shell', 'myCoursesLink') }}
+      </a>
 
       <p class="mt-4 mb-1 px-3 text-xs font-semibold tracking-wide text-text-muted uppercase">
         {{ i18n.t('shell', 'manageSection') }}

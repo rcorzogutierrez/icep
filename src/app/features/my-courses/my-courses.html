@@ -1,0 +1,59 @@
+<div class="mx-auto flex max-w-5xl flex-col gap-6">
+  <header>
+    <h1 class="text-2xl font-bold tracking-tight text-text">{{ i18n.t('myCourses', 'title') }}</h1>
+    <p class="mt-1 text-sm text-text-muted">{{ i18n.t('myCourses', 'subtitle') }}</p>
+  </header>
+
+  <div class="relative max-w-xs min-w-56">
+    <svg
+      lucideSearch
+      [size]="16"
+      class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+      aria-hidden="true"
+    ></svg>
+    <input
+      type="text"
+      [placeholder]="i18n.t('myCourses', 'searchPlaceholder')"
+      class="h-10 w-full rounded-xl border border-border bg-surface pr-3 pl-9 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    @for (course of filteredRows(); track course.id) {
+      <a
+        [routerLink]="['/my-courses', course.id]"
+        class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm transition-colors hover:border-brand-200 hover:bg-brand-50/30"
+      >
+        <div class="flex items-center justify-between">
+          <span
+            class="flex size-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700"
+          >
+            <svg lucideLayers [size]="18" aria-hidden="true"></svg>
+          </span>
+          <svg lucideChevronRight [size]="16" class="text-text-muted" aria-hidden="true"></svg>
+        </div>
+        <h2 class="font-semibold text-text">{{ course.name }}</h2>
+        <div class="mt-auto flex items-center gap-3 text-xs text-text-muted">
+          <span class="inline-flex items-center gap-1">
+            <svg lucideUsers [size]="14" aria-hidden="true"></svg>
+            {{ course.studentCount }} {{ i18n.t('myCourses', 'studentsLabel') }}
+          </span>
+          <span class="inline-flex items-center gap-1">
+            <svg lucideBookOpen [size]="14" aria-hidden="true"></svg>
+            {{ course.subjectCount }} {{ i18n.t('myCourses', 'subjectsLabel') }}
+          </span>
+        </div>
+      </a>
+    } @empty {
+      <p class="col-span-full py-6 text-center text-sm text-text-muted">
+        @if (loading()) {
+          …
+        } @else {
+          {{ i18n.t('myCourses', 'empty') }}
+        }
+      </p>
+    }
+  </div>
+</div>
