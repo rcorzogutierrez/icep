@@ -1,7 +1,9 @@
 import { DatePipe, DecimalPipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth/auth.service';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
+import { CourseSubjectTeachersService } from '../../core/courses/course-subject-teachers.service';
 import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import { CoursesService } from '../../core/courses/courses.service';
 import type { Assignment } from '../../core/grades/assignments.model';
@@ -12,6 +14,7 @@ import type { GradeCategory } from '../../core/grades/grades.model';
 import { computeFinalGrade } from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { SubjectsService } from '../../core/subjects/subjects.service';
+import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Select, type SelectOption } from '../../shared/components/select/select';
@@ -43,9 +46,12 @@ export class Gradebook {
   protected readonly assignmentsService = inject(AssignmentsService);
   protected readonly gradesService = inject(GradesService);
   protected readonly usersService = inject(UsersService);
+  private readonly authService = inject(AuthService);
+  protected readonly userProfileService = inject(UserProfileService);
   private readonly coursesService = inject(CoursesService);
   private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly courseStudentsService = inject(CourseStudentsService);
+  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly location = inject(Location);
@@ -76,23 +82,56 @@ export class Gradebook {
     this.multiTaskCategories().map((category) => ({ value: category.id, label: category.name })),
   );
 
-  /** Curso que acota la vista actual (ver courseId de arriba), si vinimos de uno. */
+  /**
+   * Curso que acota la vista actual, si vinimos de uno Y es accesible (ver
+   * accessibleCourseIds) — si no, `students` ya cae al set completo
+   * accesible, así que el aviso de "mostrando el curso X" no debe quedar
+   * mostrando un curso que en realidad no está filtrando nada.
+   */
   protected readonly course = computed(() => {
     const id = this.courseId();
-    return id ? this.coursesService.courses().find((c) => c.id === id) : undefined;
+    if (!id || !this.accessibleCourseIds().includes(id)) {
+      return undefined;
+    }
+    return this.coursesService.courses().find((c) => c.id === id);
   });
 
   /**
-   * El roster sale de los cursos que incluyen esta materia (ver
-   * courses.model.ts), no de una lista suelta por estudiante. Con
-   * `courseId` puesto, se acota a ese curso puntual en vez de sumar todos
-   * los que dictan la materia (ver `course` arriba).
+   * Cursos de esta materia que puede ver el usuario logueado: el admin ve
+   * todos (misma materia puede estar en varios cursos); un profesor SOLO
+   * los cursos donde él mismo la dicta — dos profesores pueden dictar la
+   * misma materia en cursos distintos (courseSubjectTeachers permite un
+   * profesor por curso+materia, no uno global), y sin este filtro uno
+   * terminaría viendo — y pudiendo calificar — a los estudiantes del otro.
+   */
+  private readonly accessibleCourseIds = computed(() => {
+    const allCourseIds = this.courseSubjectsService
+      .forSubject(this.subjectId())
+      .map((cs) => cs.courseId);
+    if (this.userProfileService.isAdmin()) {
+      return allCourseIds;
+    }
+    const uid = this.authService.user()?.uid;
+    const myCourseIds = new Set(
+      this.courseSubjectTeachersService
+        .rows()
+        .filter((r) => r.subjectId === this.subjectId() && r.teacherId === uid)
+        .map((r) => r.courseId),
+    );
+    return allCourseIds.filter((id) => myCourseIds.has(id));
+  });
+
+  /**
+   * El roster sale de los cursos accesibles (ver arriba), no de una lista
+   * suelta por estudiante. Con `courseId` puesto se acota a ese curso
+   * puntual — solo si es uno de los accesibles; si no (URL editada a mano
+   * con un curso ajeno), se ignora y se cae al set completo accesible en
+   * vez de filtrar a un curso que no le corresponde.
    */
   protected readonly students = computed(() => {
     const courseId = this.courseId();
-    const courseIds = courseId
-      ? [courseId]
-      : this.courseSubjectsService.forSubject(this.subjectId()).map((cs) => cs.courseId);
+    const accessible = this.accessibleCourseIds();
+    const courseIds = courseId && accessible.includes(courseId) ? [courseId] : accessible;
     const studentUids = new Set(
       this.courseStudentsService.forCourseIds(courseIds).map((cs) => cs.studentUid),
     );

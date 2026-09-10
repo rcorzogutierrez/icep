@@ -471,7 +471,11 @@
             [routerLink]="['/subjects', subjectId(), 'gradebook']"
             class="text-brand-700 hover:underline"
           >
-            {{ i18n.t('gradebook', 'viewAllStudents') }}
+            @if (userProfileService.isAdmin()) {
+              {{ i18n.t('gradebook', 'viewAllStudents') }}
+            } @else {
+              {{ i18n.t('gradebook', 'viewAllMyStudents') }}
+            }
           </a>
         </p>
       }
