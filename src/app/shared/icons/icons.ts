@@ -31,6 +31,7 @@ export {
   LucideMail as IconMail,
   LucideMenu as IconMenu,
   LucidePlus as IconPlus,
+  LucideQrCode as IconQrCode,
   LucideSearch as IconSearch,
   LucideUserPlus as IconUserPlus,
   LucideUsers as IconUsers,

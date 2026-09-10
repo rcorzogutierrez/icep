@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Timestamp } from 'firebase/firestore';
+import type { CourseInvitation } from '../../../core/invitations/course-invitations.model';
 import { CourseInvitationsService } from '../../../core/invitations/course-invitations.service';
 import { CourseStudentsService } from '../../../core/courses/course-students.service';
 import { CourseSubjectsService } from '../../../core/courses/course-subjects.service';
@@ -16,6 +17,7 @@ import {
   IconBookOpen,
   IconGraduationCap,
   IconPlus,
+  IconQrCode,
   IconUsers,
 } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -43,6 +45,7 @@ function parseLocalDate(dateStr: string): Date {
     IconBookOpen,
     IconGraduationCap,
     IconPlus,
+    IconQrCode,
     IconUsers,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,10 +67,31 @@ export class AdminCourses {
   protected readonly creating = signal(false);
   protected readonly removingId = signal<string | null>(null);
 
-  /** Código de invitación del curso recién creado, para mostrarlo ahí mismo (mismo patrón que Invitations.createdCode). */
-  protected readonly createdInvitationCode = signal<string | null>(null);
-  /** Nombre del curso al que pertenece `createdInvitationCode` — si se crean varios seguidos, deja claro cuál es cuál. */
-  protected readonly createdCourseName = signal<string | null>(null);
+  /**
+   * Qué curso muestra el panel de invitación de abajo — no es una "última
+   * creada" efímera: se puede volver a ver el código de CUALQUIER curso
+   * clickeando su botón "Código" en la fila (antes, crear un segundo curso
+   * hacía desaparecer el código del primero sin manera de volver a verlo
+   * sin entrar a Gestionar).
+   */
+  protected readonly selectedCourseId = signal<string | null>(null);
+  protected readonly generatingSelected = signal(false);
+  protected readonly revokingSelectedCode = signal<string | null>(null);
+
+  protected readonly selectedCourse = computed(() =>
+    this.coursesService.courses().find((c) => c.id === this.selectedCourseId()),
+  );
+
+  /** El código vigente (activo y no vencido) del curso seleccionado, si hay uno. */
+  protected readonly selectedInvitation = computed<CourseInvitation | undefined>(() => {
+    const courseId = this.selectedCourseId();
+    if (!courseId) {
+      return undefined;
+    }
+    return this.courseInvitationsService
+      .forCourse(courseId)
+      .find((inv) => inv.status === 'active' && inv.expiresAt.toMillis() > Date.now());
+  });
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly editName = signal('');
@@ -105,8 +129,8 @@ export class AdminCourses {
    * la primera (el curso) falla, no hay nada más que hacer. Si falla la
    * segunda (el código), el curso YA quedó creado — avisar eso puntual en
    * vez de un error genérico que sugiera "no pasó nada, probá de nuevo"
-   * (el código siempre se puede generar después desde Gestionar →
-   * Estudiantes, así que esto no bloquea nada).
+   * (el código siempre se puede generar después desde el botón "Código" de
+   * su fila, así que esto no bloquea nada).
    */
   protected async onCreate(): Promise<void> {
     const start = this.startDate();
@@ -116,8 +140,6 @@ export class AdminCourses {
       return;
     }
     this.creating.set(true);
-    this.createdInvitationCode.set(null);
-    this.createdCourseName.set(null);
 
     let courseId: string;
     try {
@@ -132,14 +154,44 @@ export class AdminCourses {
       return;
     }
 
+    this.selectedCourseId.set(courseId);
     try {
-      const code = await this.courseInvitationsService.create(courseId, name);
-      this.createdInvitationCode.set(code);
-      this.createdCourseName.set(name);
+      await this.courseInvitationsService.create(courseId, name);
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorInviteGeneric'));
     } finally {
       this.creating.set(false);
+    }
+  }
+
+  /** Selecciona este curso en el panel de abajo — el código se resuelve reactivo (selectedInvitation), no hace falta buscarlo acá. */
+  protected onViewInvitation(course: Course): void {
+    this.selectedCourseId.set(course.id);
+  }
+
+  protected async onGenerateForSelected(): Promise<void> {
+    const course = this.selectedCourse();
+    if (!course) {
+      return;
+    }
+    this.generatingSelected.set(true);
+    try {
+      await this.courseInvitationsService.create(course.id, course.name);
+    } catch {
+      this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
+    } finally {
+      this.generatingSelected.set(false);
+    }
+  }
+
+  protected async onRevokeSelected(invitation: CourseInvitation): Promise<void> {
+    this.revokingSelectedCode.set(invitation.code);
+    try {
+      await this.courseInvitationsService.revoke(invitation.code);
+    } catch {
+      this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
+    } finally {
+      this.revokingSelectedCode.set(null);
     }
   }
 

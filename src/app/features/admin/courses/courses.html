@@ -61,14 +61,49 @@
       </app-button>
     </div>
 
-    @if (createdInvitationCode(); as code) {
+    @if (selectedCourse(); as course) {
       <div class="rounded-xl border border-border bg-slate-50 p-4">
-        <app-invite-code-card
-          [code]="code"
-          [label]="i18n.t('adminCourses', 'inviteCardTitle') + ' — ' + createdCourseName()"
-        >
-          <p class="text-xs text-text-muted">{{ i18n.t('adminCourses', 'inviteCardSubtitle') }}</p>
-        </app-invite-code-card>
+        @if (selectedInvitation(); as invitation) {
+          <app-invite-code-card
+            [code]="invitation.code"
+            [label]="i18n.t('adminCourses', 'inviteCardTitle') + ' — ' + course.name"
+          >
+            <p class="text-xs text-text-muted">
+              {{ invitation.redemptionCount }}
+              {{ i18n.t('adminCourses', 'inviteRedemptionsLabel') }} ·
+              {{ i18n.t('adminCourses', 'inviteExpiresOn') }}
+              {{ invitation.expiresAt.toDate() | date: 'mediumDate' }}
+            </p>
+            <app-button
+              variant="warning"
+              size="sm"
+              class="mt-1 w-fit"
+              [loading]="revokingSelectedCode() === invitation.code"
+              (pressed)="onRevokeSelected(invitation)"
+            >
+              {{ i18n.t('adminCourses', 'revokeInvite') }}
+            </app-button>
+          </app-invite-code-card>
+        } @else {
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-text">
+                {{ i18n.t('adminCourses', 'inviteCardTitle') }} — {{ course.name }}
+              </p>
+              <p class="mt-0.5 text-sm text-text-muted">
+                {{ i18n.t('adminCourses', 'inviteNoActive') }}
+              </p>
+            </div>
+            <app-button
+              size="sm"
+              [loading]="generatingSelected()"
+              (pressed)="onGenerateForSelected()"
+            >
+              <svg lucidePlus [size]="14" aria-hidden="true"></svg>
+              {{ i18n.t('adminCourses', 'generateInvite') }}
+            </app-button>
+          </div>
+        }
       </div>
     }
   </section>
@@ -77,6 +112,7 @@
     @for (course of coursesService.courses(); track course.id) {
       <div
         class="flex flex-wrap items-center justify-between gap-4 border-b border-border-soft px-6 py-4 transition-colors last:border-0 hover:bg-slate-50/60"
+        [class.bg-brand-50]="selectedCourseId() === course.id"
       >
         @if (editingId() === course.id) {
           <div class="flex min-w-[220px] flex-1 flex-wrap items-center gap-2">
@@ -152,6 +188,10 @@
             <app-button size="sm" (pressed)="goToDetail(course.id)">
               {{ i18n.t('adminCourses', 'manage') }}
               <svg lucideArrowRight [size]="14" aria-hidden="true"></svg>
+            </app-button>
+            <app-button variant="secondary" size="sm" (pressed)="onViewInvitation(course)">
+              <svg lucideQrCode [size]="14" aria-hidden="true"></svg>
+              {{ i18n.t('adminCourses', 'viewInvite') }}
             </app-button>
             <app-button variant="secondary" size="sm" (pressed)="startEdit(course)">
               {{ i18n.t('adminCourses', 'edit') }}
