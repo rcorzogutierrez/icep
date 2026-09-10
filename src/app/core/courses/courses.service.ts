@@ -1,5 +1,6 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import {
+  Timestamp,
   collection,
   deleteDoc,
   doc,
@@ -71,13 +72,18 @@ export class CoursesService {
     });
   }
 
-  async create(name: string): Promise<string> {
+  async create(name: string, startDate: Date, endDate: Date): Promise<string> {
     const ref = doc(collection(this.firestore, 'courses'));
-    await setDoc(ref, { name: name.trim(), createdAt: serverTimestamp() });
+    await setDoc(ref, {
+      name: name.trim(),
+      startDate: Timestamp.fromDate(startDate),
+      endDate: Timestamp.fromDate(endDate),
+      createdAt: serverTimestamp(),
+    });
     return ref.id;
   }
 
-  update(id: string, fields: Partial<Pick<Course, 'name'>>) {
+  update(id: string, fields: Partial<Pick<Course, 'name' | 'startDate' | 'endDate'>>) {
     return updateDoc(doc(this.firestore, 'courses', id), fields as DocumentData);
   }
 

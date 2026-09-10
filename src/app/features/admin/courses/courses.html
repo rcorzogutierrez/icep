@@ -7,7 +7,7 @@
   </header>
 
   <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-    <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
+    <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
       <div class="flex flex-col gap-1">
         <label for="course-name" class="text-sm font-medium text-text">
           {{ i18n.t('adminCourses', 'nameLabel') }}
@@ -21,10 +21,41 @@
           (input)="name.set($any($event.target).value)"
         />
       </div>
+      <div class="flex flex-col gap-1">
+        <label for="course-start-date" class="text-sm font-medium text-text">
+          {{ i18n.t('adminCourses', 'startDateLabel') }}
+        </label>
+        <input
+          id="course-start-date"
+          type="date"
+          class="h-10 rounded-xl border border-border bg-surface px-3 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [value]="startDate()"
+          (input)="startDate.set($any($event.target).value)"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="course-end-date" class="text-sm font-medium text-text">
+          {{ i18n.t('adminCourses', 'endDateLabel') }}
+        </label>
+        <input
+          id="course-end-date"
+          type="date"
+          [min]="startDate()"
+          class="h-10 rounded-xl border border-border bg-surface px-3 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [value]="endDate()"
+          (input)="endDate.set($any($event.target).value)"
+        />
+      </div>
     </div>
 
+    <p class="text-xs text-text-muted">{{ i18n.t('adminCourses', 'datesHint') }}</p>
+
     <div>
-      <app-button [loading]="creating()" [disabled]="!name().trim()" (pressed)="onCreate()">
+      <app-button
+        [loading]="creating()"
+        [disabled]="!name().trim() || !startDate() || !endDate()"
+        (pressed)="onCreate()"
+      >
         <svg lucidePlus [size]="15" aria-hidden="true"></svg>
         {{ i18n.t('adminCourses', 'create') }}
       </app-button>
@@ -37,17 +68,30 @@
         class="flex flex-wrap items-center justify-between gap-4 border-b border-border-soft px-6 py-4 transition-colors last:border-0 hover:bg-slate-50/60"
       >
         @if (editingId() === course.id) {
-          <div class="flex min-w-[220px] flex-1 items-center gap-2">
+          <div class="flex min-w-[220px] flex-1 flex-wrap items-center gap-2">
             <input
               type="text"
               class="h-9 w-full max-w-xs rounded-xl border border-border bg-surface px-2 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
               [value]="editName()"
               (input)="editName.set($any($event.target).value)"
             />
+            <input
+              type="date"
+              class="h-9 rounded-xl border border-border bg-surface px-2 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              [value]="editStartDate()"
+              (input)="editStartDate.set($any($event.target).value)"
+            />
+            <input
+              type="date"
+              [min]="editStartDate()"
+              class="h-9 rounded-xl border border-border bg-surface px-2 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              [value]="editEndDate()"
+              (input)="editEndDate.set($any($event.target).value)"
+            />
             <app-button
               size="sm"
               [loading]="savingEdit()"
-              [disabled]="!editName().trim()"
+              [disabled]="!editName().trim() || !editStartDate() || !editEndDate()"
               (pressed)="saveEdit(course)"
             >
               {{ i18n.t('adminCourses', 'save') }}
@@ -59,7 +103,12 @@
         } @else {
           <div class="min-w-[220px]">
             <div class="text-[15px] font-bold text-text">{{ course.name }}</div>
-            @if (course.createdAt; as createdAt) {
+            @if (course.startDate && course.endDate) {
+              <div class="text-xs text-text-muted">
+                {{ course.startDate.toDate() | date: 'mediumDate' }} –
+                {{ course.endDate.toDate() | date: 'mediumDate' }}
+              </div>
+            } @else if (course.createdAt; as createdAt) {
               <div class="text-xs text-text-muted">
                 {{ i18n.t('adminCourses', 'createdOn') }}
                 {{ createdAt.toDate() | date: 'mediumDate' }}

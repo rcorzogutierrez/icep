@@ -10,6 +10,13 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Course {
   id: string;
   name: string;
+  /**
+   * `null` solo en cursos creados antes de que estas fechas existieran; el
+   * formulario las pide siempre para cursos nuevos (son tentativas, se
+   * pueden editar después).
+   */
+  startDate: Timestamp | null;
+  endDate: Timestamp | null;
   createdAt: Timestamp;
 }
 
