@@ -33,6 +33,8 @@ export const translations = {
       passwordRequired: 'Ingresá tu contraseña.',
       passwordTooShort: 'La contraseña debe tener al menos 6 caracteres.',
       errorGeneric: 'No pudimos iniciar sesión. Probá de nuevo.',
+      errorGoogleRedirect:
+        'No pudimos completar el inicio de sesión con Google en este navegador. Probá iniciar sesión con tu email y contraseña.',
       errorEmailInUse: 'Ese email ya tiene una cuenta. Iniciá sesión en vez de registrarte.',
       errorInvalidCredential: 'Email o contraseña incorrectos.',
       errorWeakPassword: 'La contraseña es muy débil (mínimo 6 caracteres).',
@@ -307,6 +309,8 @@ export const translations = {
       passwordRequired: 'Enter your password.',
       passwordTooShort: 'Password must be at least 6 characters.',
       errorGeneric: "We couldn't sign you in. Please try again.",
+      errorGoogleRedirect:
+        "We couldn't complete Google sign-in in this browser. Please try signing in with your email and password instead.",
       errorEmailInUse: 'That email already has an account. Sign in instead of signing up.',
       errorInvalidCredential: 'Incorrect email or password.',
       errorWeakPassword: 'Password is too weak (minimum 6 characters).',

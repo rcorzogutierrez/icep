@@ -102,49 +102,32 @@ export class Login {
     this.errorMessage.set(null);
   }
 
-  /** Se llama una vez al cargar: recoge el resultado si esta carga es la vuelta de un redirect de Google. */
+  /**
+   * Se llama una vez al cargar: recoge el resultado si esta carga es la
+   * vuelta de un redirect de Google. Diagnosticado (ver commits de
+   * "revisar login con Google en blanco"): cuando esto falla, es porque
+   * Chrome bloquea el storage de terceros que Firebase necesita para
+   * recuperar la operación pendiente a través de authDomain
+   * (icep-44c27.firebaseapp.com, un sitio distinto de icep.web.app) — no
+   * hay forma de evitarlo desde el código sin un dominio propio para el
+   * login, así que acá solo se avisa con un mensaje que sugiere el
+   * camino alternativo (email/contraseña), que no depende de esto.
+   */
   private async checkGoogleRedirectResult(): Promise<void> {
     let wasPending = false;
-    let sessionStorageOk = false;
     try {
-      sessionStorage.setItem('icep-storage-check', '1');
-      sessionStorageOk = sessionStorage.getItem('icep-storage-check') === '1';
-      sessionStorage.removeItem('icep-storage-check');
       wasPending = sessionStorage.getItem(GOOGLE_SIGNIN_PENDING_KEY) === '1';
       sessionStorage.removeItem(GOOGLE_SIGNIN_PENDING_KEY);
     } catch {
       // Ignorar si sessionStorage no está disponible.
     }
-    // DIAGNÓSTICO TEMPORAL (ver sesión "revisar login con Google en blanco"):
-    // hasta confirmar la causa de por qué getRedirectResult() vuelve sin
-    // resultado para algunos navegadores, dejar este log siempre encendido
-    // (no solo en el caso de error) para tener el cuadro completo la
-    // próxima vez que alguien lo reproduzca.
-    console.info('[icep-auth-debug]', {
-      href: location.href,
-      referrer: document.referrer,
-      sessionStorageOk,
-      wasPending,
-      cookiesEnabled: navigator.cookieEnabled,
-      userAgent: navigator.userAgent,
-      isBrave: (navigator as { brave?: unknown }).brave != null,
-    });
 
     try {
       const credential = await this.auth.consumeGoogleRedirectResult();
-      console.info(
-        '[icep-auth-debug] consumeGoogleRedirectResult ->',
-        credential ? 'credential OK' : 'null',
-      );
       if (!credential) {
         // Carga normal de /login (no venimos de Google): no es un error, no avisar.
-        // Volvimos del redirect pero Firebase no pudo recuperar la sesión (típico:
-        // el navegador bloqueó el storage de terceros que necesita para eso).
         if (wasPending) {
-          console.error(
-            'Google sign-in: volvió del redirect sin credencial (getRedirectResult devolvió null).',
-          );
-          this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
+          this.errorMessage.set(this.i18n.t('login', 'errorGoogleRedirect'));
         }
         return;
       }
