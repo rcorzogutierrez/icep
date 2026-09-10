@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Timestamp } from 'firebase/firestore';
+import { CourseInvitationsService } from '../../../core/invitations/course-invitations.service';
 import { CourseStudentsService } from '../../../core/courses/course-students.service';
 import { CourseSubjectsService } from '../../../core/courses/course-subjects.service';
 import { CourseTeachersService } from '../../../core/courses/course-teachers.service';
@@ -17,6 +18,7 @@ import {
   IconUsers,
 } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
+import { generateQrDataUrl } from '../../../shared/utils/qr-code';
 
 /**
  * `new Date('2026-06-01')` (sin hora) se interpreta como medianoche UTC, no
@@ -42,6 +44,7 @@ export class AdminCourses {
   protected readonly courseSubjectsService = inject(CourseSubjectsService);
   protected readonly courseStudentsService = inject(CourseStudentsService);
   protected readonly courseTeachersService = inject(CourseTeachersService);
+  protected readonly courseInvitationsService = inject(CourseInvitationsService);
   protected readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -51,6 +54,11 @@ export class AdminCourses {
   protected readonly endDate = signal('');
   protected readonly creating = signal(false);
   protected readonly removingId = signal<string | null>(null);
+
+  /** Código de invitación del curso recién creado, para mostrarlo ahí mismo (mismo patrón que Invitations.createdCode). */
+  protected readonly createdInvitationCode = signal<string | null>(null);
+  protected readonly qrDataUrl = signal<string | null>(null);
+  protected readonly copiedInviteLink = signal(false);
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly editName = signal('');
@@ -82,19 +90,40 @@ export class AdminCourses {
     return true;
   }
 
+  protected inviteLink(code: string): string {
+    return `${location.origin}/invite/${code}`;
+  }
+
+  protected async onCopyInviteLink(code: string): Promise<void> {
+    await navigator.clipboard.writeText(this.inviteLink(code));
+    this.copiedInviteLink.set(true);
+    setTimeout(() => this.copiedInviteLink.set(false), 2000);
+  }
+
+  /** Crea el curso Y, en el mismo paso, su código de invitación — nada que generar aparte después. */
   protected async onCreate(): Promise<void> {
     const start = this.startDate();
     const end = this.endDate();
-    if (!this.name().trim() || !this.datesValid(start, end)) {
+    const name = this.name().trim();
+    if (!name || !this.datesValid(start, end)) {
       return;
     }
     this.creating.set(true);
+    this.createdInvitationCode.set(null);
+    this.qrDataUrl.set(null);
     try {
-      await this.coursesService.create(this.name(), parseLocalDate(start), parseLocalDate(end));
+      const courseId = await this.coursesService.create(
+        name,
+        parseLocalDate(start),
+        parseLocalDate(end),
+      );
+      const code = await this.courseInvitationsService.create(courseId, name);
+      this.createdInvitationCode.set(code);
       this.name.set('');
       this.startDate.set('');
       this.endDate.set('');
       this.toast.success(this.i18n.t('adminCourses', 'created'));
+      generateQrDataUrl(this.inviteLink(code)).then((url) => this.qrDataUrl.set(url));
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {

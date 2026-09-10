@@ -60,6 +60,28 @@
         {{ i18n.t('adminCourses', 'create') }}
       </app-button>
     </div>
+
+    @if (createdInvitationCode(); as code) {
+      <div class="flex flex-col gap-4 rounded-xl border border-border bg-slate-50 p-4 sm:flex-row">
+        @if (qrDataUrl(); as qr) {
+          <img
+            [src]="qr"
+            alt=""
+            class="size-32 shrink-0 rounded-xl border border-border p-1 bg-surface"
+          />
+        }
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
+          <p class="text-sm text-text-muted">{{ i18n.t('adminCourses', 'inviteCardTitle') }}</p>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="truncate font-mono text-sm text-text">{{ inviteLink(code) }}</p>
+            <app-button variant="secondary" size="sm" (pressed)="onCopyInviteLink(code)">
+              {{ copiedInviteLink() ? i18n.t('common', 'copied') : i18n.t('common', 'copy') }}
+            </app-button>
+          </div>
+          <p class="text-xs text-text-muted">{{ i18n.t('adminCourses', 'inviteCardSubtitle') }}</p>
+        </div>
+      </div>
+    }
   </section>
 
   <div class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">

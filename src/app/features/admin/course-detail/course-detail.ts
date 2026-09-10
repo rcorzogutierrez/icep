@@ -9,7 +9,6 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { toDataURL } from 'qrcode';
 import { CourseInvitationsService } from '../../../core/invitations/course-invitations.service';
 import type { CourseInvitation } from '../../../core/invitations/course-invitations.model';
 import { CourseStudentsService } from '../../../core/courses/course-students.service';
@@ -26,6 +25,7 @@ import { Select, type SelectOption } from '../../../shared/components/select/sel
 import { TransferList } from '../../../shared/components/transfer-list/transfer-list';
 import { IconArrowLeft, IconPlus, IconX } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
+import { generateQrDataUrl } from '../../../shared/utils/qr-code';
 
 type Tab = 'subjects' | 'students' | 'teachers' | 'assignments';
 
@@ -83,9 +83,7 @@ export class CourseDetail {
         this.qrDataUrl.set(null);
         return;
       }
-      toDataURL(this.inviteLink(invitation.code), { width: 220, margin: 1 })
-        .then((url) => this.qrDataUrl.set(url))
-        .catch(() => this.qrDataUrl.set(null));
+      generateQrDataUrl(this.inviteLink(invitation.code)).then((url) => this.qrDataUrl.set(url));
     });
   }
 
