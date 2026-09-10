@@ -33,6 +33,15 @@ const emailFormSchema = schema<EmailFormModel>((p) => {
  */
 const PENDING_INVITE_CODE_KEY = 'icep-pending-invite-code';
 
+/**
+ * Marca que "salimos a Google y todavía no volvimos", para distinguir una
+ * carga normal de /login (consumeGoogleRedirectResult() da null siempre,
+ * no es un error) de una vuelta real del redirect sin resultado (el
+ * navegador bloqueó el storage que Firebase necesita para recordar la
+ * operación pendiente — ahí sí hay que avisar en vez de quedarse mudo).
+ */
+const GOOGLE_SIGNIN_PENDING_KEY = 'icep-google-signin-pending';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -95,9 +104,26 @@ export class Login {
 
   /** Se llama una vez al cargar: recoge el resultado si esta carga es la vuelta de un redirect de Google. */
   private async checkGoogleRedirectResult(): Promise<void> {
+    let wasPending = false;
+    try {
+      wasPending = sessionStorage.getItem(GOOGLE_SIGNIN_PENDING_KEY) === '1';
+      sessionStorage.removeItem(GOOGLE_SIGNIN_PENDING_KEY);
+    } catch {
+      // Ignorar si sessionStorage no está disponible.
+    }
+
     try {
       const credential = await this.auth.consumeGoogleRedirectResult();
       if (!credential) {
+        // Carga normal de /login (no venimos de Google): no es un error, no avisar.
+        // Volvimos del redirect pero Firebase no pudo recuperar la sesión (típico:
+        // el navegador bloqueó el storage de terceros que necesita para eso).
+        if (wasPending) {
+          console.error(
+            'Google sign-in: volvió del redirect sin credencial (getRedirectResult devolvió null).',
+          );
+          this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
+        }
         return;
       }
       this.signingInGoogle.set(true);
@@ -111,7 +137,8 @@ export class Login {
         // Ignorar si sessionStorage no está disponible.
       }
       await this.afterAuth(credential.user);
-    } catch {
+    } catch (error) {
+      console.error('Google sign-in: error al volver del redirect.', error);
       this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
     } finally {
       this.signingInGoogle.set(false);
@@ -122,13 +149,15 @@ export class Login {
     this.signingInGoogle.set(true);
     this.errorMessage.set(null);
     try {
+      sessionStorage.setItem(GOOGLE_SIGNIN_PENDING_KEY, '1');
       sessionStorage.setItem(PENDING_INVITE_CODE_KEY, this.manualCode().trim());
     } catch {
       // Ignorar si sessionStorage no está disponible.
     }
     try {
       await this.auth.signInWithGoogle();
-    } catch {
+    } catch (error) {
+      console.error('Google sign-in: error al iniciar el redirect.', error);
       this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
       this.signingInGoogle.set(false);
     }
