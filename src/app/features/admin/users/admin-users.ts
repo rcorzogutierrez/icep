@@ -37,20 +37,28 @@ export class AdminUsers {
   protected readonly confirmingRemoveUser = signal<UserProfile | null>(null);
   protected readonly changingRoleUid = signal<string | null>(null);
   protected readonly confirmingRoleChangeToStudent = signal<UserProfile | null>(null);
+  protected readonly confirmingRoleChangeFromStudent = signal<{
+    user: UserProfile;
+    role: UserRole;
+  } | null>(null);
 
   /**
-   * El Select ya "eligió" student en cuanto el usuario lo clickeó — el
+   * El Select ya "eligió" el rol nuevo en cuanto el usuario lo clickeó — el
    * cambio real todavía no se aplicó (espera la confirmación). Si el
    * binding de `[value]` fuera `user.role` a secas, cancelar no lo haría
    * volver a mostrar el rol real: `user.role` nunca cambió, así que
    * Angular no tiene un valor distinto que re-empujar hacia el hijo. Este
-   * método SÍ cambia de salida (student mientras el diálogo está abierto
-   * para este usuario, el rol real en cualquier otro caso), así que
-   * cancelar (que vacía `confirmingRoleChangeToStudent`) genuinamente
-   * fuerza al Select a mostrar el rol real de nuevo.
+   * método SÍ cambia de salida (el rol elegido mientras hay un diálogo
+   * abierto para este usuario, el rol real en cualquier otro caso), así
+   * que cancelar (que vacía la señal correspondiente) genuinamente fuerza
+   * al Select a mostrar el rol real de nuevo.
    */
   protected displayedRole(user: UserProfile): UserRole {
-    return this.confirmingRoleChangeToStudent()?.uid === user.uid ? 'student' : user.role;
+    if (this.confirmingRoleChangeToStudent()?.uid === user.uid) {
+      return 'student';
+    }
+    const pending = this.confirmingRoleChangeFromStudent();
+    return pending?.user.uid === user.uid ? pending.role : user.role;
   }
 
   protected readonly roleOptions = computed<SelectOption<UserRole>[]>(() => [
@@ -107,9 +115,10 @@ export class AdminUsers {
    * Sin guard explícito contra auto-degradarse: el botón/select ya está
    * oculto para la propia fila (ver isSelf), mismo criterio que "Borrar".
    *
-   * Pasar a "student" pide confirmación antes: le revoca de verdad el
-   * acceso de profesor (ver UsersService.updateRole), no es un cambio
-   * cosmético. Los demás cambios de rol se aplican directo.
+   * Pasar a "student", o salir de "student", pide confirmación antes: en
+   * ambos casos UsersService.updateRole revoca vínculos reales de curso
+   * (ver sus comentarios), no es un cambio cosmético. Profesor <-> admin
+   * se aplica directo, no toca ninguna de esas tablas.
    */
   protected onChangeRole(user: UserProfile, role: UserRole | undefined): void {
     if (!role || role === user.role) {
@@ -117,6 +126,10 @@ export class AdminUsers {
     }
     if (role === 'student') {
       this.confirmingRoleChangeToStudent.set(user);
+      return;
+    }
+    if (user.role === 'student') {
+      this.confirmingRoleChangeFromStudent.set({ user, role });
       return;
     }
     void this.applyRoleChange(user, role);

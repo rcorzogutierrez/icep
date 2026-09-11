@@ -130,3 +130,17 @@
     (cancelled)="confirmingRoleChangeToStudent.set(null)"
   />
 }
+
+@if (confirmingRoleChangeFromStudent(); as pending) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="pending.user.displayName ?? pending.user.email ?? undefined"
+    [message]="i18n.t('adminUsers', 'confirmRoleFromStudentMessage')"
+    [confirmLabel]="i18n.t('adminUsers', 'confirmRoleFromStudentAction')"
+    variant="warning"
+    (confirmed)="
+      confirmingRoleChangeFromStudent.set(null); applyRoleChange(pending.user, pending.role)
+    "
+    (cancelled)="confirmingRoleChangeFromStudent.set(null)"
+  />
+}

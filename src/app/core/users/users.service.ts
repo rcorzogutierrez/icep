@@ -85,18 +85,23 @@ export class UsersService {
    * No toca `enrolledSubjectIds`: si un estudiante pasa a profesor ese
    * campo queda huérfano pero inofensivo (nada lo lee para un no-estudiante).
    *
-   * Si el nuevo rol es "student", sí revoca sus asignaciones de profesor
-   * (courseTeachers/courseSubjectTeachers/subjectAssignments derivado):
-   * no es solo prolijidad — la regla de escritura de grades/gradeCategories/
+   * Si el nuevo rol es "student", revoca sus asignaciones de profesor
+   * (courseTeachers/courseSubjectTeachers/subjectAssignments derivado): no
+   * es solo prolijidad — la regla de escritura de grades/gradeCategories/
    * assignments solo chequea `exists(subjectAssignments/...)`, no el rol
    * actual, así que sin esto un profesor recién degradado conservaría
-   * permiso real de escritura sobre esa materia. Lo contrario (student ->
-   * teacher/admin) no revoca `courseStudents`: no habilita nada por sí
-   * solo, es decisión aparte si conviene limpiarlo.
+   * permiso real de escritura sobre esa materia.
+   *
+   * Si el nuevo rol NO es "student" (pasa a profesor o admin), revoca sus
+   * `courseStudents`: acá no hay riesgo de seguridad (esa tabla no
+   * habilita nada por sí sola), pero dejarla inflaría de por vida el
+   * contador de "estudiantes" de esos cursos con alguien que ya no lo es.
    */
   async updateRole(uid: string, role: UserRole): Promise<void> {
     if (role === 'student') {
       await this.revokeTeachingAccess(uid);
+    } else {
+      await this.revokeStudentEnrollments(uid);
     }
     await updateDoc(doc(this.firestore, 'users', uid), {
       role,
@@ -114,6 +119,11 @@ export class UsersService {
       courseSubjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row)),
     );
     await Promise.all(courseTeacherRows.map((row) => this.courseTeachersService.unassign(row.id)));
+  }
+
+  private async revokeStudentEnrollments(uid: string): Promise<void> {
+    const courseStudentRows = await this.courseStudentsService.fetchForStudent(uid);
+    await Promise.all(courseStudentRows.map((row) => this.courseStudentsService.unassign(row.id)));
   }
 
   /**

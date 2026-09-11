@@ -115,6 +115,9 @@ export const translations = {
       confirmRoleToStudentMessage:
         'Este usuario va a dejar de ser profesor: pierde sus materias y cursos asignados (no se restauran automáticamente si volvés a hacerlo profesor). Las notas que ya cargó no se pierden.',
       confirmRoleToStudentAction: 'Sí, cambiar a estudiante',
+      confirmRoleFromStudentMessage:
+        'Este usuario va a dejar de ser estudiante: se lo quita de los cursos donde está matriculado (no se restaura automáticamente si volvés a hacerlo estudiante). Sus notas ya cargadas no se pierden.',
+      confirmRoleFromStudentAction: 'Sí, cambiar de rol',
     },
     invitationsPage: {
       title: 'Invitaciones',
@@ -441,6 +444,9 @@ export const translations = {
       confirmRoleToStudentMessage:
         'This user will stop being a teacher: their assigned subjects and courses are removed (not automatically restored if you make them a teacher again). Grades they already entered are not lost.',
       confirmRoleToStudentAction: 'Yes, change to student',
+      confirmRoleFromStudentMessage:
+        "This user will stop being a student: they're removed from the courses they're enrolled in (not automatically restored if you make them a student again). Their existing grades are not lost.",
+      confirmRoleFromStudentAction: 'Yes, change role',
     },
     invitationsPage: {
       title: 'Invitations',
