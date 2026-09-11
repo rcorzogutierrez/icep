@@ -36,6 +36,22 @@ export class AdminUsers {
   protected readonly removingUid = signal<string | null>(null);
   protected readonly confirmingRemoveUser = signal<UserProfile | null>(null);
   protected readonly changingRoleUid = signal<string | null>(null);
+  protected readonly confirmingRoleChangeToStudent = signal<UserProfile | null>(null);
+
+  /**
+   * El Select ya "eligió" student en cuanto el usuario lo clickeó — el
+   * cambio real todavía no se aplicó (espera la confirmación). Si el
+   * binding de `[value]` fuera `user.role` a secas, cancelar no lo haría
+   * volver a mostrar el rol real: `user.role` nunca cambió, así que
+   * Angular no tiene un valor distinto que re-empujar hacia el hijo. Este
+   * método SÍ cambia de salida (student mientras el diálogo está abierto
+   * para este usuario, el rol real en cualquier otro caso), así que
+   * cancelar (que vacía `confirmingRoleChangeToStudent`) genuinamente
+   * fuerza al Select a mostrar el rol real de nuevo.
+   */
+  protected displayedRole(user: UserProfile): UserRole {
+    return this.confirmingRoleChangeToStudent()?.uid === user.uid ? 'student' : user.role;
+  }
 
   protected readonly roleOptions = computed<SelectOption<UserRole>[]>(() => [
     { value: 'student', label: this.i18n.t('adminUsers', 'roleStudent') },
@@ -90,11 +106,23 @@ export class AdminUsers {
   /**
    * Sin guard explícito contra auto-degradarse: el botón/select ya está
    * oculto para la propia fila (ver isSelf), mismo criterio que "Borrar".
+   *
+   * Pasar a "student" pide confirmación antes: le revoca de verdad el
+   * acceso de profesor (ver UsersService.updateRole), no es un cambio
+   * cosmético. Los demás cambios de rol se aplican directo.
    */
-  protected async onChangeRole(user: UserProfile, role: UserRole | undefined): Promise<void> {
+  protected onChangeRole(user: UserProfile, role: UserRole | undefined): void {
     if (!role || role === user.role) {
       return;
     }
+    if (role === 'student') {
+      this.confirmingRoleChangeToStudent.set(user);
+      return;
+    }
+    void this.applyRoleChange(user, role);
+  }
+
+  protected async applyRoleChange(user: UserProfile, role: UserRole): Promise<void> {
     this.changingRoleUid.set(user.uid);
     try {
       await this.usersService.updateRole(user.uid, role);

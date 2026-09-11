@@ -44,7 +44,7 @@
                 <app-select
                   class="block w-36"
                   [options]="roleOptions()"
-                  [value]="user.role"
+                  [value]="displayedRole(user)"
                   [disabled]="changingRoleUid() === user.uid"
                   (valueChange)="onChangeRole(user, $event)"
                 />
@@ -116,5 +116,17 @@
     [confirmLabel]="i18n.t('adminUsers', 'delete')"
     (confirmed)="confirmingRemoveUser.set(null); onRemove(user)"
     (cancelled)="confirmingRemoveUser.set(null)"
+  />
+}
+
+@if (confirmingRoleChangeToStudent(); as user) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="user.displayName ?? user.email ?? undefined"
+    [message]="i18n.t('adminUsers', 'confirmRoleToStudentMessage')"
+    [confirmLabel]="i18n.t('adminUsers', 'confirmRoleToStudentAction')"
+    variant="warning"
+    (confirmed)="confirmingRoleChangeToStudent.set(null); applyRoleChange(user, 'student')"
+    (cancelled)="confirmingRoleChangeToStudent.set(null)"
   />
 }

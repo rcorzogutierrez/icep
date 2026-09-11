@@ -112,6 +112,9 @@ export const translations = {
       delete: 'Borrar',
       confirmDeleteMessage:
         '¿Seguro que querés borrar este usuario? Se van a quitar también sus vínculos con cursos. Esta acción no se puede deshacer.',
+      confirmRoleToStudentMessage:
+        'Este usuario va a dejar de ser profesor: pierde sus materias y cursos asignados (no se restauran automáticamente si volvés a hacerlo profesor). Las notas que ya cargó no se pierden.',
+      confirmRoleToStudentAction: 'Sí, cambiar a estudiante',
     },
     invitationsPage: {
       title: 'Invitaciones',
@@ -435,6 +438,9 @@ export const translations = {
       delete: 'Delete',
       confirmDeleteMessage:
         "Are you sure you want to delete this user? Their course links will be removed too. This can't be undone.",
+      confirmRoleToStudentMessage:
+        'This user will stop being a teacher: their assigned subjects and courses are removed (not automatically restored if you make them a teacher again). Grades they already entered are not lost.',
+      confirmRoleToStudentAction: 'Yes, change to student',
     },
     invitationsPage: {
       title: 'Invitations',

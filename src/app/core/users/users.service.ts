@@ -84,12 +84,36 @@ export class UsersService {
   /**
    * No toca `enrolledSubjectIds`: si un estudiante pasa a profesor ese
    * campo queda huérfano pero inofensivo (nada lo lee para un no-estudiante).
+   *
+   * Si el nuevo rol es "student", sí revoca sus asignaciones de profesor
+   * (courseTeachers/courseSubjectTeachers/subjectAssignments derivado):
+   * no es solo prolijidad — la regla de escritura de grades/gradeCategories/
+   * assignments solo chequea `exists(subjectAssignments/...)`, no el rol
+   * actual, así que sin esto un profesor recién degradado conservaría
+   * permiso real de escritura sobre esa materia. Lo contrario (student ->
+   * teacher/admin) no revoca `courseStudents`: no habilita nada por sí
+   * solo, es decisión aparte si conviene limpiarlo.
    */
-  updateRole(uid: string, role: UserRole) {
-    return updateDoc(doc(this.firestore, 'users', uid), {
+  async updateRole(uid: string, role: UserRole): Promise<void> {
+    if (role === 'student') {
+      await this.revokeTeachingAccess(uid);
+    }
+    await updateDoc(doc(this.firestore, 'users', uid), {
       role,
       updatedAt: serverTimestamp(),
     });
+  }
+
+  private async revokeTeachingAccess(uid: string): Promise<void> {
+    const [courseTeacherRows, courseSubjectTeacherRows] = await Promise.all([
+      this.courseTeachersService.fetchForTeacher(uid),
+      this.courseSubjectTeachersService.fetchForTeacher(uid),
+    ]);
+
+    await Promise.all(
+      courseSubjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row)),
+    );
+    await Promise.all(courseTeacherRows.map((row) => this.courseTeachersService.unassign(row.id)));
   }
 
   /**
