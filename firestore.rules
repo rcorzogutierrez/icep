@@ -178,8 +178,13 @@ service cloud.firestore {
         && request.resource.data.status == 'revoked'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
 
-      // Borrar del historial: quien lo creó, o un admin (cualquier estado).
-      allow delete: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid);
+      // Borrar del historial: quien lo creó, un admin, o cualquier profesor
+      // (cualquier estado) — mismo criterio que el resto de este bloque
+      // (courses/courseTeachers/courseSubjects/courseStudents: "cualquier
+      // profesor administra cursos", no solo el dueño). Necesario además
+      // para que CoursesService.remove pueda limpiar las invitaciones de
+      // un curso que borra un profesor que no las creó él mismo.
+      allow delete: if request.auth != null && (isAdmin() || isTeacher());
     }
 
     // subjects/{id}: catálogo de materias. Solo el admin crea/edita/borra;

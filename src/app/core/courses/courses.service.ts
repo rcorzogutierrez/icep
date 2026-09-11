@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
+import { CourseInvitationsService } from '../invitations/course-invitations.service';
 import { UserProfileService } from '../users/user-profile.service';
 import { CourseStudentsService } from './course-students.service';
 import { CourseSubjectTeachersService } from './course-subject-teachers.service';
@@ -31,6 +32,7 @@ export class CoursesService {
   private readonly courseStudentsService = inject(CourseStudentsService);
   private readonly courseTeachersService = inject(CourseTeachersService);
   private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
+  private readonly courseInvitationsService = inject(CourseInvitationsService);
 
   private readonly _courses = signal<Course[]>([]);
   private readonly _loading = signal(true);
@@ -87,15 +89,29 @@ export class CoursesService {
     return updateDoc(doc(this.firestore, 'courses', id), fields as DocumentData);
   }
 
-  /** Borra el curso y, con él, sus materias, estudiantes, profesores y asignaciones materia-profesor. */
+  /**
+   * Borra el curso y, con él, sus materias, estudiantes, profesores,
+   * asignaciones materia-profesor y códigos de invitación del curso. Estos
+   * últimos importan de verdad, no solo por prolijidad: un código todavía
+   * activo de un curso ya borrado seguiría dejando entrar gente nueva (el
+   * rule de `courseStudents` solo chequea que el código esté activo y
+   * vigente, no que el curso exista) — quedarían "matriculados" en un
+   * curso fantasma.
+   */
   async remove(id: string): Promise<void> {
-    const [courseSubjects, courseStudents, courseTeachers, courseSubjectTeachers] =
-      await Promise.all([
-        this.courseSubjectsService.fetchForCourseIds([id]),
-        this.courseStudentsService.fetchForCourseIds([id]),
-        this.courseTeachersService.fetchForCourseIds([id]),
-        this.courseSubjectTeachersService.fetchForCourseIds([id]),
-      ]);
+    const [
+      courseSubjects,
+      courseStudents,
+      courseTeachers,
+      courseSubjectTeachers,
+      courseInvitations,
+    ] = await Promise.all([
+      this.courseSubjectsService.fetchForCourseIds([id]),
+      this.courseStudentsService.fetchForCourseIds([id]),
+      this.courseTeachersService.fetchForCourseIds([id]),
+      this.courseSubjectTeachersService.fetchForCourseIds([id]),
+      this.courseInvitationsService.fetchForCourseIds([id]),
+    ]);
     // Las asignaciones materia-profesor primero (pueden revocar
     // subjectAssignments), después el resto.
     await Promise.all(
@@ -105,6 +121,7 @@ export class CoursesService {
       ...courseSubjects.map((cs) => this.courseSubjectsService.unassign(cs.id)),
       ...courseStudents.map((cs) => this.courseStudentsService.unassign(cs.id)),
       ...courseTeachers.map((ct) => this.courseTeachersService.unassign(ct.id)),
+      ...courseInvitations.map((inv) => this.courseInvitationsService.remove(inv.code)),
     ]);
     await deleteDoc(doc(this.firestore, 'courses', id));
   }

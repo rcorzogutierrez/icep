@@ -5,6 +5,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   increment,
   onSnapshot,
   orderBy,
@@ -13,6 +14,7 @@ import {
   setDoc,
   Timestamp,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { CourseStudentsService } from '../courses/course-students.service';
@@ -21,6 +23,17 @@ import type { Locale } from '../i18n/translations';
 import { UserProfileService } from '../users/user-profile.service';
 import type { CourseInvitation } from './course-invitations.model';
 import { generateInvitationCode } from './invitation-code';
+
+/** Firestore permite hasta 30 valores por cláusula "in". */
+const IN_QUERY_CHUNK_SIZE = 30;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
 
 /**
  * Vencimiento: 29 días desde la creación — no 30 exactos, a propósito: las
@@ -87,6 +100,23 @@ export class CourseInvitationsService {
 
       onCleanup(() => unsubscribe());
     });
+  }
+
+  /** Fetch puntual (no reactivo) por curso; útil para borrar un curso (ver CoursesService.remove). */
+  async fetchForCourseIds(courseIds: string[]): Promise<CourseInvitation[]> {
+    if (courseIds.length === 0) {
+      return [];
+    }
+    const results: CourseInvitation[] = [];
+    for (const idsChunk of chunk(courseIds, IN_QUERY_CHUNK_SIZE)) {
+      const q = query(
+        collection(this.firestore, 'courseInvitations'),
+        where('courseId', 'in', idsChunk),
+      );
+      const snapshot = await getDocs(q);
+      results.push(...snapshot.docs.map((d) => d.data() as CourseInvitation));
+    }
+    return results;
   }
 
   forCourse(courseId: string): CourseInvitation[] {
