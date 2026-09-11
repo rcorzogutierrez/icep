@@ -99,6 +99,16 @@ export class CourseTeachersService {
     return results;
   }
 
+  /** Fetch puntual (no reactivo) por profesor; útil para borrar un usuario (ver UsersService.remove). */
+  async fetchForTeacher(teacherId: string): Promise<CourseTeacher[]> {
+    const q = query(
+      collection(this.firestore, 'courseTeachers'),
+      where('teacherId', '==', teacherId),
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as CourseTeacher);
+  }
+
   async assign(courseId: string, teacherId: string, teacherName: string): Promise<void> {
     const ref = doc(this.firestore, 'courseTeachers', `${courseId}_${teacherId}`);
     await setDoc(ref, { courseId, teacherId, teacherName, createdAt: serverTimestamp() });
