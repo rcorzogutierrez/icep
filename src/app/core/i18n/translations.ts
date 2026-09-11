@@ -11,6 +11,7 @@ export const translations = {
       copy: 'Copiar',
       copied: '¡Copiado!',
       close: 'Cerrar',
+      cancel: 'Cancelar',
       notifications: 'Notificaciones',
       downloadQr: 'Descargar QR',
       enlargeQr: 'Ampliar QR',
@@ -109,6 +110,8 @@ export const translations = {
       revoke: 'Revocar',
       reinstate: 'Restaurar',
       delete: 'Borrar',
+      confirmDeleteMessage:
+        '¿Seguro que querés borrar este usuario? Se van a quitar también sus vínculos con cursos. Esta acción no se puede deshacer.',
     },
     invitationsPage: {
       title: 'Invitaciones',
@@ -135,6 +138,8 @@ export const translations = {
       revokeAction: 'Revocar',
       resendAction: 'Reenviar',
       deleteAction: 'Eliminar',
+      confirmDeleteMessage:
+        '¿Seguro que querés borrar esta invitación? Si está pendiente, el código deja de funcionar de inmediato. Esta acción no se puede deshacer.',
       edit: 'Editar',
       save: 'Guardar',
       cancel: 'Cancelar',
@@ -159,6 +164,8 @@ export const translations = {
       save: 'Guardar',
       cancel: 'Cancelar',
       delete: 'Borrar',
+      confirmDeleteMessage:
+        '¿Seguro que querés borrar esta materia? Se pierden también su rúbrica, tareas y notas asociadas. Esta acción no se puede deshacer.',
       empty: 'No hay materias todavía.',
       duplicateCode: 'Ya existe una materia con ese código.',
       created: 'Materia creada.',
@@ -198,6 +205,8 @@ export const translations = {
       save: 'Guardar',
       cancel: 'Cancelar',
       delete: 'Borrar',
+      confirmDeleteCourseMessage:
+        '¿Seguro que querés borrar este curso? Se van a borrar también sus materias, estudiantes, profesores y asignaciones. Esta acción no se puede deshacer.',
       empty: 'No hay cursos todavía.',
       courseNotFound: 'Curso no encontrado.',
       created: 'Curso creado.',
@@ -231,6 +240,10 @@ export const translations = {
       save: 'Guardar',
       cancel: 'Cancelar',
       delete: 'Borrar',
+      confirmDeleteCategoryMessage:
+        '¿Seguro que querés borrar esta categoría? Se van a borrar también todas sus tareas. Esta acción no se puede deshacer.',
+      confirmDeleteAssignmentMessage:
+        '¿Seguro que querés borrar esta tarea? Las notas que los estudiantes ya tienen ahí van a dejar de verse. Esta acción no se puede deshacer.',
       noCategories: 'Todavía no hay categorías definidas.',
       categoryNameLabel: 'Nombre de la categoría',
       categoryWeightLabel: 'Peso (%)',
@@ -321,6 +334,7 @@ export const translations = {
       copy: 'Copy',
       copied: 'Copied!',
       close: 'Close',
+      cancel: 'Cancel',
       notifications: 'Notifications',
       downloadQr: 'Download QR',
       enlargeQr: 'Enlarge QR',
@@ -419,6 +433,8 @@ export const translations = {
       revoke: 'Revoke',
       reinstate: 'Reinstate',
       delete: 'Delete',
+      confirmDeleteMessage:
+        "Are you sure you want to delete this user? Their course links will be removed too. This can't be undone.",
     },
     invitationsPage: {
       title: 'Invitations',
@@ -445,6 +461,8 @@ export const translations = {
       revokeAction: 'Revoke',
       resendAction: 'Resend',
       deleteAction: 'Delete',
+      confirmDeleteMessage:
+        "Are you sure you want to delete this invitation? If it's pending, the code stops working right away. This can't be undone.",
       edit: 'Edit',
       save: 'Save',
       cancel: 'Cancel',
@@ -469,6 +487,8 @@ export const translations = {
       save: 'Save',
       cancel: 'Cancel',
       delete: 'Delete',
+      confirmDeleteMessage:
+        "Are you sure you want to delete this subject? Its rubric, assignments, and grades will be lost too. This can't be undone.",
       empty: 'No subjects yet.',
       duplicateCode: 'A subject with that code already exists.',
       created: 'Subject created.',
@@ -508,6 +528,8 @@ export const translations = {
       save: 'Save',
       cancel: 'Cancel',
       delete: 'Delete',
+      confirmDeleteCourseMessage:
+        "Are you sure you want to delete this course? Its subjects, students, teachers, and assignments will be deleted too. This can't be undone.",
       empty: 'No courses yet.',
       courseNotFound: 'Course not found.',
       created: 'Course created.',
@@ -541,6 +563,10 @@ export const translations = {
       save: 'Save',
       cancel: 'Cancel',
       delete: 'Delete',
+      confirmDeleteCategoryMessage:
+        "Are you sure you want to delete this category? All of its assignments will be deleted too. This can't be undone.",
+      confirmDeleteAssignmentMessage:
+        "Are you sure you want to delete this assignment? Scores students already have on it will stop showing. This can't be undone.",
       noCategories: 'No categories defined yet.',
       categoryNameLabel: 'Category name',
       categoryWeightLabel: 'Weight (%)',

@@ -17,6 +17,7 @@ import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
+import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
@@ -29,6 +30,7 @@ import { ToastService } from '../../shared/toast/toast.service';
   standalone: true,
   imports: [
     Button,
+    ConfirmDialog,
     Select,
     RouterLink,
     Page,
@@ -167,6 +169,7 @@ export class Gradebook {
   protected readonly editCategoryWeight = signal<number | null>(null);
   protected readonly savingCategory = signal(false);
   protected readonly removingCategoryId = signal<string | null>(null);
+  protected readonly confirmingRemoveCategory = signal<GradeCategory | null>(null);
 
   protected readonly assignmentsOpen = signal(false);
   protected readonly showAddAssignmentForm = signal(false);
@@ -182,6 +185,7 @@ export class Gradebook {
   protected readonly editAssignmentDueDate = signal('');
   protected readonly savingAssignment = signal(false);
   protected readonly removingAssignmentId = signal<string | null>(null);
+  protected readonly confirmingRemoveAssignment = signal<Assignment | null>(null);
 
   /** Tareas de una categoría, para agruparlas en la lista y en la grilla. */
   protected assignmentsFor(categoryId: string): Assignment[] {

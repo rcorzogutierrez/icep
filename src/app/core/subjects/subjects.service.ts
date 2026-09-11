@@ -15,7 +15,11 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
+import { CourseSubjectTeachersService } from '../courses/course-subject-teachers.service';
+import { CourseSubjectsService } from '../courses/course-subjects.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
+import { GradeCategoriesService } from '../grades/grade-categories.service';
+import { GradesService } from '../grades/grades.service';
 import { UserProfileService } from '../users/user-profile.service';
 import { SubjectAssignmentsService } from './subject-assignments.service';
 import type { Subject } from './subjects.model';
@@ -38,6 +42,10 @@ export class SubjectsService {
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
   private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
+  private readonly courseSubjectsService = inject(CourseSubjectsService);
+  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
+  private readonly gradeCategoriesService = inject(GradeCategoriesService);
+  private readonly gradesService = inject(GradesService);
 
   private readonly _subjects = signal<Subject[]>([]);
   private readonly _loading = signal(true);
@@ -128,12 +136,32 @@ export class SubjectsService {
     return updateDoc(doc(this.firestore, 'subjects', id), fields as DocumentData);
   }
 
-  /** Borra la materia y, con ella, todas sus asignaciones de profesor. */
+  /**
+   * Borra la materia y, con ella, todo lo que cuelga de ella: asignaciones
+   * de profesor (globales y por curso), rúbrica (categorías, que a su vez
+   * cascadean sus tareas), notas cargadas, y los vínculos con los cursos
+   * que la incluían.
+   */
   async remove(id: string): Promise<void> {
     const assignments = await this.subjectAssignmentsService.fetchBySubjectIds([id]);
-    await Promise.all(
-      assignments.map((assignment) => this.subjectAssignmentsService.unassign(assignment.id)),
+    const categories = this.gradeCategoriesService.forSubject(id);
+    const grades = this.gradesService.forSubject(id);
+    const courseSubjectRows = this.courseSubjectsService.forSubject(id);
+    const courseSubjectTeacherRows = courseSubjectRows.flatMap((cs) =>
+      this.courseSubjectTeachersService.forCourse(cs.courseId).filter((r) => r.subjectId === id),
     );
+
+    await Promise.all(
+      courseSubjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row)),
+    );
+
+    await Promise.all([
+      ...assignments.map((assignment) => this.subjectAssignmentsService.unassign(assignment.id)),
+      ...categories.map((category) => this.gradeCategoriesService.remove(category.id)),
+      ...grades.map((grade) => this.gradesService.remove(grade.id)),
+      ...courseSubjectRows.map((row) => this.courseSubjectsService.unassign(row.id)),
+    ]);
+
     await deleteDoc(doc(this.firestore, 'subjects', id));
   }
 }

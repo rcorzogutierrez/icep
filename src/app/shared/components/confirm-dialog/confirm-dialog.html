@@ -1,0 +1,11 @@
+<app-modal [open]="open()" [title]="title()" (closed)="cancelled.emit()">
+  <p class="text-sm text-text-muted">{{ message() }}</p>
+  <div class="mt-5 flex justify-end gap-2">
+    <app-button variant="secondary" size="sm" (pressed)="cancelled.emit()">
+      {{ i18n.t('common', 'cancel') }}
+    </app-button>
+    <app-button [variant]="variant()" size="sm" (pressed)="confirmed.emit()">
+      {{ confirmLabel() }}
+    </app-button>
+  </div>
+</app-modal>

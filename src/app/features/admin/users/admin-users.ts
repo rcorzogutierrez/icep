@@ -5,6 +5,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import type { UserProfile, UserRole, UserStatus } from '../../../core/users/users.model';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
+import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
@@ -20,7 +21,7 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [Button, Select, DatePipe, Page, PageHeader],
+  imports: [Button, ConfirmDialog, Select, DatePipe, Page, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-users.html',
 })
@@ -33,6 +34,7 @@ export class AdminUsers {
 
   protected readonly pendingActionUid = signal<string | null>(null);
   protected readonly removingUid = signal<string | null>(null);
+  protected readonly confirmingRemoveUser = signal<UserProfile | null>(null);
   protected readonly changingRoleUid = signal<string | null>(null);
 
   protected readonly roleOptions = computed<SelectOption<UserRole>[]>(() => [

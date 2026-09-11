@@ -1,5 +1,13 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
-import { collection, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
@@ -85,5 +93,9 @@ export class GradesService {
       { subjectId, studentUid, scores: { [categoryId]: score }, updatedAt: serverTimestamp() },
       { merge: true },
     );
+  }
+
+  remove(id: string): Promise<void> {
+    return deleteDoc(doc(this.firestore, 'grades', id));
   }
 }

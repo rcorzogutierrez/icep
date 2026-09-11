@@ -229,7 +229,12 @@ export class CourseDetail {
   protected async onRemoveSubjects(subjectIds: string[]): Promise<void> {
     const ids = new Set(subjectIds);
     const rows = this.courseSubjects().filter((cs) => ids.has(cs.subjectId));
+    const courseId = this.courseId();
     try {
+      const teacherRows = this.courseSubjectTeachersService
+        .forCourse(courseId)
+        .filter((r) => ids.has(r.subjectId));
+      await Promise.all(teacherRows.map((row) => this.courseSubjectTeachersService.unassign(row)));
       await Promise.all(rows.map((row) => this.courseSubjectsService.unassign(row.id)));
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
@@ -325,7 +330,14 @@ export class CourseDetail {
   protected async onRemoveTeachers(teacherIds: string[]): Promise<void> {
     const ids = new Set(teacherIds);
     const rows = this.courseTeachers().filter((ct) => ids.has(ct.teacherId));
+    const courseId = this.courseId();
     try {
+      const subjectTeacherRows = this.courseSubjectTeachersService
+        .forCourse(courseId)
+        .filter((r) => ids.has(r.teacherId));
+      await Promise.all(
+        subjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row)),
+      );
       await Promise.all(rows.map((row) => this.courseTeachersService.unassign(row.id)));
     } catch {
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));

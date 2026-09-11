@@ -84,7 +84,7 @@
                     variant="danger"
                     size="sm"
                     [loading]="removingUid() === user.uid"
-                    (pressed)="onRemove(user)"
+                    (pressed)="confirmingRemoveUser.set(user)"
                   >
                     {{ i18n.t('adminUsers', 'delete') }}
                   </app-button>
@@ -107,3 +107,14 @@
     </table>
   </div>
 </app-page>
+
+@if (confirmingRemoveUser(); as user) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="user.displayName ?? user.email ?? undefined"
+    [message]="i18n.t('adminUsers', 'confirmDeleteMessage')"
+    [confirmLabel]="i18n.t('adminUsers', 'delete')"
+    (confirmed)="confirmingRemoveUser.set(null); onRemove(user)"
+    (cancelled)="confirmingRemoveUser.set(null)"
+  />
+}

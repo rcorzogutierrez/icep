@@ -4,6 +4,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import type { Subject } from '../../../core/subjects/subjects.model';
 import { Button } from '../../../shared/components/button/button';
+import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -12,7 +13,7 @@ import { ToastService } from '../../../shared/toast/toast.service';
 @Component({
   selector: 'app-admin-subjects',
   standalone: true,
-  imports: [Button, Page, PageHeader],
+  imports: [Button, ConfirmDialog, Page, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './subjects.html',
 })
@@ -26,6 +27,7 @@ export class AdminSubjects {
   protected readonly code = signal('');
   protected readonly creating = signal(false);
   protected readonly removingId = signal<string | null>(null);
+  protected readonly confirmingRemoveSubject = signal<Subject | null>(null);
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly editName = signal('');

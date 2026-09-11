@@ -11,6 +11,7 @@ import { CoursesService } from '../../../core/courses/courses.service';
 import type { Course } from '../../../core/courses/courses.model';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { Button } from '../../../shared/components/button/button';
+import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { InviteCodeCard } from '../../../shared/components/invite-code-card/invite-code-card';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
@@ -41,6 +42,7 @@ function parseLocalDate(dateStr: string): Date {
   standalone: true,
   imports: [
     Button,
+    ConfirmDialog,
     DatePipe,
     InviteCodeCard,
     Page,
@@ -70,6 +72,7 @@ export class AdminCourses {
   protected readonly endDate = signal('');
   protected readonly creating = signal(false);
   protected readonly removingId = signal<string | null>(null);
+  protected readonly confirmingRemoveCourse = signal<Course | null>(null);
 
   /**
    * Qué curso muestra el panel de invitación de abajo — no es una "última

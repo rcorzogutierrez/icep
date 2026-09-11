@@ -105,7 +105,7 @@
                     variant="danger"
                     size="sm"
                     [loading]="removingId() === subject.id"
-                    (pressed)="onRemove(subject)"
+                    (pressed)="confirmingRemoveSubject.set(subject)"
                   >
                     {{ i18n.t('adminSubjects', 'delete') }}
                   </app-button>
@@ -128,3 +128,14 @@
     </table>
   </div>
 </app-page>
+
+@if (confirmingRemoveSubject(); as subject) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="subject.name"
+    [message]="i18n.t('adminSubjects', 'confirmDeleteMessage')"
+    [confirmLabel]="i18n.t('adminSubjects', 'delete')"
+    (confirmed)="confirmingRemoveSubject.set(null); onRemove(subject)"
+    (cancelled)="confirmingRemoveSubject.set(null)"
+  />
+}

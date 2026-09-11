@@ -152,7 +152,7 @@
                     variant="danger"
                     size="sm"
                     [loading]="removingCode() === invitation.code"
-                    (pressed)="onRemove(invitation)"
+                    (pressed)="confirmingRemoveInvitation.set(invitation)"
                   >
                     {{ i18n.t('invitationsPage', 'deleteAction') }}
                   </app-button>
@@ -175,3 +175,14 @@
     </table>
   </div>
 </app-page>
+
+@if (confirmingRemoveInvitation(); as invitation) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="invitation.email"
+    [message]="i18n.t('invitationsPage', 'confirmDeleteMessage')"
+    [confirmLabel]="i18n.t('invitationsPage', 'deleteAction')"
+    (confirmed)="confirmingRemoveInvitation.set(null); onRemove(invitation)"
+    (cancelled)="confirmingRemoveInvitation.set(null)"
+  />
+}

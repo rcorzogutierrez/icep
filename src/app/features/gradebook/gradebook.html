@@ -116,7 +116,7 @@
                         variant="danger"
                         size="sm"
                         [loading]="removingCategoryId() === category.id"
-                        (pressed)="onRemoveCategory(category)"
+                        (pressed)="confirmingRemoveCategory.set(category)"
                       >
                         {{ i18n.t('gradebook', 'delete') }}
                       </app-button>
@@ -357,7 +357,7 @@
                             variant="danger"
                             size="sm"
                             [loading]="removingAssignmentId() === assignment.id"
-                            (pressed)="onRemoveAssignment(assignment)"
+                            (pressed)="confirmingRemoveAssignment.set(assignment)"
                           >
                             {{ i18n.t('gradebook', 'delete') }}
                           </app-button>
@@ -566,3 +566,25 @@
     </div>
   </section>
 </app-page>
+
+@if (confirmingRemoveCategory(); as category) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="category.name"
+    [message]="i18n.t('gradebook', 'confirmDeleteCategoryMessage')"
+    [confirmLabel]="i18n.t('gradebook', 'delete')"
+    (confirmed)="confirmingRemoveCategory.set(null); onRemoveCategory(category)"
+    (cancelled)="confirmingRemoveCategory.set(null)"
+  />
+}
+
+@if (confirmingRemoveAssignment(); as assignment) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="assignment.name"
+    [message]="i18n.t('gradebook', 'confirmDeleteAssignmentMessage')"
+    [confirmLabel]="i18n.t('gradebook', 'delete')"
+    (confirmed)="confirmingRemoveAssignment.set(null); onRemoveAssignment(assignment)"
+    (cancelled)="confirmingRemoveAssignment.set(null)"
+  />
+}

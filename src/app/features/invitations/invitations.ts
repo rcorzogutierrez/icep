@@ -11,6 +11,7 @@ import { InvitationsService } from '../../core/invitations/invitations.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
+import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
@@ -29,7 +30,7 @@ const EXPIRED_CLASS = STATUS_CLASS.revoked;
 @Component({
   selector: 'app-invitations',
   standalone: true,
-  imports: [Button, Select, DatePipe, RouterLink, Page, PageHeader, IconInfo],
+  imports: [Button, ConfirmDialog, Select, DatePipe, RouterLink, Page, PageHeader, IconInfo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invitations.html',
 })
@@ -70,6 +71,7 @@ export class Invitations {
   protected readonly revokingCode = signal<string | null>(null);
   protected readonly resendingCode = signal<string | null>(null);
   protected readonly removingCode = signal<string | null>(null);
+  protected readonly confirmingRemoveInvitation = signal<Invitation | null>(null);
 
   protected readonly editingCode = signal<string | null>(null);
   protected readonly editEmail = signal('');

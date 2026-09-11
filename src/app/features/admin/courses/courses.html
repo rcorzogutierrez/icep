@@ -212,7 +212,7 @@
               variant="danger"
               size="sm"
               [loading]="removingId() === course.id"
-              (pressed)="onRemove(course)"
+              (pressed)="confirmingRemoveCourse.set(course)"
             >
               {{ i18n.t('adminCourses', 'delete') }}
             </app-button>
@@ -230,3 +230,14 @@
     }
   </div>
 </app-page>
+
+@if (confirmingRemoveCourse(); as course) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="course.name"
+    [message]="i18n.t('adminCourses', 'confirmDeleteCourseMessage')"
+    [confirmLabel]="i18n.t('adminCourses', 'delete')"
+    (confirmed)="confirmingRemoveCourse.set(null); onRemove(course)"
+    (cancelled)="confirmingRemoveCourse.set(null)"
+  />
+}
