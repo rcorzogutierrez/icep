@@ -1,10 +1,11 @@
 import { inject } from '@angular/core';
-import { type CanActivateFn, Router } from '@angular/router';
+import { type CanActivateFn, type CanDeactivateFn, Router } from '@angular/router';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
 import { waitForSignal } from '../utils/wait-for-signal';
 import { AuthService } from './auth.service';
+import type { CourseDetail } from '../../features/admin/course-detail/course-detail';
 
 export const authGuard: CanActivateFn = async () => {
   const authService = inject(AuthService);
@@ -126,4 +127,18 @@ export const courseAccessGuard: CanActivateFn = async (route) => {
     ),
   );
   return !assignments.empty || router.parseUrl('/my-courses');
+};
+
+/**
+ * Gestionar curso (Materias/Estudiantes/Profesores) mantiene los cambios en
+ * un borrador local hasta que se confirma "Guardar" (ver CourseDetail) — si
+ * hay algo sin guardar y el usuario intenta salir de la página entera (no
+ * cambiar de pestaña, eso es interno), le preguntamos primero en vez de
+ * perderlo en silencio.
+ */
+export const unsavedCourseChangesGuard: CanDeactivateFn<CourseDetail> = (component) => {
+  if (!component.hasPendingChanges()) {
+    return true;
+  }
+  return component.confirmLeaveWithUnsavedChanges();
 };

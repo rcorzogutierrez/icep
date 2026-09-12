@@ -19,7 +19,7 @@
           [class.bg-brand-50]="activeTab() === 'subjects'"
           [class.text-brand-700]="activeTab() === 'subjects'"
           [class.bg-slate-100]="activeTab() !== 'subjects'"
-          >{{ courseSubjects().length }}</span
+          >{{ subjectsCount() }}</span
         >
       </button>
       <button
@@ -36,7 +36,7 @@
           [class.bg-brand-50]="activeTab() === 'students'"
           [class.text-brand-700]="activeTab() === 'students'"
           [class.bg-slate-100]="activeTab() !== 'students'"
-          >{{ courseStudents().length }}</span
+          >{{ studentsCount() }}</span
         >
       </button>
       <button
@@ -53,7 +53,7 @@
           [class.bg-brand-50]="activeTab() === 'teachers'"
           [class.text-brand-700]="activeTab() === 'teachers'"
           [class.bg-slate-100]="activeTab() !== 'teachers'"
-          >{{ courseTeachers().length }}</span
+          >{{ teachersCount() }}</span
         >
       </button>
       <button
@@ -67,6 +67,24 @@
         {{ i18n.t('adminCourses', 'tabAssignments') }}
       </button>
     </div>
+
+    @if (hasPendingChanges()) {
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-slate-50 p-4"
+      >
+        <p class="text-sm font-medium text-status-paused">
+          {{ i18n.t('adminCourses', 'unsavedChangesNotice') }}
+        </p>
+        <div class="flex gap-2">
+          <app-button variant="secondary" size="sm" (pressed)="discardChanges()">
+            {{ i18n.t('adminCourses', 'discardChangesAction') }}
+          </app-button>
+          <app-button size="sm" (pressed)="showSaveSummary.set(true)">
+            {{ i18n.t('adminCourses', 'saveChangesAction') }}
+          </app-button>
+        </div>
+      </div>
+    }
 
     @switch (activeTab()) {
       @case ('subjects') {
@@ -222,4 +240,83 @@
   </app-page>
 } @else {
   <p class="text-sm text-text-muted">{{ i18n.t('adminCourses', 'courseNotFound') }}</p>
+}
+
+@if (showSaveSummary()) {
+  <app-modal
+    [open]="true"
+    [title]="i18n.t('adminCourses', 'saveSummaryTitle')"
+    (closed)="showSaveSummary.set(false)"
+  >
+    <div class="flex flex-col gap-3 text-sm">
+      @if (pendingSummary().subjectsAdded.length > 0) {
+        <p>
+          <span class="font-semibold text-text">{{
+            i18n.t('adminCourses', 'summarySubjectsAdded')
+          }}</span>
+          {{ pendingSummary().subjectsAdded.join(', ') }}
+        </p>
+      }
+      @if (pendingSummary().subjectsRemoved.length > 0) {
+        <p>
+          <span class="font-semibold text-text">{{
+            i18n.t('adminCourses', 'summarySubjectsRemoved')
+          }}</span>
+          {{ pendingSummary().subjectsRemoved.join(', ') }}
+        </p>
+      }
+      @if (pendingSummary().studentsAdded.length > 0) {
+        <p>
+          <span class="font-semibold text-text">{{
+            i18n.t('adminCourses', 'summaryStudentsAdded')
+          }}</span>
+          {{ pendingSummary().studentsAdded.join(', ') }}
+        </p>
+      }
+      @if (pendingSummary().studentsRemoved.length > 0) {
+        <p>
+          <span class="font-semibold text-text">{{
+            i18n.t('adminCourses', 'summaryStudentsRemoved')
+          }}</span>
+          {{ pendingSummary().studentsRemoved.join(', ') }}
+        </p>
+      }
+      @if (pendingSummary().teachersAdded.length > 0) {
+        <p>
+          <span class="font-semibold text-text">{{
+            i18n.t('adminCourses', 'summaryTeachersAdded')
+          }}</span>
+          {{ pendingSummary().teachersAdded.join(', ') }}
+        </p>
+      }
+      @if (pendingSummary().teachersRemoved.length > 0) {
+        <p>
+          <span class="font-semibold text-text">{{
+            i18n.t('adminCourses', 'summaryTeachersRemoved')
+          }}</span>
+          {{ pendingSummary().teachersRemoved.join(', ') }}
+        </p>
+      }
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <app-button variant="secondary" size="sm" (pressed)="showSaveSummary.set(false)">
+        {{ i18n.t('common', 'cancel') }}
+      </app-button>
+      <app-button size="sm" [loading]="savingChanges()" (pressed)="applyChanges()">
+        {{ i18n.t('adminCourses', 'confirmSaveAction') }}
+      </app-button>
+    </div>
+  </app-modal>
+}
+
+@if (confirmingLeave()) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="course()?.name"
+    [message]="i18n.t('adminCourses', 'confirmLeaveUnsavedMessage')"
+    [confirmLabel]="i18n.t('adminCourses', 'confirmLeaveUnsavedAction')"
+    variant="warning"
+    (confirmed)="resolveLeave(true)"
+    (cancelled)="resolveLeave(false)"
+  />
 }

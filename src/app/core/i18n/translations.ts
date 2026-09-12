@@ -235,6 +235,21 @@ export const translations = {
       inviteNoActive: 'Todavía no hay un código activo para este curso.',
       errorInviteGeneric:
         'El curso se creó, pero no pudimos generar su código de invitación. Podés generarlo desde Gestionar → Estudiantes.',
+      unsavedChangesNotice: 'Tenés cambios sin guardar en este curso.',
+      discardChangesAction: 'Descartar cambios',
+      saveChangesAction: 'Guardar cambios',
+      saveSummaryTitle: 'Confirmar cambios',
+      summarySubjectsAdded: 'Materias que se agregan:',
+      summarySubjectsRemoved: 'Materias que se quitan:',
+      summaryStudentsAdded: 'Estudiantes que se agregan:',
+      summaryStudentsRemoved: 'Estudiantes que se quitan:',
+      summaryTeachersAdded: 'Profesores que se agregan:',
+      summaryTeachersRemoved: 'Profesores que se quitan:',
+      confirmSaveAction: 'Confirmar y guardar',
+      changesSaved: 'Cambios guardados.',
+      confirmLeaveUnsavedMessage:
+        'Tenés cambios sin guardar en este curso. Si salís ahora, se pierden.',
+      confirmLeaveUnsavedAction: 'Salir sin guardar',
     },
     gradebook: {
       title: 'Calificaciones',
@@ -569,6 +584,21 @@ export const translations = {
       inviteNoActive: "There's no active code for this course yet.",
       errorInviteGeneric:
         "The course was created, but we couldn't generate its invite code. You can generate it from Manage → Students.",
+      unsavedChangesNotice: 'You have unsaved changes in this course.',
+      discardChangesAction: 'Discard changes',
+      saveChangesAction: 'Save changes',
+      saveSummaryTitle: 'Confirm changes',
+      summarySubjectsAdded: 'Subjects being added:',
+      summarySubjectsRemoved: 'Subjects being removed:',
+      summaryStudentsAdded: 'Students being added:',
+      summaryStudentsRemoved: 'Students being removed:',
+      summaryTeachersAdded: 'Teachers being added:',
+      summaryTeachersRemoved: 'Teachers being removed:',
+      confirmSaveAction: 'Confirm and save',
+      changesSaved: 'Changes saved.',
+      confirmLeaveUnsavedMessage:
+        "You have unsaved changes in this course. If you leave now, they'll be lost.",
+      confirmLeaveUnsavedAction: 'Leave without saving',
     },
     gradebook: {
       title: 'Grades',

@@ -6,6 +6,7 @@ import {
   courseAccessGuard,
   staffGuard,
   subjectAccessGuard,
+  unsavedCourseChangesGuard,
 } from './core/auth/auth.guards';
 
 export const routes: Routes = [
@@ -80,6 +81,7 @@ export const routes: Routes = [
       {
         path: 'admin/courses/:courseId',
         canActivate: [staffGuard],
+        canDeactivate: [unsavedCourseChangesGuard],
         loadComponent: () =>
           import('./features/admin/course-detail/course-detail').then((m) => m.CourseDetail),
       },
