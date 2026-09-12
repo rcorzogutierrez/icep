@@ -108,35 +108,39 @@
 
       <h2 class="mt-6 text-2xl font-semibold text-text">{{ i18n.t('login', 'title') }}</h2>
       <p class="mt-2 text-sm text-text-muted">
-        {{ code() ? i18n.t('login', 'inviteSubtitle') : i18n.t('login', 'subtitle') }}
+        @if (code() && mode() === 'signIn') {
+          {{ i18n.t('login', 'inviteAlreadyRegisteredSubtitle') }}
+        } @else if (code()) {
+          {{ i18n.t('login', 'inviteSubtitle') }}
+        } @else {
+          {{ i18n.t('login', 'subtitle') }}
+        }
       </p>
 
-      @if (!code()) {
-        <div class="mt-6 flex gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
-          <button
-            type="button"
-            class="flex-1 rounded-full py-1.5 transition-all"
-            [class.bg-surface]="mode() === 'signIn'"
-            [class.text-text]="mode() === 'signIn'"
-            [class.shadow-sm]="mode() === 'signIn'"
-            [class.text-text-muted]="mode() !== 'signIn'"
-            (click)="setMode('signIn')"
-          >
-            {{ i18n.t('login', 'tabSignIn') }}
-          </button>
-          <button
-            type="button"
-            class="flex-1 rounded-full py-1.5 transition-all"
-            [class.bg-surface]="mode() === 'signUp'"
-            [class.text-text]="mode() === 'signUp'"
-            [class.shadow-sm]="mode() === 'signUp'"
-            [class.text-text-muted]="mode() !== 'signUp'"
-            (click)="setMode('signUp')"
-          >
-            {{ i18n.t('login', 'tabSignUp') }}
-          </button>
-        </div>
-      }
+      <div class="mt-6 flex gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
+        <button
+          type="button"
+          class="flex-1 rounded-full py-1.5 transition-all"
+          [class.bg-surface]="mode() === 'signIn'"
+          [class.text-text]="mode() === 'signIn'"
+          [class.shadow-sm]="mode() === 'signIn'"
+          [class.text-text-muted]="mode() !== 'signIn'"
+          (click)="setMode('signIn')"
+        >
+          {{ i18n.t('login', 'tabSignIn') }}
+        </button>
+        <button
+          type="button"
+          class="flex-1 rounded-full py-1.5 transition-all"
+          [class.bg-surface]="mode() === 'signUp'"
+          [class.text-text]="mode() === 'signUp'"
+          [class.shadow-sm]="mode() === 'signUp'"
+          [class.text-text-muted]="mode() !== 'signUp'"
+          (click)="setMode('signUp')"
+        >
+          {{ i18n.t('login', 'tabSignUp') }}
+        </button>
+      </div>
 
       <form class="mt-6 flex flex-col gap-4" (submit)="$event.preventDefault(); onEmailSubmit()">
         @if (mode() === 'signUp' && !code()) {
