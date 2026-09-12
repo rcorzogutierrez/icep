@@ -95,6 +95,12 @@ export class Invitations {
     return `${location.origin}/invite/${code}`;
   }
 
+  /** Quién generó esta invitación — solo se muestra al admin (ve las de todos); un profesor ya sabe que son todas suyas. */
+  protected createdByLabel(invitation: Invitation): string {
+    const creator = this.usersService.users().find((u) => u.uid === invitation.createdBy);
+    return creator?.displayName ?? creator?.email ?? invitation.createdBy;
+  }
+
   /** Ya existe una cuenta con ese email (comparación case-insensitive). */
   private isEmailRegistered(email: string): boolean {
     const normalized = email.trim().toLowerCase();
