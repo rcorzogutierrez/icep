@@ -11,9 +11,11 @@ import { computeCategoryPercent, computeFinalGrade } from '../../core/grades/gra
 import { I18nService } from '../../core/i18n/i18n.service';
 import { CoursesService } from '../../core/courses/courses.service';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
+import { CourseSubjectTeachersService } from '../../core/courses/course-subject-teachers.service';
 import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import { SubjectAssignmentsService } from '../../core/subjects/subject-assignments.service';
 import { SubjectsService } from '../../core/subjects/subjects.service';
+import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Drawer } from '../../shared/components/drawer/drawer';
@@ -94,11 +96,13 @@ function gradeBand(grade: number | null): GradeBand {
 })
 export class MyStudents {
   private readonly authService = inject(AuthService);
+  private readonly userProfileService = inject(UserProfileService);
   private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
   protected readonly subjectsService = inject(SubjectsService);
   private readonly coursesService = inject(CoursesService);
   private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly courseStudentsService = inject(CourseStudentsService);
+  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
   protected readonly usersService = inject(UsersService);
   private readonly gradeCategoriesService = inject(GradeCategoriesService);
   private readonly assignmentsService = inject(AssignmentsService);
@@ -122,6 +126,7 @@ export class MyStudents {
       this.coursesService.loading() ||
       this.courseSubjectsService.loading() ||
       this.courseStudentsService.loading() ||
+      this.courseSubjectTeachersService.loading() ||
       this.usersService.loading() ||
       this.gradeCategoriesService.loading() ||
       this.assignmentsService.loading() ||
@@ -152,6 +157,30 @@ export class MyStudents {
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
 
+  /**
+   * Cursos de una materia que puede ver el profesor logueado: el admin ve
+   * todos; un profesor SOLO los cursos donde él mismo la dicta —
+   * `subjectAssignments` (de donde sale `mySubjectIds`) es global a la
+   * materia, no por curso, así que sin este filtro un profesor vería (y
+   * podría calificar) a estudiantes de otro curso donde la misma materia
+   * la dicta un profesor distinto. Mismo criterio que
+   * Gradebook.accessibleCourseIds.
+   */
+  private accessibleCourseIdsFor(subjectId: string): string[] {
+    const allCourseIds = this.courseSubjectsService.forSubject(subjectId).map((cs) => cs.courseId);
+    if (this.userProfileService.isAdmin()) {
+      return allCourseIds;
+    }
+    const uid = this.authService.user()?.uid;
+    const myCourseIds = new Set(
+      this.courseSubjectTeachersService
+        .rows()
+        .filter((r) => r.subjectId === subjectId && r.teacherId === uid)
+        .map((r) => r.courseId),
+    );
+    return allCourseIds.filter((id) => myCourseIds.has(id));
+  }
+
   /** Todos los estudiantes del profesor, con su progreso en cada materia compartida. */
   protected readonly studentRows = computed<StudentRow[]>(() => {
     const rowsByUid = new Map<string, StudentRow>();
@@ -165,7 +194,7 @@ export class MyStudents {
         continue;
       }
 
-      const courseIds = this.courseSubjectsService.forSubject(subjectId).map((cs) => cs.courseId);
+      const courseIds = this.accessibleCourseIdsFor(subjectId);
       const courseStudents = this.courseStudentsService.forCourseIds(courseIds);
       const studentUids = new Set(courseStudents.map((cs) => cs.studentUid));
 
