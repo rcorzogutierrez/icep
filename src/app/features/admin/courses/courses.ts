@@ -10,6 +10,7 @@ import { CourseTeachersService } from '../../../core/courses/course-teachers.ser
 import { CoursesService } from '../../../core/courses/courses.service';
 import type { Course } from '../../../core/courses/courses.model';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { InviteCodeCard } from '../../../shared/components/invite-code-card/invite-code-card';
@@ -63,6 +64,7 @@ export class AdminCourses {
   protected readonly courseStudentsService = inject(CourseStudentsService);
   protected readonly courseTeachersService = inject(CourseTeachersService);
   protected readonly courseInvitationsService = inject(CourseInvitationsService);
+  private readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -118,12 +120,29 @@ export class AdminCourses {
     return this.courseSubjectsService.forCourse(courseId).length;
   }
 
+  /**
+   * Cuenta solo filas cuyo uid sigue teniendo el rol correspondiente HOY
+   * (mismo criterio que MyCourseDetail/Gradebook al armar el roster): sin
+   * esto, un usuario borrado o reasignado a otro rol antes de que
+   * existieran las cascadas de limpieza (ver UsersService) infla este
+   * número para siempre, aunque en ningún lado se lo vuelva a mostrar.
+   */
   protected studentsCountFor(courseId: string): number {
-    return this.courseStudentsService.forCourse(courseId).length;
+    return this.courseStudentsService
+      .forCourse(courseId)
+      .filter((cs) =>
+        this.usersService.users().some((u) => u.uid === cs.studentUid && u.role === 'student'),
+      ).length;
   }
 
   protected teachersCountFor(courseId: string): number {
-    return this.courseTeachersService.forCourse(courseId).length;
+    return this.courseTeachersService
+      .forCourse(courseId)
+      .filter((ct) =>
+        this.usersService
+          .users()
+          .some((u) => u.uid === ct.teacherId && (u.role === 'teacher' || u.role === 'admin')),
+      ).length;
   }
 
   /** Ambas fechas cargadas y fin no anterior a inicio (se muestra un toast si no). */

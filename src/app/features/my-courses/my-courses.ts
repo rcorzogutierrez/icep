@@ -5,6 +5,7 @@ import { CourseStudentsService } from '../../core/courses/course-students.servic
 import { CourseSubjectTeachersService } from '../../core/courses/course-subject-teachers.service';
 import { CoursesService } from '../../core/courses/courses.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { UsersService } from '../../core/users/users.service';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
@@ -50,6 +51,7 @@ export class MyCourses {
   private readonly coursesService = inject(CoursesService);
   private readonly courseStudentsService = inject(CourseStudentsService);
   private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
+  private readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
 
   protected readonly search = signal('');
@@ -58,7 +60,8 @@ export class MyCourses {
     () =>
       this.coursesService.loading() ||
       this.courseStudentsService.loading() ||
-      this.courseSubjectTeachersService.loading(),
+      this.courseSubjectTeachersService.loading() ||
+      this.usersService.loading(),
   );
 
   /** Cursos donde el profesor logueado dicta al menos una materia. */
@@ -91,10 +94,20 @@ export class MyCourses {
             .filter((r) => r.teacherId === uid)
             .map((r) => r.subjectId),
         ).size;
+        // Contar solo filas de courseStudents cuyo uid sigue siendo
+        // efectivamente estudiante hoy (mismo criterio que
+        // MyCourseDetail.studentRows) — si no, una fila vieja de alguien
+        // borrado o reasignado a otro rol infla este número aunque el
+        // detalle del curso ya no lo muestre en ningún lado.
+        const studentCount = this.courseStudentsService
+          .forCourse(courseId)
+          .filter((cs) =>
+            this.usersService.users().some((u) => u.uid === cs.studentUid && u.role === 'student'),
+          ).length;
         return {
           id: course.id,
           name: course.name,
-          studentCount: this.courseStudentsService.forCourse(courseId).length,
+          studentCount,
           subjectCount,
         };
       })
