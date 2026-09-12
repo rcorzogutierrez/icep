@@ -59,7 +59,15 @@
     </div>
 
     @if (selectedCourse(); as course) {
-      <div class="rounded-xl border border-border bg-slate-50 p-4">
+      <div class="relative rounded-xl border border-border bg-slate-50 p-4 pr-10">
+        <button
+          type="button"
+          class="absolute top-3 right-3 text-text-muted hover:text-text"
+          [attr.aria-label]="i18n.t('common', 'close')"
+          (click)="closeInvitationPanel()"
+        >
+          <svg lucideX [size]="16" aria-hidden="true"></svg>
+        </button>
         @if (selectedInvitation(); as invitation) {
           <app-invite-code-card
             [code]="invitation.code"

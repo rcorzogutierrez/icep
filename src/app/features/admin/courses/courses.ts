@@ -23,6 +23,7 @@ import {
   IconPlus,
   IconQrCode,
   IconUsers,
+  IconX,
 } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
 
@@ -54,6 +55,7 @@ function parseLocalDate(dateStr: string): Date {
     IconPlus,
     IconQrCode,
     IconUsers,
+    IconX,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './courses.html',
@@ -109,6 +111,11 @@ export class AdminCourses {
     const courseId = this.selectedCourseId();
     return courseId ? this.activeInvitationFor(courseId) : undefined;
   });
+
+  /** Cierra el panel de código de invitación — antes solo desaparecía si se navegaba/recargaba la página. */
+  protected closeInvitationPanel(): void {
+    this.selectedCourseId.set(null);
+  }
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly editName = signal('');
