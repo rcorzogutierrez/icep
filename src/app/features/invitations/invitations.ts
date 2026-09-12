@@ -107,12 +107,37 @@ export class Invitations {
     return this.usersService.users().some((user) => user.email?.toLowerCase() === normalized);
   }
 
+  /**
+   * Ya hay una invitación pendiente y vigente para ese email (comparación
+   * case-insensitive) — sin este chequeo, nada impedía crear dos
+   * invitaciones activas para la misma persona con solo tipear el email de
+   * nuevo en el form. Para reinvitar ya existe "Reenviar" en la fila
+   * existente (reusa el link si sigue vigente, genera uno nuevo solo si
+   * venció/fue revocado), así que un duplicado acá nunca es necesario.
+   */
+  private isEmailAlreadyInvited(email: string, excludeCode?: string): boolean {
+    const normalized = email.trim().toLowerCase();
+    return this.invitationsService
+      .invitations()
+      .some(
+        (invitation) =>
+          invitation.code !== excludeCode &&
+          invitation.status === 'pending' &&
+          !this.isExpired(invitation) &&
+          invitation.email.toLowerCase() === normalized,
+      );
+  }
+
   protected async onCreate(): Promise<void> {
     if (!this.email().trim()) {
       return;
     }
     if (this.isEmailRegistered(this.email())) {
       this.toast.error(this.i18n.t('invitationsPage', 'emailAlreadyRegistered'));
+      return;
+    }
+    if (this.isEmailAlreadyInvited(this.email())) {
+      this.toast.error(this.i18n.t('invitationsPage', 'emailAlreadyInvited'));
       return;
     }
     this.creating.set(true);
@@ -186,6 +211,10 @@ export class Invitations {
     }
     if (this.isEmailRegistered(this.editEmail())) {
       this.toast.error(this.i18n.t('invitationsPage', 'emailAlreadyRegistered'));
+      return;
+    }
+    if (this.isEmailAlreadyInvited(this.editEmail(), invitation.code)) {
+      this.toast.error(this.i18n.t('invitationsPage', 'emailAlreadyInvited'));
       return;
     }
     this.savingEdit.set(true);

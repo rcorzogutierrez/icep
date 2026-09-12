@@ -155,6 +155,8 @@ export const translations = {
       updated: 'Email actualizado.',
       deleted: 'Invitación eliminada.',
       emailAlreadyRegistered: 'Ese email ya tiene una cuenta en el sistema.',
+      emailAlreadyInvited:
+        'Ya hay una invitación pendiente para ese email. Usá "Reenviar" en esa fila, o esperá a que venza.',
       errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
     },
     adminSubjects: {
@@ -485,6 +487,8 @@ export const translations = {
       updated: 'Email updated.',
       deleted: 'Invitation deleted.',
       emailAlreadyRegistered: 'That email already has an account in the system.',
+      emailAlreadyInvited:
+        'There is already a pending invitation for that email. Use "Resend" on that row, or wait for it to expire.',
       errorGeneric: "We couldn't complete the action. Please try again.",
     },
     adminSubjects: {
