@@ -95,6 +95,8 @@ firebase hosting:channel:deploy preview
 
 y ejercitá el login completo (Google incluido) con la consola del navegador abierta — una CSP mal ajustada bloquea una llamada en silencio, sin error visible.
 
+Una query nueva con `where(...)` + `orderBy(...)` sobre campos distintos necesita un índice compuesto en `firestore.indexes.json`, y ese archivo tampoco se publica con `npm run deploy` — hace falta `firebase deploy --only firestore:indexes`. El emulador no exige este índice como sí lo hace producción, así que el faltante pasa todos los tests locales sin problema y solo falla ya deployado (la query cae en su `catch` y el listado queda vacío en silencio).
+
 ## CI
 
 Cada push a `master` y cada pull request corren, en orden, `typecheck` → `lint` → `test` → `build` (ver [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). El job fija Node a la última 22.x — no bajarlo, Angular CLI 22 no arranca con versiones intermedias (ver [Requisitos](#requisitos)).

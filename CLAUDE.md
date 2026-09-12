@@ -66,6 +66,8 @@ Standalone components, `ChangeDetectionStrategy.OnPush` everywhere, class names 
 
 `npm run deploy` only pushes Hosting. A change to `firestore.rules` or `storage.rules` needs its own explicit deploy (`firebase deploy --only firestore:rules` / `--only storage:rules`) or it silently doesn't ship. A change to `firebase.json` (headers/CSP/rewrites) should go through a preview channel (`firebase hosting:channel:deploy preview`) first — a bad CSP blocks a request silently, with no visible error, so exercise the full login flow against the preview before promoting.
 
+A new query combining `where(...)` with `orderBy(...)` on a different field (or two `where` clauses) needs a composite index declared in `firestore.indexes.json`, deployed with its own `firebase deploy --only firestore:indexes` — same "doesn't ship on its own" trap as rules. The Firestore emulator does **not** reject a missing index the way production does, so this passes every local test and only fails once deployed (`FAILED_PRECONDITION`, silently swallowed by a listener's error handler into an empty list) — this is exactly how the per-teacher `invitations` query shipped broken. Check `firestore.indexes.json` whenever a new query adds a `where` beyond a single equality-on-`orderBy`'s-own-field.
+
 ## Security
 
 Every rule here maps to a real gap found and fixed in this repo, not a generic checklist — see the comments next to the relevant `match` block in `firestore.rules` for the specific incident behind each one. Apply these to any new feature before it's considered done, not just when asked to.
