@@ -164,10 +164,24 @@ export class Invitations {
     try {
       await this.invitationsService.revoke(invitation.code);
       this.toast.success(this.i18n.t('invitationsPage', 'revoked'));
+      this.clearCreatedCardIfMatches(invitation.code);
     } catch {
       this.toast.error(this.i18n.t('invitationsPage', 'errorGeneric'));
     } finally {
       this.revokingCode.set(null);
+    }
+  }
+
+  /**
+   * La tarjeta de "Invitación creada, compartí este link" de arriba no se
+   * actualiza sola con lo que pasa en la tabla: si esa misma invitación se
+   * borra o se revoca, hay que ocultarla a mano — si no, queda mostrando un
+   * link que ya no sirve, como si nada hubiera pasado.
+   */
+  private clearCreatedCardIfMatches(code: string): void {
+    if (this.createdCode() === code) {
+      this.createdCode.set(null);
+      this.copied.set(false);
     }
   }
 
@@ -234,6 +248,7 @@ export class Invitations {
     try {
       await this.invitationsService.remove(invitation.code);
       this.toast.success(this.i18n.t('invitationsPage', 'deleted'));
+      this.clearCreatedCardIfMatches(invitation.code);
     } catch {
       this.toast.error(this.i18n.t('invitationsPage', 'errorGeneric'));
     } finally {
