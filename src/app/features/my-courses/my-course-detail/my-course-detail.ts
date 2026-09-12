@@ -23,6 +23,7 @@ import {
   IconCheck,
   IconChevronRight,
   IconSearch,
+  IconUserPlus,
 } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
 
@@ -82,6 +83,7 @@ function gradeBand(grade: number | null): GradeBand {
     IconCheck,
     IconChevronRight,
     IconSearch,
+    IconUserPlus,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './my-course-detail.html',
@@ -291,5 +293,10 @@ export class MyCourseDetail {
 
   protected goBack(): void {
     this.router.navigate(['/my-courses']);
+  }
+
+  /** Lleva directo a la pestaña "Estudiantes" de Gestionar — sin esto había que saber que existía /admin/courses y buscarlo ahí. */
+  protected goToAddStudent(): void {
+    this.router.navigate(['/admin/courses', this.courseId()], { queryParams: { tab: 'students' } });
   }
 }

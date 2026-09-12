@@ -301,6 +301,7 @@ export const translations = {
       backToCourses: 'Volver a Mis cursos',
       detailSubtitle: 'Estudiantes de este curso, en las materias que dictás acá.',
       detailEmpty: 'Todavía no hay estudiantes en tus materias de este curso.',
+      addStudentAction: 'Agregar estudiante',
     },
     myStudents: {
       title: 'Mis estudiantes',
@@ -635,6 +636,7 @@ export const translations = {
       backToCourses: 'Back to My courses',
       detailSubtitle: "This course's students, in the subjects you teach here.",
       detailEmpty: "You don't have students in your subjects in this course yet.",
+      addStudentAction: 'Add student',
     },
     myStudents: {
       title: 'My students',

@@ -34,6 +34,11 @@
         />
         {{ i18n.t('myStudents', 'onlyPending') }}
       </label>
+
+      <app-button variant="secondary" size="sm" (pressed)="goToAddStudent()">
+        <svg lucideUserPlus [size]="14" aria-hidden="true"></svg>
+        {{ i18n.t('myCourses', 'addStudentAction') }}
+      </app-button>
     </div>
 
     <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">

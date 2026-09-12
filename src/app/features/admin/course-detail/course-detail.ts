@@ -47,6 +47,8 @@ type Tab = 'subjects' | 'students' | 'teachers' | 'assignments';
 })
 export class CourseDetail {
   readonly courseId = input.required<string>();
+  /** Pestaña inicial vía `?tab=students` (ver MyCourseDetail: "Agregar estudiante" linkea directo acá). */
+  readonly tab = input<Tab | undefined>(undefined);
 
   protected readonly coursesService = inject(CoursesService);
   protected readonly courseSubjectsService = inject(CourseSubjectsService);
@@ -60,7 +62,16 @@ export class CourseDetail {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
-  protected readonly activeTab = signal<Tab>('subjects');
+  /**
+   * `?tab=students` decide la pestaña inicial (ver `tab` arriba), pero una
+   * vez que el usuario clickea otra pestaña eso manda — mismo patrón
+   * `override` que `Login.mode`, para no pelearle al click con el query
+   * param en cada re-render.
+   */
+  private readonly tabOverride = signal<Tab | null>(null);
+  protected readonly activeTab = computed<Tab>(
+    () => this.tabOverride() ?? this.tab() ?? 'subjects',
+  );
 
   protected readonly course = computed(() =>
     this.coursesService.courses().find((c) => c.id === this.courseId()),
@@ -182,7 +193,7 @@ export class CourseDetail {
   }
 
   protected setTab(tab: Tab): void {
-    this.activeTab.set(tab);
+    this.tabOverride.set(tab);
   }
 
   protected goBack(): void {
