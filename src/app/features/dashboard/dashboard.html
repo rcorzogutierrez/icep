@@ -8,32 +8,63 @@
 
   <div class="grid gap-4 sm:grid-cols-3">
     @for (stat of statCards(); track stat.label) {
-      <div
-        class="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm"
-      >
-        <span
-          class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"
+      @if (stat.route) {
+        <button
+          type="button"
+          class="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left shadow-sm transition-shadow hover:shadow-md"
+          (click)="goToStat(stat)"
         >
-          @switch (stat.icon) {
-            @case ('users') {
-              <svg lucideUsers [size]="20" aria-hidden="true"></svg>
+          <span
+            class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"
+          >
+            @switch (stat.icon) {
+              @case ('users') {
+                <svg lucideUsers [size]="20" aria-hidden="true"></svg>
+              }
+              @case ('book') {
+                <svg lucideBookOpen [size]="20" aria-hidden="true"></svg>
+              }
+              @case ('mail') {
+                <svg lucideUserPlus [size]="20" aria-hidden="true"></svg>
+              }
+              @case ('graduation') {
+                <svg lucideGraduationCap [size]="20" aria-hidden="true"></svg>
+              }
             }
-            @case ('book') {
-              <svg lucideBookOpen [size]="20" aria-hidden="true"></svg>
+          </span>
+          <div>
+            <p class="text-2xl font-bold tracking-tight text-text">{{ stat.value }}</p>
+            <p class="text-sm text-text-muted">{{ stat.label }}</p>
+          </div>
+        </button>
+      } @else {
+        <div
+          class="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm"
+        >
+          <span
+            class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"
+          >
+            @switch (stat.icon) {
+              @case ('users') {
+                <svg lucideUsers [size]="20" aria-hidden="true"></svg>
+              }
+              @case ('book') {
+                <svg lucideBookOpen [size]="20" aria-hidden="true"></svg>
+              }
+              @case ('mail') {
+                <svg lucideUserPlus [size]="20" aria-hidden="true"></svg>
+              }
+              @case ('graduation') {
+                <svg lucideGraduationCap [size]="20" aria-hidden="true"></svg>
+              }
             }
-            @case ('mail') {
-              <svg lucideUserPlus [size]="20" aria-hidden="true"></svg>
-            }
-            @case ('graduation') {
-              <svg lucideGraduationCap [size]="20" aria-hidden="true"></svg>
-            }
-          }
-        </span>
-        <div>
-          <p class="text-2xl font-bold tracking-tight text-text">{{ stat.value }}</p>
-          <p class="text-sm text-text-muted">{{ stat.label }}</p>
+          </span>
+          <div>
+            <p class="text-2xl font-bold tracking-tight text-text">{{ stat.value }}</p>
+            <p class="text-sm text-text-muted">{{ stat.label }}</p>
+          </div>
         </div>
-      </div>
+      }
     }
   </div>
 

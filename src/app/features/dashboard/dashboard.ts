@@ -41,6 +41,8 @@ interface StatCard {
   label: string;
   value: number;
   icon: StatIcon;
+  /** Si está, la tarjeta es clickeable y navega ahí — un número sin adónde ir no invita a hacer clic. */
+  route?: string;
 }
 
 /** Área logueada de la app (solo alcanzable con status "approved", ver approvedGuard). */
@@ -101,6 +103,12 @@ export class Dashboard {
 
   protected goToGradebook(subjectId: string): void {
     void this.router.navigateByUrl(`/subjects/${subjectId}/gradebook`);
+  }
+
+  protected goToStat(stat: StatCard): void {
+    if (stat.route) {
+      void this.router.navigateByUrl(stat.route);
+    }
   }
 
   /**
@@ -164,16 +172,19 @@ export class Dashboard {
           label: this.i18n.t('dashboard', 'adminPanel'),
           value: this.usersService.users().length,
           icon: 'users',
+          route: '/admin/users',
         },
         {
           label: this.i18n.t('dashboard', 'subjectsLink'),
           value: this.subjectsService.subjects().length,
           icon: 'book',
+          route: '/admin/subjects',
         },
         {
           label: this.i18n.t('dashboard', 'statPendingInvitations'),
           value: this.pendingInvitationsCount(),
           icon: 'mail',
+          route: '/invitations',
         },
       ];
     }
@@ -188,6 +199,7 @@ export class Dashboard {
           label: this.i18n.t('dashboard', 'statPendingInvitations'),
           value: this.pendingInvitationsCount(),
           icon: 'mail',
+          route: '/invitations',
         },
       ];
     }
