@@ -15,11 +15,9 @@ import {
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
+import type { Assignment } from './assignments.model';
 import { AssignmentsService } from './assignments.service';
 import type { GradeCategory } from './grades.model';
-
-/** Puntos posibles de la tarea invisible que respalda una categoría "de una sola nota". */
-const SINGLE_TASK_POINTS_POSSIBLE = 100;
 
 /** Firestore permite hasta 30 valores por cláusula "in". */
 const IN_QUERY_CHUNK_SIZE = 30;
@@ -127,13 +125,12 @@ export class GradeCategoriesService {
       createdAt: serverTimestamp(),
     });
     if (!hasMultipleTasks) {
-      await this.assignmentsService.create(
-        subjectId,
-        ref.id,
-        trimmedName,
-        SINGLE_TASK_POINTS_POSSIBLE,
-        null,
-      );
+      // El puntaje de una categoría "de una sola nota" se carga sobre una
+      // escala igual a su peso (no un 0-100 fijo): así "9" en una categoría
+      // de peso 10 significa 9/10 (90%, notable), no 9/100 (9%, aplazo) —
+      // evita que el profesor cargue pensando en una escala y el sistema
+      // la interprete con otra.
+      await this.assignmentsService.create(subjectId, ref.id, trimmedName, weight, null);
     }
     return ref.id;
   }
@@ -141,17 +138,27 @@ export class GradeCategoriesService {
   async update(id: string, fields: Partial<Pick<GradeCategory, 'name' | 'weight'>>) {
     await updateDoc(doc(this.firestore, 'gradeCategories', id), fields as DocumentData);
 
-    if (fields.name === undefined) {
+    const category = this._categories().find((c) => c.id === id);
+    if (!category || category.hasMultipleTasks) {
       return;
     }
     // Categoría "de una sola nota": su tarea invisible lleva el mismo
-    // nombre (nunca se muestra, pero conviene mantenerlo en sincronía).
-    const category = this._categories().find((c) => c.id === id);
-    if (category && !category.hasMultipleTasks) {
-      const [soleAssignment] = this.assignmentsService.forCategory(id);
-      if (soleAssignment) {
-        await this.assignmentsService.update(soleAssignment.id, { name: fields.name });
-      }
+    // nombre (nunca se muestra, pero conviene mantenerlo en sincronía) y el
+    // mismo puntaje máximo que el peso (ver comentario en create()) — si
+    // el peso cambia, el máximo tiene que moverse con él.
+    const [soleAssignment] = this.assignmentsService.forCategory(id);
+    if (!soleAssignment) {
+      return;
+    }
+    const assignmentFields: Partial<Pick<Assignment, 'name' | 'pointsPossible'>> = {};
+    if (fields.name !== undefined) {
+      assignmentFields.name = fields.name;
+    }
+    if (fields.weight !== undefined) {
+      assignmentFields.pointsPossible = fields.weight;
+    }
+    if (Object.keys(assignmentFields).length > 0) {
+      await this.assignmentsService.update(soleAssignment.id, assignmentFields);
     }
   }
 

@@ -219,14 +219,17 @@
                     ></div>
                   </div>
                   @if (catRow.singleAssignment; as assignment) {
-                    <input
-                      type="number"
-                      min="0"
-                      [max]="assignment.pointsPossible"
-                      class="h-7 w-14 rounded-xl border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                      [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
-                      (input)="onScoreInput(assignment.id, $any($event.target).value)"
-                    />
+                    <div class="flex items-center gap-1 text-xs text-text-muted">
+                      <input
+                        type="number"
+                        min="0"
+                        [max]="assignment.pointsPossible"
+                        class="h-7 w-14 rounded-xl border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
+                        (input)="onScoreInput(assignment.id, $any($event.target).value)"
+                      />
+                      <span>/{{ assignment.pointsPossible }}</span>
+                    </div>
                     <app-button
                       size="sm"
                       [loading]="savingAssignmentId() === assignment.id"

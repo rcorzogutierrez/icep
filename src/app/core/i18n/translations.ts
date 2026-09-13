@@ -286,7 +286,7 @@ export const translations = {
       categoryModeLabel: '¿Cómo se va a calificar esta categoría?',
       categoryModeSingleTitle: 'Con una sola nota',
       categoryModeSingleDesc:
-        'Para categorías simples, como Asistencia. Cargás un puntaje de 0 a 100.',
+        'Para categorías simples, como Asistencia. Cargás un puntaje de 0 al peso de la categoría (ej. de 0 a 10 si pesa 10%).',
       categoryModeMultipleTitle: 'Con varias tareas',
       categoryModeMultipleDesc: 'Vas a poder agregar cada tarea, con sus puntos y vencimiento.',
       addCategory: 'Agregar categoría',
@@ -654,7 +654,7 @@ export const translations = {
       categoryModeLabel: 'How should this category be graded?',
       categoryModeSingleTitle: 'With a single score',
       categoryModeSingleDesc:
-        'For simple categories, like Attendance. You enter one score from 0 to 100.',
+        "For simple categories, like Attendance. You enter one score from 0 to the category's weight (e.g. 0 to 10 if it's worth 10%).",
       categoryModeMultipleTitle: 'With multiple assignments',
       categoryModeMultipleDesc:
         "You'll be able to add each assignment, with its points and due date.",
