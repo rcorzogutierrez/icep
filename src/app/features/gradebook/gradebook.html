@@ -525,7 +525,18 @@
           @for (student of students(); track student.uid) {
             <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
               <td class="sticky left-0 bg-surface px-4 py-3 font-medium text-text">
-                {{ student.displayName ?? student.email }}
+                <div class="flex items-center gap-1.5">
+                  <span>{{ student.displayName ?? student.email }}</span>
+                  <button
+                    type="button"
+                    class="shrink-0 text-text-muted hover:text-brand-600"
+                    [class.text-brand-600]="hasComment(student.uid)"
+                    [attr.aria-label]="i18n.t('gradebook', 'commentButtonLabel')"
+                    (click)="openCommentEditor(student)"
+                  >
+                    <svg lucideMessageSquare [size]="15" aria-hidden="true"></svg>
+                  </button>
+                </div>
               </td>
               @for (category of categories(); track category.id) {
                 @for (assignment of assignmentsFor(category.id); track assignment.id) {
@@ -587,4 +598,34 @@
     (confirmed)="confirmingRemoveAssignment.set(null); onRemoveAssignment(assignment)"
     (cancelled)="confirmingRemoveAssignment.set(null)"
   />
+}
+
+@if (commentEditorFor(); as target) {
+  <app-modal
+    [open]="true"
+    [title]="i18n.t('gradebook', 'commentModalTitle')"
+    (closed)="closeCommentEditor()"
+  >
+    <div class="flex flex-col gap-3">
+      <p class="text-sm font-medium text-text">{{ target.name }}</p>
+      <div class="flex flex-col gap-1">
+        <textarea
+          rows="4"
+          class="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [placeholder]="i18n.t('gradebook', 'commentPlaceholder')"
+          [value]="commentDraft()"
+          (input)="commentDraft.set($any($event.target).value)"
+        ></textarea>
+        <p class="text-xs text-text-muted">{{ i18n.t('gradebook', 'commentHint') }}</p>
+      </div>
+      <div class="flex justify-end gap-2">
+        <app-button variant="secondary" size="sm" (pressed)="closeCommentEditor()">
+          {{ i18n.t('gradebook', 'cancel') }}
+        </app-button>
+        <app-button size="sm" [loading]="savingComment()" (pressed)="saveComment()">
+          {{ i18n.t('gradebook', 'save') }}
+        </app-button>
+      </div>
+    </div>
+  </app-modal>
 }

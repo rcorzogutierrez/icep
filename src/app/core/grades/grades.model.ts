@@ -46,5 +46,12 @@ export interface Grade {
    * para cómo esto se agrega en nota de categoría y nota final.
    */
   scores: Record<string, number | null>;
+  /**
+   * Comentario opcional del profesor sobre el desempeño general del
+   * estudiante en la materia — uno solo por materia+estudiante, no por
+   * tarea individual (ver GradesService.setComment). `null`/ausente =
+   * sin comentario.
+   */
+  comment?: string | null;
   updatedAt: Timestamp;
 }

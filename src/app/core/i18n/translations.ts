@@ -88,6 +88,7 @@ export const translations = {
       viewUsers: 'Ver usuarios',
       studentsLabel: 'estudiantes',
       noCoursesForSubject: 'Sin curso asociado todavía',
+      teacherComment: 'Comentario del profesor',
     },
     shell: {
       summary: 'Resumen',
@@ -314,6 +315,11 @@ export const translations = {
       noStudents: 'Todavía no hay estudiantes inscriptos en esta materia.',
       invalidScore: 'La nota debe ser un número entre 0 y los puntos posibles de la tarea.',
       errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
+      commentButtonLabel: 'Comentario',
+      commentModalTitle: 'Comentario para el estudiante',
+      commentPlaceholder: 'Unas líneas sobre su desempeño en la materia (opcional)...',
+      commentHint: 'Lo va a ver el estudiante junto con sus notas de esta materia.',
+      commentSaved: 'Comentario guardado.',
     },
     myCourses: {
       title: 'Mis cursos',
@@ -346,6 +352,9 @@ export const translations = {
       goToGradebook: 'Ir al gradebook completo',
       invalidScore: 'La nota debe ser un número entre 0 y los puntos posibles de la tarea.',
       errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
+      commentLabel: 'Comentario para el estudiante',
+      commentPlaceholder: 'Unas líneas sobre su desempeño en la materia (opcional)...',
+      commentSaved: 'Comentario guardado.',
     },
     assignmentReview: {
       backToGradebook: 'Volver a Calificaciones',
@@ -447,6 +456,7 @@ export const translations = {
       viewUsers: 'View users',
       studentsLabel: 'students',
       noCoursesForSubject: 'No course linked yet',
+      teacherComment: "Teacher's comment",
     },
     shell: {
       summary: 'Summary',
@@ -673,6 +683,11 @@ export const translations = {
       noStudents: 'No students enrolled in this subject yet.',
       invalidScore: "The score must be a number between 0 and the assignment's points possible.",
       errorGeneric: "We couldn't complete the action. Please try again.",
+      commentButtonLabel: 'Comment',
+      commentModalTitle: 'Comment for the student',
+      commentPlaceholder: 'A few lines about their performance in the subject (optional)...',
+      commentHint: 'The student will see this alongside their grades for this subject.',
+      commentSaved: 'Comment saved.',
     },
     myCourses: {
       title: 'My courses',
@@ -705,6 +720,9 @@ export const translations = {
       goToGradebook: 'Go to full gradebook',
       invalidScore: "The score must be a number between 0 and the assignment's points possible.",
       errorGeneric: "We couldn't complete the action. Please try again.",
+      commentLabel: 'Comment for the student',
+      commentPlaceholder: 'A few lines about their performance in the subject (optional)...',
+      commentSaved: 'Comment saved.',
     },
     assignmentReview: {
       backToGradebook: 'Back to Grades',

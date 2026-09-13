@@ -95,6 +95,26 @@ export class GradesService {
     );
   }
 
+  /** Comentario general del profesor para un estudiante en una materia, o null si no puso ninguno. */
+  commentFor(subjectId: string, studentUid: string): string | null {
+    const grade = this.forSubject(subjectId).find((g) => g.studentUid === studentUid);
+    return grade?.comment ?? null;
+  }
+
+  setComment(subjectId: string, studentUid: string, comment: string): Promise<void> {
+    const ref = doc(this.firestore, 'grades', `${subjectId}_${studentUid}`);
+    return setDoc(
+      ref,
+      {
+        subjectId,
+        studentUid,
+        comment: comment.trim() || null,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  }
+
   remove(id: string): Promise<void> {
     return deleteDoc(doc(this.firestore, 'grades', id));
   }

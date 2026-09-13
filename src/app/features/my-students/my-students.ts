@@ -122,6 +122,9 @@ export class MyStudents {
   protected readonly openStudentUid = signal<string | null>(null);
   protected readonly editingScores = signal<Record<string, string>>({});
   protected readonly savingAssignmentId = signal<string | null>(null);
+  /** Borrador del comentario por materia, para el estudiante del drawer abierto (ver closeDrawer, que lo limpia al cambiar de estudiante). */
+  protected readonly commentDrafts = signal<Record<string, string>>({});
+  protected readonly savingCommentSubjectId = signal<string | null>(null);
   /** Acordeón: una sola materia expandida a la vez dentro del drawer — arranca cerrado, ver openDrawer/closeDrawer. */
   protected readonly expandedSubjectId = signal<string | null>(null);
 
@@ -289,6 +292,7 @@ export class MyStudents {
   protected closeDrawer(): void {
     this.openStudentUid.set(null);
     this.editingScores.set({});
+    this.commentDrafts.set({});
     this.expandedSubjectId.set(null);
   }
 
@@ -366,5 +370,47 @@ export class MyStudents {
 
   protected goToGradebook(subjectId: string): void {
     this.router.navigate(['/subjects', subjectId, 'gradebook']);
+  }
+
+  protected commentDraftFor(subjectId: string, studentUid: string): string {
+    const draft = this.commentDrafts()[subjectId];
+    if (draft !== undefined) {
+      return draft;
+    }
+    return this.gradesService.commentFor(subjectId, studentUid) ?? '';
+  }
+
+  protected onCommentInput(subjectId: string, value: string): void {
+    this.commentDrafts.update((map) => ({ ...map, [subjectId]: value }));
+  }
+
+  protected isCommentDirty(subjectId: string, studentUid: string): boolean {
+    const draft = this.commentDrafts()[subjectId];
+    if (draft === undefined) {
+      return false;
+    }
+    const saved = this.gradesService.commentFor(subjectId, studentUid) ?? '';
+    return draft.trim() !== saved;
+  }
+
+  protected async onSaveComment(subjectId: string, studentUid: string): Promise<void> {
+    const draft = this.commentDrafts()[subjectId];
+    if (draft === undefined) {
+      return;
+    }
+    this.savingCommentSubjectId.set(subjectId);
+    try {
+      await this.gradesService.setComment(subjectId, studentUid, draft);
+      this.commentDrafts.update((map) => {
+        const rest = { ...map };
+        delete rest[subjectId];
+        return rest;
+      });
+      this.toast.success(this.i18n.t('myStudents', 'commentSaved'));
+    } catch {
+      this.toast.error(this.i18n.t('myStudents', 'errorGeneric'));
+    } finally {
+      this.savingCommentSubjectId.set(null);
+    }
   }
 }

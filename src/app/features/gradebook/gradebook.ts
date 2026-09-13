@@ -18,10 +18,11 @@ import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
+import { Modal } from '../../shared/components/modal/modal';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
-import { IconChevronDown, IconPlus } from '../../shared/icons/icons';
+import { IconChevronDown, IconMessageSquare, IconPlus } from '../../shared/icons/icons';
 import { ToastService } from '../../shared/toast/toast.service';
 
 /** Rúbrica + tareas + grilla de notas de una materia. Ver auth.guards.ts::subjectAccessGuard para quién puede entrar. */
@@ -31,11 +32,13 @@ import { ToastService } from '../../shared/toast/toast.service';
   imports: [
     Button,
     ConfirmDialog,
+    Modal,
     Select,
     RouterLink,
     Page,
     PageHeader,
     IconChevronDown,
+    IconMessageSquare,
     IconPlus,
     DecimalPipe,
     DatePipe,
@@ -211,6 +214,48 @@ export class Gradebook {
 
   protected scoreFor(studentUid: string, assignmentId: string): number | null {
     return this.gradesService.scoreFor(this.subjectId(), studentUid, assignmentId);
+  }
+
+  protected hasComment(studentUid: string): boolean {
+    return this.gradesService.commentFor(this.subjectId(), studentUid) !== null;
+  }
+
+  protected readonly commentEditorFor = signal<{ uid: string; name: string } | null>(null);
+  protected readonly commentDraft = signal('');
+  protected readonly savingComment = signal(false);
+
+  protected openCommentEditor(student: {
+    uid: string;
+    displayName?: string | null;
+    email?: string | null;
+  }): void {
+    this.commentEditorFor.set({
+      uid: student.uid,
+      name: student.displayName ?? student.email ?? '',
+    });
+    this.commentDraft.set(this.gradesService.commentFor(this.subjectId(), student.uid) ?? '');
+  }
+
+  protected closeCommentEditor(): void {
+    this.commentEditorFor.set(null);
+    this.commentDraft.set('');
+  }
+
+  protected async saveComment(): Promise<void> {
+    const target = this.commentEditorFor();
+    if (!target) {
+      return;
+    }
+    this.savingComment.set(true);
+    try {
+      await this.gradesService.setComment(this.subjectId(), target.uid, this.commentDraft());
+      this.toast.success(this.i18n.t('gradebook', 'commentSaved'));
+      this.closeCommentEditor();
+    } catch {
+      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
+    } finally {
+      this.savingComment.set(false);
+    }
   }
 
   protected async onSetScore(

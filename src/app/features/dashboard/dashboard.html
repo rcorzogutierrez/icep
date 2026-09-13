@@ -89,6 +89,22 @@
               <p class="text-sm font-medium text-text">
                 {{ i18n.t('dashboard', 'finalGrade') }}: {{ finalGradeLabelFor(subject.id) }}
               </p>
+              @if (commentFor(subject.id); as comment) {
+                <div
+                  class="mt-2 flex items-start gap-1.5 rounded-xl bg-brand-50 px-2.5 py-2 text-xs text-brand-700"
+                >
+                  <svg
+                    lucideMessageSquare
+                    [size]="13"
+                    class="mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  ></svg>
+                  <span>
+                    <span class="font-semibold">{{ i18n.t('dashboard', 'teacherComment') }}:</span>
+                    {{ comment }}
+                  </span>
+                </div>
+              }
             </div>
           }
         </div>

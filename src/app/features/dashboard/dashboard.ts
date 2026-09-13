@@ -31,6 +31,7 @@ import {
   IconBookOpen,
   IconGraduationCap,
   IconLayers,
+  IconMessageSquare,
   IconUserPlus,
   IconUsers,
 } from '../../shared/icons/icons';
@@ -59,6 +60,7 @@ interface StatCard {
     IconUserPlus,
     IconGraduationCap,
     IconLayers,
+    IconMessageSquare,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',
@@ -83,6 +85,7 @@ export class Dashboard {
   protected readonly mySubjects = signal<Subject[]>([]);
   protected readonly mySubjectTeachers = signal<Map<string, string[]>>(new Map());
   protected readonly mySubjectFinalGrades = signal<Map<string, number | null>>(new Map());
+  protected readonly mySubjectComments = signal<Map<string, string | null>>(new Map());
   protected readonly loadingMySubjects = signal(false);
 
   /** Nombres de los profesores de una materia, unidos con coma (o el fallback si no tiene ninguno). */
@@ -99,6 +102,11 @@ export class Dashboard {
     return grade != null
       ? `${Math.round(grade * 10) / 10}%`
       : this.i18n.t('dashboard', 'noGradeYet');
+  }
+
+  /** Comentario del profesor para esa materia, o null si no dejó ninguno. */
+  protected commentFor(subjectId: string): string | null {
+    return this.mySubjectComments().get(subjectId) ?? null;
   }
 
   protected goToGradebook(subjectId: string): void {
@@ -220,6 +228,7 @@ export class Dashboard {
         this.mySubjects.set([]);
         this.mySubjectTeachers.set(new Map());
         this.mySubjectFinalGrades.set(new Map());
+        this.mySubjectComments.set(new Map());
         this.loadingMySubjects.set(false);
         return;
       }
@@ -230,6 +239,7 @@ export class Dashboard {
           this.mySubjects.set([]);
           this.mySubjectTeachers.set(new Map());
           this.mySubjectFinalGrades.set(new Map());
+          this.mySubjectComments.set(new Map());
         })
         .finally(() => this.loadingMySubjects.set(false));
     });
@@ -246,6 +256,7 @@ export class Dashboard {
       this.mySubjects.set([]);
       this.mySubjectTeachers.set(new Map());
       this.mySubjectFinalGrades.set(new Map());
+      this.mySubjectComments.set(new Map());
       return;
     }
 
@@ -269,6 +280,7 @@ export class Dashboard {
     this.mySubjectTeachers.set(byTeacher);
 
     const finalGrades = new Map<string, number | null>();
+    const comments = new Map<string, string | null>();
     for (const subjectId of subjectIds) {
       const grade = grades.find((g) => g?.subjectId === subjectId);
       const subjectCategories = categories.filter((c) => c.subjectId === subjectId);
@@ -277,8 +289,10 @@ export class Dashboard {
         subjectId,
         computeFinalGrade(subjectCategories, subjectAssignments, grade?.scores),
       );
+      comments.set(subjectId, grade?.comment ?? null);
     }
     this.mySubjectFinalGrades.set(finalGrades);
+    this.mySubjectComments.set(comments);
   }
 
   protected goToAdmin(): void {

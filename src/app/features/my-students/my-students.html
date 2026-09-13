@@ -248,6 +248,31 @@
               </div>
             }
 
+            <div class="flex flex-col gap-1.5 border-t border-border pt-3">
+              <label [for]="'comment-' + s.subjectId" class="text-xs font-medium text-text-muted">
+                {{ i18n.t('myStudents', 'commentLabel') }}
+              </label>
+              <textarea
+                [id]="'comment-' + s.subjectId"
+                rows="2"
+                class="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                [placeholder]="i18n.t('myStudents', 'commentPlaceholder')"
+                [value]="commentDraftFor(s.subjectId, student.uid)"
+                (input)="onCommentInput(s.subjectId, $any($event.target).value)"
+              ></textarea>
+              @if (isCommentDirty(s.subjectId, student.uid)) {
+                <div class="flex justify-end">
+                  <app-button
+                    size="sm"
+                    [loading]="savingCommentSubjectId() === s.subjectId"
+                    (pressed)="onSaveComment(s.subjectId, student.uid)"
+                  >
+                    {{ i18n.t('myStudents', 'save') }}
+                  </app-button>
+                </div>
+              }
+            </div>
+
             <button
               type="button"
               class="inline-flex w-fit items-center gap-1.5 text-xs text-brand-700 hover:underline"
