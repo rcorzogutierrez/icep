@@ -140,8 +140,20 @@
     <div class="flex flex-col gap-4">
       @for (s of student.subjects; track s.subjectId) {
         <div class="flex flex-col gap-3.5 rounded-2xl border border-border p-4 shadow-sm">
-          <div class="flex items-center justify-between">
+          <button
+            type="button"
+            class="flex items-center justify-between"
+            [attr.aria-expanded]="expandedSubjectId() === s.subjectId"
+            (click)="toggleSubject(s.subjectId)"
+          >
             <div class="flex items-center gap-2">
+              <svg
+                lucideChevronDown
+                [size]="14"
+                class="text-text-muted transition-transform"
+                [class.-rotate-90]="expandedSubjectId() !== s.subjectId"
+                aria-hidden="true"
+              ></svg>
               <span class="font-mono text-xs text-text-muted">{{ s.subjectCode }}</span>
               <span class="text-sm font-semibold text-text">{{ s.subjectName }}</span>
             </div>
@@ -158,89 +170,91 @@
                 {{ i18n.t('myStudents', 'noGradeYet') }}
               }
             </span>
-          </div>
-
-          @for (catRow of categoryRowsFor(s.subjectId, student.uid); track catRow.category.id) {
-            <div>
-              <div class="mb-1.5 flex items-center justify-between text-sm">
-                <span class="text-text"
-                  >{{ catRow.category.name }}
-                  <span class="text-text-muted">· {{ catRow.category.weight }}%</span></span
-                >
-                @if (
-                  catRow.singleAssignment &&
-                  savingAssignmentId() !== catRow.singleAssignment.id &&
-                  !isDirty(s.subjectId, student.uid, catRow.singleAssignment.id) &&
-                  catRow.percent !== null
-                ) {
-                  <span class="inline-flex items-center gap-1 text-xs text-status-active">
-                    <svg lucideCheck [size]="13" aria-hidden="true"></svg>
-                    {{ i18n.t('myStudents', 'saved') }}
-                  </span>
-                } @else {
-                  <span
-                    class="text-xs"
-                    [class.text-status-active]="gradeBand(catRow.percent) === 'active'"
-                    [class.text-status-paused]="gradeBand(catRow.percent) === 'paused'"
-                    [class.text-status-expired]="gradeBand(catRow.percent) === 'expired'"
-                    [class.text-text-muted]="gradeBand(catRow.percent) === 'muted'"
-                  >
-                    @if (catRow.percent !== null) {
-                      {{ catRow.percent | number: '1.0-0' }}%
-                    } @else {
-                      {{ i18n.t('myStudents', 'noGradeYet') }}
-                    }
-                  </span>
-                }
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    class="h-full rounded-full"
-                    [class.bg-status-active]="gradeBand(catRow.percent) === 'active'"
-                    [class.bg-status-paused]="gradeBand(catRow.percent) === 'paused'"
-                    [class.bg-status-expired]="gradeBand(catRow.percent) === 'expired'"
-                    [style.width.%]="catRow.percent ?? 0"
-                  ></div>
-                </div>
-                @if (catRow.singleAssignment; as assignment) {
-                  <input
-                    type="number"
-                    min="0"
-                    [max]="assignment.pointsPossible"
-                    class="h-7 w-14 rounded-xl border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                    [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
-                    (input)="onScoreInput(assignment.id, $any($event.target).value)"
-                  />
-                  <app-button
-                    size="sm"
-                    [loading]="savingAssignmentId() === assignment.id"
-                    [disabled]="!isDirty(s.subjectId, student.uid, assignment.id)"
-                    (pressed)="onSaveScore(s.subjectId, student.uid, assignment)"
-                  >
-                    {{ i18n.t('myStudents', 'save') }}
-                  </app-button>
-                } @else {
-                  <button
-                    type="button"
-                    class="text-xs whitespace-nowrap text-brand-700 hover:underline"
-                    (click)="goToGradebook(s.subjectId)"
-                  >
-                    {{ i18n.t('myStudents', 'viewTasks') }}
-                  </button>
-                }
-              </div>
-            </div>
-          }
-
-          <button
-            type="button"
-            class="inline-flex w-fit items-center gap-1.5 text-xs text-brand-700 hover:underline"
-            (click)="goToGradebook(s.subjectId)"
-          >
-            {{ i18n.t('myStudents', 'goToGradebook') }}
-            <svg lucideArrowUpRight [size]="13" aria-hidden="true"></svg>
           </button>
+
+          @if (expandedSubjectId() === s.subjectId) {
+            @for (catRow of categoryRowsFor(s.subjectId, student.uid); track catRow.category.id) {
+              <div>
+                <div class="mb-1.5 flex items-center justify-between text-sm">
+                  <span class="text-text"
+                    >{{ catRow.category.name }}
+                    <span class="text-text-muted">· {{ catRow.category.weight }}%</span></span
+                  >
+                  @if (
+                    catRow.singleAssignment &&
+                    savingAssignmentId() !== catRow.singleAssignment.id &&
+                    !isDirty(s.subjectId, student.uid, catRow.singleAssignment.id) &&
+                    catRow.percent !== null
+                  ) {
+                    <span class="inline-flex items-center gap-1 text-xs text-status-active">
+                      <svg lucideCheck [size]="13" aria-hidden="true"></svg>
+                      {{ i18n.t('myStudents', 'saved') }}
+                    </span>
+                  } @else {
+                    <span
+                      class="text-xs"
+                      [class.text-status-active]="gradeBand(catRow.percent) === 'active'"
+                      [class.text-status-paused]="gradeBand(catRow.percent) === 'paused'"
+                      [class.text-status-expired]="gradeBand(catRow.percent) === 'expired'"
+                      [class.text-text-muted]="gradeBand(catRow.percent) === 'muted'"
+                    >
+                      @if (catRow.percent !== null) {
+                        {{ catRow.percent | number: '1.0-0' }}%
+                      } @else {
+                        {{ i18n.t('myStudents', 'noGradeYet') }}
+                      }
+                    </span>
+                  }
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      class="h-full rounded-full"
+                      [class.bg-status-active]="gradeBand(catRow.percent) === 'active'"
+                      [class.bg-status-paused]="gradeBand(catRow.percent) === 'paused'"
+                      [class.bg-status-expired]="gradeBand(catRow.percent) === 'expired'"
+                      [style.width.%]="catRow.percent ?? 0"
+                    ></div>
+                  </div>
+                  @if (catRow.singleAssignment; as assignment) {
+                    <input
+                      type="number"
+                      min="0"
+                      [max]="assignment.pointsPossible"
+                      class="h-7 w-14 rounded-xl border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
+                      (input)="onScoreInput(assignment.id, $any($event.target).value)"
+                    />
+                    <app-button
+                      size="sm"
+                      [loading]="savingAssignmentId() === assignment.id"
+                      [disabled]="!isDirty(s.subjectId, student.uid, assignment.id)"
+                      (pressed)="onSaveScore(s.subjectId, student.uid, assignment)"
+                    >
+                      {{ i18n.t('myStudents', 'save') }}
+                    </app-button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="text-xs whitespace-nowrap text-brand-700 hover:underline"
+                      (click)="goToGradebook(s.subjectId)"
+                    >
+                      {{ i18n.t('myStudents', 'viewTasks') }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <button
+              type="button"
+              class="inline-flex w-fit items-center gap-1.5 text-xs text-brand-700 hover:underline"
+              (click)="goToGradebook(s.subjectId)"
+            >
+              {{ i18n.t('myStudents', 'goToGradebook') }}
+              <svg lucideArrowUpRight [size]="13" aria-hidden="true"></svg>
+            </button>
+          }
         </div>
       }
     </div>

@@ -25,6 +25,7 @@ import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
   IconArrowUpRight,
   IconCheck,
+  IconChevronDown,
   IconChevronRight,
   IconSearch,
 } from '../../shared/icons/icons';
@@ -88,6 +89,7 @@ function gradeBand(grade: number | null): GradeBand {
     DecimalPipe,
     IconArrowUpRight,
     IconCheck,
+    IconChevronDown,
     IconChevronRight,
     IconSearch,
   ],
@@ -118,6 +120,8 @@ export class MyStudents {
   protected readonly openStudentUid = signal<string | null>(null);
   protected readonly editingScores = signal<Record<string, string>>({});
   protected readonly savingAssignmentId = signal<string | null>(null);
+  /** Acordeón: una sola materia expandida a la vez dentro del drawer — arranca cerrado, ver openDrawer/closeDrawer. */
+  protected readonly expandedSubjectId = signal<string | null>(null);
 
   protected readonly loading = computed(
     () =>
@@ -276,11 +280,18 @@ export class MyStudents {
 
   protected openDrawer(uid: string): void {
     this.openStudentUid.set(uid);
+    this.expandedSubjectId.set(null);
   }
 
   protected closeDrawer(): void {
     this.openStudentUid.set(null);
     this.editingScores.set({});
+    this.expandedSubjectId.set(null);
+  }
+
+  /** Acordeón: abrir una materia cierra la que estaba abierta antes. */
+  protected toggleSubject(subjectId: string): void {
+    this.expandedSubjectId.update((current) => (current === subjectId ? null : subjectId));
   }
 
   /** Rúbrica de una materia ya resuelta para el estudiante del drawer abierto. */
