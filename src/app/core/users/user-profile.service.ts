@@ -1,6 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import type { User } from 'firebase/auth';
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import type { Locale } from '../i18n/translations';
@@ -85,6 +85,20 @@ export class UserProfileService {
       enrolledSubjectIds: subjectIds,
       locale,
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * Apodo elegido por el propio usuario — pisa el nombre que vino de
+   * Google/email al registrarse (ver comentario en firestore.rules sobre
+   * por qué ese nombre no siempre es confiable). `displayName` ya es el
+   * campo que toda la app lee para mostrar a un usuario, así que no hace
+   * falta un campo nuevo ni tocar ningún otro lugar.
+   */
+  updateDisplayName(uid: string, displayName: string): Promise<void> {
+    return updateDoc(doc(this.firestore, 'users', uid), {
+      displayName: displayName.trim(),
       updatedAt: serverTimestamp(),
     });
   }

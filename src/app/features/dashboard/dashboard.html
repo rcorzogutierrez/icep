@@ -2,7 +2,7 @@
   <app-page-header [subtitle]="roleLabel() + ' · ' + i18n.t('dashboard', 'subtitle')">
     <span pageTitle>
       {{ i18n.t('dashboard', 'greeting') }},
-      {{ auth.user()?.displayName ?? auth.user()?.email }}
+      {{ userProfileService.profile()?.displayName ?? auth.user()?.email }}
     </span>
   </app-page-header>
 

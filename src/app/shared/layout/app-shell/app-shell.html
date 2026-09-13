@@ -154,19 +154,29 @@
           </button>
         </div>
 
-        <span class="hidden max-w-[200px] truncate text-sm text-text sm:block lg:max-w-none">{{
-          auth.user()?.displayName ?? auth.user()?.email
-        }}</span>
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-full transition-colors hover:bg-slate-100"
+          (click)="openNicknameEditor()"
+        >
+          <span class="hidden max-w-[200px] truncate text-sm text-text sm:block lg:max-w-none">{{
+            userProfileService.profile()?.displayName ?? auth.user()?.email
+          }}</span>
 
-        @if (auth.user()?.photoURL; as photo) {
-          <img [src]="photo" alt="" class="size-7 shrink-0 rounded-full" />
-        } @else {
-          <span
-            class="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 ring-2 ring-brand-50"
-          >
-            {{ (auth.user()?.displayName ?? auth.user()?.email ?? '?').charAt(0).toUpperCase() }}
-          </span>
-        }
+          @if (auth.user()?.photoURL; as photo) {
+            <img [src]="photo" alt="" class="size-7 shrink-0 rounded-full" />
+          } @else {
+            <span
+              class="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 ring-2 ring-brand-50"
+            >
+              {{
+                (userProfileService.profile()?.displayName ?? auth.user()?.email ?? '?')
+                  .charAt(0)
+                  .toUpperCase()
+              }}
+            </span>
+          }
+        </button>
 
         <button
           type="button"
@@ -185,3 +195,40 @@
     </main>
   </div>
 </div>
+
+@if (editingNickname()) {
+  <app-modal
+    [open]="true"
+    [title]="i18n.t('shell', 'editNicknameTitle')"
+    (closed)="editingNickname.set(false)"
+  >
+    <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="nickname-input" class="text-sm font-medium text-text">
+          {{ i18n.t('shell', 'nicknameLabel') }}
+        </label>
+        <input
+          id="nickname-input"
+          type="text"
+          class="h-10 rounded-xl border border-border bg-surface px-3 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [value]="nicknameDraft()"
+          (input)="nicknameDraft.set($any($event.target).value)"
+        />
+        <p class="text-xs text-text-muted">{{ i18n.t('shell', 'nicknameHint') }}</p>
+      </div>
+      <div class="flex justify-end gap-2">
+        <app-button variant="secondary" size="sm" (pressed)="editingNickname.set(false)">
+          {{ i18n.t('common', 'cancel') }}
+        </app-button>
+        <app-button
+          size="sm"
+          [loading]="savingNickname()"
+          [disabled]="!nicknameDraft().trim()"
+          (pressed)="saveNickname()"
+        >
+          {{ i18n.t('shell', 'save') }}
+        </app-button>
+      </div>
+    </div>
+  </app-modal>
+}

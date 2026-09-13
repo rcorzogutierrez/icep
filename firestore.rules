@@ -73,8 +73,18 @@ service cloud.firestore {
         && request.resource.data.role in ['student', 'teacher', 'admin']
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'role', 'enrolledSubjectIds', 'updatedAt']);
 
+      // "displayName" acá es el apodo opcional que el propio usuario elige
+      // (ver UserProfileService.updateDisplayName) — el nombre que vino de
+      // Google/email al registrarse no siempre es el real (puede ser el de
+      // una empresa, o directamente no existir con email+contraseña).
+      // Cuando se toca, tiene que ser un string no vacío y acotado; si no
+      // se toca en este update (ej. solo cambia "locale"), no se exige nada.
       allow update: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locale', 'updatedAt']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locale', 'displayName', 'updatedAt'])
+        && (resource.data.displayName == request.resource.data.displayName
+            || (request.resource.data.displayName is string
+                && request.resource.data.displayName.size() > 0
+                && request.resource.data.displayName.size() <= 60));
 
       // Solo un admin, y nunca sobre su propia cuenta (evita que el
       // último admin se quede sin poder administrar el sistema).

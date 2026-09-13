@@ -96,6 +96,13 @@ export const translations = {
       myStudentsLink: 'Mis estudiantes',
       myCoursesLink: 'Mis cursos',
       openMenu: 'Abrir menú',
+      editNicknameTitle: 'Tu apodo',
+      nicknameLabel: 'Así te van a ver los demás',
+      nicknameHint:
+        'Opcional — si no lo cambiás, se usa el nombre de tu cuenta de Google o el email.',
+      save: 'Guardar',
+      nicknameUpdated: 'Apodo actualizado.',
+      errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
     },
     adminUsers: {
       title: 'Usuarios',
@@ -448,6 +455,12 @@ export const translations = {
       myStudentsLink: 'My students',
       myCoursesLink: 'My courses',
       openMenu: 'Open menu',
+      editNicknameTitle: 'Your nickname',
+      nicknameLabel: 'This is how others will see you',
+      nicknameHint: "Optional — if you don't change it, your Google account name or email is used.",
+      save: 'Save',
+      nicknameUpdated: 'Nickname updated.',
+      errorGeneric: "We couldn't complete the action. Please try again.",
     },
     adminUsers: {
       title: 'Users',
