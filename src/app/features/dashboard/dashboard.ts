@@ -58,6 +58,8 @@ interface CategoryBreakdownRow {
   percent: number | null;
   /** Vacío para categorías "de una sola nota" (ver GradeCategory.hasMultipleTasks) — no hay tareas individuales que listar. */
   assignments: { assignment: Assignment; score: number | null }[];
+  /** Solo para categorías "de una sola nota" — el puntaje crudo que cargó el profesor (ej. "9/10"), no solo el % ya calculado. */
+  singleScore: { earned: number | null; possible: number } | null;
 }
 
 interface StatCard {
@@ -143,7 +145,15 @@ export class Dashboard {
                 assignment,
                 score: detail.grade?.scores[assignment.id] ?? null,
               }));
-        return { category, percent, assignments };
+        const soleAssignment =
+          category.hasMultipleTasks === false ? categoryAssignments[0] : undefined;
+        const singleScore = soleAssignment
+          ? {
+              earned: detail.grade?.scores[soleAssignment.id] ?? null,
+              possible: soleAssignment.pointsPossible,
+            }
+          : null;
+        return { category, percent, assignments, singleScore };
       });
   }
 

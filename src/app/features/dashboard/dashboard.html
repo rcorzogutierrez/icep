@@ -154,6 +154,14 @@
                               </li>
                             }
                           </ul>
+                        } @else if (row.singleScore; as singleScore) {
+                          <p class="mt-1 text-xs text-text-muted">
+                            @if (singleScore.earned !== null) {
+                              {{ singleScore.earned }}/{{ singleScore.possible }}
+                            } @else {
+                              {{ i18n.t('dashboard', 'noGradeYet') }}
+                            }
+                          </p>
                         }
                       </div>
                     }
