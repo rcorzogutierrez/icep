@@ -230,14 +230,15 @@
                       />
                       <span>/{{ assignment.pointsPossible }}</span>
                     </div>
-                    <app-button
-                      size="sm"
-                      [loading]="savingAssignmentId() === assignment.id"
-                      [disabled]="!isDirty(s.subjectId, student.uid, assignment.id)"
-                      (pressed)="onSaveScore(s.subjectId, student.uid, assignment)"
-                    >
-                      {{ i18n.t('myStudents', 'save') }}
-                    </app-button>
+                    @if (isDirty(s.subjectId, student.uid, assignment.id)) {
+                      <app-button
+                        size="sm"
+                        [loading]="savingAssignmentId() === assignment.id"
+                        (pressed)="onSaveScore(s.subjectId, student.uid, assignment)"
+                      >
+                        {{ i18n.t('myStudents', 'save') }}
+                      </app-button>
+                    }
                   } @else {
                     <button
                       type="button"
