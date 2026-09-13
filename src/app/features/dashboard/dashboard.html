@@ -74,15 +74,36 @@
         <div class="grid gap-3 sm:grid-cols-2">
           @for (subject of subjectsService.mySubjects(); track subject.id) {
             <div
-              class="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md"
+              class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md"
             >
-              <p class="font-medium text-text">
-                <span class="font-mono text-text-muted">{{ subject.code }}</span>
-                · {{ subject.name }}
-              </p>
-              <app-button variant="secondary" size="sm" (pressed)="goToGradebook(subject.id)">
-                {{ i18n.t('dashboard', 'grade') }}
-              </app-button>
+              <div class="flex items-center justify-between gap-3">
+                <p class="font-medium text-text">
+                  <span class="font-mono text-text-muted">{{ subject.code }}</span>
+                  · {{ subject.name }}
+                </p>
+                <app-button variant="secondary" size="sm" (pressed)="goToGradebook(subject.id)">
+                  {{ i18n.t('dashboard', 'grade') }}
+                  <svg lucideArrowRight [size]="14" aria-hidden="true"></svg>
+                </app-button>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                @for (course of coursesForSubject(subject.id); track course.courseId) {
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 py-1 pr-2.5 pl-2 text-xs font-medium text-brand-700"
+                  >
+                    <svg lucideLayers [size]="12" aria-hidden="true"></svg>
+                    {{ course.courseName }}
+                    <span class="inline-flex items-center gap-0.5 text-brand-600/80">
+                      <svg lucideUsers [size]="11" aria-hidden="true"></svg>
+                      {{ course.studentCount }}
+                    </span>
+                  </span>
+                } @empty {
+                  <span class="text-xs text-text-muted">{{
+                    i18n.t('dashboard', 'noCoursesForSubject')
+                  }}</span>
+                }
+              </div>
             </div>
           }
         </div>

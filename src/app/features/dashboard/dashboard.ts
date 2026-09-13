@@ -9,7 +9,9 @@ import {
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
+import { CourseSubjectTeachersService } from '../../core/courses/course-subject-teachers.service';
 import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
+import { CoursesService } from '../../core/courses/courses.service';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
 import { GradesService } from '../../core/grades/grades.service';
@@ -24,7 +26,14 @@ import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
-import { IconBookOpen, IconGraduationCap, IconUserPlus, IconUsers } from '../../shared/icons/icons';
+import {
+  IconArrowRight,
+  IconBookOpen,
+  IconGraduationCap,
+  IconLayers,
+  IconUserPlus,
+  IconUsers,
+} from '../../shared/icons/icons';
 
 type StatIcon = 'users' | 'book' | 'mail' | 'graduation';
 
@@ -38,7 +47,17 @@ interface StatCard {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [Button, Page, PageHeader, IconUsers, IconBookOpen, IconUserPlus, IconGraduationCap],
+  imports: [
+    Button,
+    Page,
+    PageHeader,
+    IconArrowRight,
+    IconUsers,
+    IconBookOpen,
+    IconUserPlus,
+    IconGraduationCap,
+    IconLayers,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',
 })
@@ -50,6 +69,8 @@ export class Dashboard {
   private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
   private readonly courseStudentsService = inject(CourseStudentsService);
   private readonly courseSubjectsService = inject(CourseSubjectsService);
+  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
+  private readonly coursesService = inject(CoursesService);
   private readonly gradeCategoriesService = inject(GradeCategoriesService);
   private readonly assignmentsService = inject(AssignmentsService);
   private readonly gradesService = inject(GradesService);
@@ -80,6 +101,41 @@ export class Dashboard {
 
   protected goToGradebook(subjectId: string): void {
     void this.router.navigateByUrl(`/subjects/${subjectId}/gradebook`);
+  }
+
+  /**
+   * Cursos donde el profesor logueado dicta ESTA materia puntual, con el
+   * conteo de estudiantes de cada uno — mismo criterio de
+   * courseSubjectTeachers (curso+materia+profesor) que Gradebook/Mis
+   * estudiantes, no solo subjectAssignments (que es global a la materia,
+   * sin curso). Un profesor puede dictarla en más de un curso a la vez.
+   */
+  protected coursesForSubject(
+    subjectId: string,
+  ): { courseId: string; courseName: string; studentCount: number }[] {
+    const uid = this.auth.user()?.uid;
+    if (!uid) {
+      return [];
+    }
+    return this.courseSubjectTeachersService
+      .rows()
+      .filter((row) => row.subjectId === subjectId && row.teacherId === uid)
+      .map((row) => {
+        const course = this.coursesService.courses().find((c) => c.id === row.courseId);
+        if (!course) {
+          return null;
+        }
+        const studentCount = this.courseStudentsService
+          .forCourse(row.courseId)
+          .filter((cs) =>
+            this.usersService.users().some((u) => u.uid === cs.studentUid && u.role === 'student'),
+          ).length;
+        return { courseId: row.courseId, courseName: course.name, studentCount };
+      })
+      .filter(
+        (entry): entry is { courseId: string; courseName: string; studentCount: number } =>
+          entry !== null,
+      );
   }
 
   protected readonly roleLabel = computed(() => {

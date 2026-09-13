@@ -86,6 +86,8 @@ export const translations = {
       newInvitation: 'Nueva invitación',
       newSubject: 'Nueva materia',
       viewUsers: 'Ver usuarios',
+      studentsLabel: 'estudiantes',
+      noCoursesForSubject: 'Sin curso asociado todavía',
     },
     shell: {
       summary: 'Resumen',
@@ -436,6 +438,8 @@ export const translations = {
       newInvitation: 'New invitation',
       newSubject: 'New subject',
       viewUsers: 'View users',
+      studentsLabel: 'students',
+      noCoursesForSubject: 'No course linked yet',
     },
     shell: {
       summary: 'Summary',
