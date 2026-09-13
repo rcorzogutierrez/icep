@@ -216,6 +216,95 @@ export class Gradebook {
     return this.gradesService.scoreFor(this.subjectId(), studentUid, assignmentId);
   }
 
+  /**
+   * Borrador de notas de la grilla, por estudiante — no se escribe a
+   * Firestore en cada tecla ni al perder el foco, sino recién cuando el
+   * profesor confirma con el botón "Guardar" de esa fila (ver onSaveRow).
+   * Clave `${studentUid}_${assignmentId}` porque el mismo assignmentId se
+   * repite por columna para todos los estudiantes de la grilla.
+   */
+  protected readonly editingScores = signal<Record<string, string>>({});
+  protected readonly savingRowUid = signal<string | null>(null);
+
+  private scoreDraftKey(studentUid: string, assignmentId: string): string {
+    return `${studentUid}_${assignmentId}`;
+  }
+
+  protected inputValueFor(studentUid: string, assignmentId: string): string {
+    const draft = this.editingScores()[this.scoreDraftKey(studentUid, assignmentId)];
+    if (draft !== undefined) {
+      return draft;
+    }
+    const score = this.scoreFor(studentUid, assignmentId);
+    return score === null ? '' : String(score);
+  }
+
+  protected onScoreInput(studentUid: string, assignmentId: string, value: string): void {
+    this.editingScores.update((map) => ({
+      ...map,
+      [this.scoreDraftKey(studentUid, assignmentId)]: value,
+    }));
+  }
+
+  /** Tareas de esta fila cuyo borrador difiere del valor guardado — ninguna significa fila "limpia". */
+  private dirtyAssignmentsFor(studentUid: string): Assignment[] {
+    return this.assignments().filter((assignment) => {
+      const draft = this.editingScores()[this.scoreDraftKey(studentUid, assignment.id)];
+      if (draft === undefined) {
+        return false;
+      }
+      const saved = this.scoreFor(studentUid, assignment.id);
+      return draft.trim() !== (saved === null ? '' : String(saved));
+    });
+  }
+
+  protected isRowDirty(studentUid: string): boolean {
+    return this.dirtyAssignmentsFor(studentUid).length > 0;
+  }
+
+  protected async onSaveRow(studentUid: string): Promise<void> {
+    const dirtyAssignments = this.dirtyAssignmentsFor(studentUid);
+    if (dirtyAssignments.length === 0) {
+      return;
+    }
+
+    const updates: { assignment: Assignment; score: number | null }[] = [];
+    for (const assignment of dirtyAssignments) {
+      const raw = this.editingScores()[this.scoreDraftKey(studentUid, assignment.id)] ?? '';
+      const trimmed = raw.trim();
+      const score = trimmed === '' ? null : Number(trimmed);
+      if (
+        score !== null &&
+        (Number.isNaN(score) || score < 0 || score > assignment.pointsPossible)
+      ) {
+        this.toast.error(this.i18n.t('gradebook', 'invalidScore'));
+        return;
+      }
+      updates.push({ assignment, score });
+    }
+
+    this.savingRowUid.set(studentUid);
+    try {
+      await Promise.all(
+        updates.map(({ assignment, score }) =>
+          this.gradesService.setScore(this.subjectId(), studentUid, assignment.id, score),
+        ),
+      );
+      this.editingScores.update((map) => {
+        const rest = { ...map };
+        for (const { assignment } of updates) {
+          delete rest[this.scoreDraftKey(studentUid, assignment.id)];
+        }
+        return rest;
+      });
+      this.toast.success(this.i18n.t('gradebook', 'scoresSaved'));
+    } catch {
+      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
+    } finally {
+      this.savingRowUid.set(null);
+    }
+  }
+
   protected hasComment(studentUid: string): boolean {
     return this.gradesService.commentFor(this.subjectId(), studentUid) !== null;
   }
@@ -255,24 +344,6 @@ export class Gradebook {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
       this.savingComment.set(false);
-    }
-  }
-
-  protected async onSetScore(
-    studentUid: string,
-    assignment: Assignment,
-    rawValue: string,
-  ): Promise<void> {
-    const trimmed = rawValue.trim();
-    const score = trimmed === '' ? null : Number(trimmed);
-    if (score !== null && (Number.isNaN(score) || score < 0 || score > assignment.pointsPossible)) {
-      this.toast.error(this.i18n.t('gradebook', 'invalidScore'));
-      return;
-    }
-    try {
-      await this.gradesService.setScore(this.subjectId(), studentUid, assignment.id, score);
-    } catch {
-      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     }
   }
 

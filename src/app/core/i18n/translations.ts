@@ -321,6 +321,8 @@ export const translations = {
       commentPlaceholder: 'Unas líneas sobre su desempeño en la materia (opcional)...',
       commentHint: 'Lo va a ver el estudiante junto con sus notas de esta materia.',
       commentSaved: 'Comentario guardado.',
+      rowUnsaved: 'Sin guardar',
+      scoresSaved: 'Notas guardadas.',
     },
     myCourses: {
       title: 'Mis cursos',
@@ -690,6 +692,8 @@ export const translations = {
       commentPlaceholder: 'A few lines about their performance in the subject (optional)...',
       commentHint: 'The student will see this alongside their grades for this subject.',
       commentSaved: 'Comment saved.',
+      rowUnsaved: 'Unsaved',
+      scoresSaved: 'Grades saved.',
     },
     myCourses: {
       title: 'My courses',
