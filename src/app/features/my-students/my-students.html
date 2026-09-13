@@ -166,8 +166,10 @@
             >
               @if (s.finalGrade !== null) {
                 {{ s.finalGrade | number: '1.0-0' }}%
-              } @else {
+              } @else if (s.hasRubric) {
                 {{ i18n.t('myStudents', 'noGradeYet') }}
+              } @else {
+                {{ i18n.t('myStudents', 'noRubricYet') }}
               }
             </span>
           </button>

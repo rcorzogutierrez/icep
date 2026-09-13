@@ -34,6 +34,8 @@ interface SubjectProgress {
   subjectCode: string;
   subjectName: string;
   finalGrade: number | null;
+  /** false si la materia todavía no tiene ninguna categoría de rúbrica creada — distinto de "tiene rúbrica pero sin notas cargadas". */
+  hasRubric: boolean;
 }
 
 interface StudentRow {
@@ -179,6 +181,7 @@ export class MyCourseDetail {
           subjectCode: subject.code,
           subjectName: subject.name,
           finalGrade,
+          hasRubric: categories.length > 0,
         });
         rowsByUid.set(cs.studentUid, row);
       }
