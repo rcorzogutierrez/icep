@@ -486,27 +486,27 @@
             @for (category of categories(); track category.id) {
               @if (assignmentsFor(category.id).length > 0) {
                 @if (category.hasMultipleTasks === false) {
-                  <th
-                    class="border-l border-border px-4 py-2 text-center font-medium whitespace-nowrap"
-                    rowspan="2"
-                  >
-                    {{ category.name }} ({{ category.weight }}%)
-                    <span class="block font-normal text-text-muted">/{{ category.weight }}</span>
+                  <th class="border-l border-border px-2 py-2 text-center font-medium" rowspan="2">
+                    {{ category.name }}
+                    <span class="block font-normal text-text-muted"
+                      >{{ category.weight }}% · /{{ category.weight }}</span
+                    >
                   </th>
                 } @else {
                   <th
-                    class="border-l border-border px-4 py-2 text-center font-medium whitespace-nowrap"
+                    class="border-l border-border px-2 py-2 text-center font-medium"
                     [attr.colspan]="assignmentsFor(category.id).length"
                   >
-                    {{ category.name }} ({{ category.weight }}%)
+                    {{ category.name }}
+                    <span class="block font-normal text-text-muted">{{ category.weight }}%</span>
                   </th>
                 }
               }
             }
-            <th class="px-4 py-2 font-medium" rowspan="2">
+            <th class="px-3 py-2 font-medium" rowspan="2">
               {{ i18n.t('gradebook', 'colFinalGrade') }}
             </th>
-            <th class="px-4 py-2 font-medium" rowspan="2">
+            <th class="px-3 py-2 font-medium" rowspan="2">
               {{ i18n.t('gradebook', 'colActions') }}
             </th>
           </tr>
@@ -514,7 +514,7 @@
             @for (category of categories(); track category.id) {
               @if (category.hasMultipleTasks !== false) {
                 @for (assignment of assignmentsFor(category.id); track assignment.id) {
-                  <th class="border-l border-border px-4 py-2 font-medium whitespace-nowrap">
+                  <th class="border-l border-border px-2 py-2 font-medium whitespace-nowrap">
                     {{ assignment.name }}
                     <span class="block font-normal text-text-muted"
                       >/{{ assignment.pointsPossible }}</span
@@ -559,19 +559,19 @@
               </td>
               @for (category of categories(); track category.id) {
                 @for (assignment of assignmentsFor(category.id); track assignment.id) {
-                  <td class="border-l border-border px-4 py-3">
+                  <td class="border-l border-border px-2 py-3">
                     <input
                       type="number"
                       min="0"
                       [max]="assignment.pointsPossible"
-                      class="h-9 w-16 rounded-xl border border-border bg-surface shadow-sm px-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      class="h-9 w-14 rounded-xl border border-border bg-surface shadow-sm px-1.5 text-center text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                       [value]="inputValueFor(student.uid, assignment.id)"
                       (input)="onScoreInput(student.uid, assignment.id, $any($event.target).value)"
                     />
                   </td>
                 }
               }
-              <td class="px-4 py-3 font-semibold text-text">
+              <td class="px-3 py-3 font-semibold text-text">
                 @if (finalGradeFor(student.uid) !== null) {
                   {{ finalGradeFor(student.uid) | number: '1.0-1' }}%
                 } @else {
@@ -580,7 +580,7 @@
                   }}</span>
                 }
               </td>
-              <td class="px-4 py-3">
+              <td class="px-3 py-3">
                 @if (isRowDirty(student.uid)) {
                   <app-button
                     size="sm"
