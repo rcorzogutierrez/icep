@@ -445,6 +445,7 @@ export class Gradebook {
         this.categoryHasMultipleTasks(),
       );
       this.closeAddCategoryForm();
+      this.toast.success(this.i18n.t('gradebook', 'categoryAdded'));
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
@@ -491,6 +492,7 @@ export class Gradebook {
         weight,
       });
       this.editingCategoryId.set(null);
+      this.toast.success(this.i18n.t('gradebook', 'categorySaved'));
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
@@ -502,6 +504,7 @@ export class Gradebook {
     this.removingCategoryId.set(category.id);
     try {
       await this.categoriesService.remove(category.id);
+      this.toast.success(this.i18n.t('gradebook', 'categoryDeleted'));
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
@@ -531,6 +534,7 @@ export class Gradebook {
         this.assignmentDueDate() ? new Date(this.assignmentDueDate()) : null,
       );
       this.closeAddAssignmentForm();
+      this.toast.success(this.i18n.t('gradebook', 'assignmentAdded'));
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
@@ -583,6 +587,7 @@ export class Gradebook {
         dueDate: this.editAssignmentDueDate() ? new Date(this.editAssignmentDueDate()) : null,
       });
       this.editingAssignmentId.set(null);
+      this.toast.success(this.i18n.t('gradebook', 'assignmentSaved'));
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
@@ -594,6 +599,7 @@ export class Gradebook {
     this.removingAssignmentId.set(assignment.id);
     try {
       await this.assignmentsService.remove(assignment.id);
+      this.toast.success(this.i18n.t('gradebook', 'assignmentDeleted'));
     } catch {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {

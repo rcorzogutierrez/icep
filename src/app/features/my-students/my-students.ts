@@ -350,6 +350,7 @@ export class MyStudents {
         delete rest[assignment.id];
         return rest;
       });
+      this.toast.success(this.i18n.t('myStudents', 'scoreSaved'));
     } catch {
       this.toast.error(this.i18n.t('myStudents', 'errorGeneric'));
     } finally {
