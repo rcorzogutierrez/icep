@@ -1,15 +1,19 @@
 # ICEP Gradebook
 
-Sistema de gestión académica para ICEP: cursos, materias, rúbricas de calificación y notas, con acceso por invitación y tres roles (admin, profesor, estudiante). Interfaz bilingüe (ES/EN).
+Sistema de gestión académica para el Instituto Evangélico de Teología: cursos, materias, rúbricas de calificación y notas, con acceso por invitación y tres roles (admin, profesor, estudiante). Interfaz bilingüe (ES/EN).
+
+> El producto se rebrandeó de "ICEP" a **"IET Gradebook"** (así aparece en la UI, `<title>`, logo) — el nombre del repo, el paquete npm y el proyecto de Firebase (`icep-44c27`) se quedaron en "icep" a propósito, no se renombraron. No es una inconsistencia a corregir.
 
 [![CI](https://github.com/rcorzogutierrez/icep/actions/workflows/ci.yml/badge.svg)](https://github.com/rcorzogutierrez/icep/actions/workflows/ci.yml)
 
 ## Qué hace
 
-- **Admin**: aprueba/rechaza usuarios, gestiona el catálogo de materias, arma cursos (agrupan estudiantes por énfasis/año) y asigna profesores a las materias de cada curso.
-- **Profesor**: define la rúbrica de una materia (categorías con peso, ej. "Tareas" 40%), crea tareas dentro de cada categoría, carga notas — individualmente o para toda la clase de una vez ("Revisar tarea") — y ve un roster de sus estudiantes a través de todas sus materias ("Mis estudiantes").
+- **Admin**: aprueba/rechaza usuarios, les cambia el rol o los borra, gestiona el catálogo de materias, arma cursos (con fecha de inicio/fin) y asigna profesores a las materias de cada curso.
+- **Profesor**: define la rúbrica de una materia (categorías con peso, ej. "Tareas" 40%), crea tareas dentro de cada categoría, carga notas — individualmente o para toda la clase de una vez ("Revisar tarea") — y navega sus cursos y estudiantes de dos formas: por materia ("Mis estudiantes", roster a través de todas sus materias) o curso por curso ("Mis cursos").
 - **Estudiante**: ve sus materias, quién las dicta y su nota final (calculada a partir de la rúbrica y las tareas calificadas).
-- **Alta de cuentas**: nunca es libre. Un admin o profesor genera un código de invitación (ligado a un email y un rol), y solo esa persona puede canjearlo para crear su perfil — ver [Seguridad](#seguridad-y-modelo-de-datos).
+- **Alta de cuentas**: nunca es libre, pero hay dos mecanismos distintos — ver [Seguridad](#seguridad-y-modelo-de-datos) para el porqué de cada uno:
+  - **Invitación individual**: un admin o profesor invita a un email puntual con un rol; solo esa cuenta puede canjearla.
+  - **Código de curso**: un admin o profesor genera un código (o QR) de un curso puntual; cualquiera con el código se suma como estudiante a ESE curso — mismo modelo que un código de clase de Google Classroom.
 
 ## Stack
 
@@ -19,6 +23,7 @@ Sistema de gestión académica para ICEP: cursos, materias, rúbricas de calific
 | Estilos | Tailwind CSS 4 |
 | Backend | Firebase: Auth, Firestore, Storage, Hosting |
 | Íconos | [Lucide](https://lucide.dev/) (`@lucide/angular`) |
+| QR | [`qrcode`](https://www.npmjs.com/package/qrcode) — generado 100% en el navegador, sin servicio externo (ver `shared/utils/qr-code.ts`) |
 | Tests | Vitest (`@angular/build:unit-test`, jsdom, sin browser real) |
 | CI | GitHub Actions — ver [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 
@@ -64,12 +69,13 @@ Con los emuladores corriendo, la UI en `http://localhost:4200` ya conecta a ello
 
 ## Seguridad y modelo de datos
 
-Las reglas de Firestore (`firestore.rules`) son la única fuente de verdad de autorización — los guards de Angular (`core/auth/auth.guards.ts`) son UX, no seguridad; asumen que el usuario pudo entrar, no lo autorizan a leer/escribir nada por sí solos.
+Las reglas de Firestore (`firestore.rules`) son la única fuente de verdad de autorización — los guards de Angular (`core/auth/auth.guards.ts`) son UX, no seguridad; asumen que el usuario pudo entrar, no lo autorizan a leer/escribir nada por sí solos. Antes de agregar una feature que toque `firestore.rules` (sobre todo cualquier cosa tipo invitación/código, o una acción de admin sobre otro usuario), leé la sección **Security** de [`CLAUDE.md`](CLAUDE.md): son patrones sacados de vulnerabilidades reales ya encontradas y corregidas en este repo, no una checklist genérica.
 
 Colecciones principales:
 
-- **`users/{uid}`** — perfil de acceso (`role`: student/teacher/admin, `status`: approved/rejected). Se crea únicamente al canjear una invitación.
-- **`invitations/{code}`** — código de invitación, ligado a un email y un rol. Solo la cuenta con ese email puede canjearlo (ver `firestore.rules`), y una vez usado queda marcado como tal.
+- **`users/{uid}`** — perfil de acceso (`role`: student/teacher/admin, `status`: approved/rejected). Se crea únicamente al canjear una invitación (individual o de curso).
+- **`invitations/{code}`** — invitación individual, ligada a un email y un rol, un solo uso, vence a los 7 días. Solo la cuenta con ese email puede canjearla (ver `firestore.rules`).
+- **`courseInvitations/{code}`** — código de curso, multi-uso y **deliberadamente sin email**: quien tenga el código/link/QR se suma como estudiante a ese curso puntual, vence a los ~29 días. No es un descuido de seguridad — está documentado como tal en `firestore.rules` y en la sección Security de [`CLAUDE.md`](CLAUDE.md), que también es la referencia a seguir si agregás un tercer mecanismo de invitación.
 - **`subjects/{id}`** — catálogo de materias.
 - **`courses/{id}`**, **`courseStudents`**, **`courseTeachers`**, **`courseSubjects`**, **`courseSubjectTeachers`** — agrupan estudiantes por curso (énfasis/año), qué materias tiene cada curso y qué profesor dicta cuál. `subjectAssignments/{subjectId}_{teacherId}` es la tabla derivada de todo esto: lo único que leen las reglas de `grades`/`gradeCategories`/`assignments` para verificar "¿este profesor realmente dicta esta materia?".
 - **`gradeCategories/{id}`** — rúbrica de una materia (categorías con peso; la suma a 100% se valida en el cliente, no en las reglas).
