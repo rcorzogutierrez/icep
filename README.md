@@ -10,7 +10,7 @@ Sistema de gestión académica para el Instituto Evangélico de Teología: curso
 
 - **Admin**: aprueba/rechaza usuarios, les cambia el rol o los borra, gestiona el catálogo de materias, arma cursos (con fecha de inicio/fin) y asigna profesores a las materias de cada curso.
 - **Profesor**: define la rúbrica de una materia (categorías con peso, ej. "Tareas" 40%), crea tareas dentro de cada categoría, carga notas — individualmente o para toda la clase de una vez ("Revisar tarea") — y navega sus cursos y estudiantes de dos formas: por materia ("Mis estudiantes", roster a través de todas sus materias) o curso por curso ("Mis cursos").
-- **Estudiante**: ve sus materias, quién las dicta y su nota final (calculada a partir de la rúbrica y las tareas calificadas).
+- **Estudiante**: ve sus materias, quién las dicta, su nota final y el desglose por categoría/tarea (calculado a partir de la rúbrica y las tareas calificadas), además del comentario opcional que el profesor haya dejado. Puede elegir un apodo propio (`displayName`) en vez del nombre que trajo Google/email al registrarse.
 - **Alta de cuentas**: nunca es libre, pero hay dos mecanismos distintos — ver [Seguridad](#seguridad-y-modelo-de-datos) para el porqué de cada uno:
   - **Invitación individual**: un admin o profesor invita a un email puntual con un rol; solo esa cuenta puede canjearla.
   - **Código de curso**: un admin o profesor genera un código (o QR) de un curso puntual; cualquiera con el código se suma como estudiante a ESE curso — mismo modelo que un código de clase de Google Classroom.
@@ -73,14 +73,14 @@ Las reglas de Firestore (`firestore.rules`) son la única fuente de verdad de au
 
 Colecciones principales:
 
-- **`users/{uid}`** — perfil de acceso (`role`: student/teacher/admin, `status`: approved/rejected). Se crea únicamente al canjear una invitación (individual o de curso).
+- **`users/{uid}`** — perfil de acceso (`role`: student/teacher/admin, `status`: approved/rejected). Se crea únicamente al canjear una invitación (individual o de curso). `displayName` es autoeditable por el propio usuario (apodo opcional) — el resto de los campos no.
 - **`invitations/{code}`** — invitación individual, ligada a un email y un rol, un solo uso, vence a los 7 días. Solo la cuenta con ese email puede canjearla (ver `firestore.rules`).
 - **`courseInvitations/{code}`** — código de curso, multi-uso y **deliberadamente sin email**: quien tenga el código/link/QR se suma como estudiante a ese curso puntual, vence a los ~29 días. No es un descuido de seguridad — está documentado como tal en `firestore.rules` y en la sección Security de [`CLAUDE.md`](CLAUDE.md), que también es la referencia a seguir si agregás un tercer mecanismo de invitación.
 - **`subjects/{id}`** — catálogo de materias.
 - **`courses/{id}`**, **`courseStudents`**, **`courseTeachers`**, **`courseSubjects`**, **`courseSubjectTeachers`** — agrupan estudiantes por curso (énfasis/año), qué materias tiene cada curso y qué profesor dicta cuál. `subjectAssignments/{subjectId}_{teacherId}` es la tabla derivada de todo esto: lo único que leen las reglas de `grades`/`gradeCategories`/`assignments` para verificar "¿este profesor realmente dicta esta materia?".
 - **`gradeCategories/{id}`** — rúbrica de una materia (categorías con peso; la suma a 100% se valida en el cliente, no en las reglas).
 - **`assignments/{id}`** — una tarea dentro de una categoría.
-- **`grades/{subjectId}_{studentUid}`** — nota de un estudiante en una materia (`scores`: `assignmentId → puntos`). Id determinístico a propósito, para que el propio estudiante pueda consultar su nota con un `getDoc` directo.
+- **`grades/{subjectId}_{studentUid}`** — nota de un estudiante en una materia (`scores`: `assignmentId → puntos`, `comment`: comentario opcional del profesor). Id determinístico a propósito, para que el propio estudiante pueda consultar su nota con un `getDoc` directo.
 
 Para el detalle campo por campo, los modelos TypeScript en `src/app/core/*/​*.model.ts` están documentados junto a cada interfaz.
 
