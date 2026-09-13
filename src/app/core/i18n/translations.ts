@@ -323,6 +323,10 @@ export const translations = {
       commentSaved: 'Comentario guardado.',
       rowUnsaved: 'Sin guardar',
       scoresSaved: 'Notas guardadas.',
+      discard: 'Descartar',
+      confirmSaveRowTitle: 'Confirmar cambios',
+      confirmSaveRowIntro: 'Vas a guardar estos cambios para',
+      confirmSaveAction: 'Confirmar y guardar',
     },
     myCourses: {
       title: 'Mis cursos',
@@ -694,6 +698,10 @@ export const translations = {
       commentSaved: 'Comment saved.',
       rowUnsaved: 'Unsaved',
       scoresSaved: 'Grades saved.',
+      discard: 'Discard',
+      confirmSaveRowTitle: 'Confirm changes',
+      confirmSaveRowIntro: "You're about to save these changes for",
+      confirmSaveAction: 'Confirm and save',
     },
     myCourses: {
       title: 'My courses',

@@ -22,7 +22,12 @@ import { Modal } from '../../shared/components/modal/modal';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
-import { IconChevronDown, IconMessageSquare, IconPlus } from '../../shared/icons/icons';
+import {
+  IconArrowRight,
+  IconChevronDown,
+  IconMessageSquare,
+  IconPlus,
+} from '../../shared/icons/icons';
 import { ToastService } from '../../shared/toast/toast.service';
 
 /** Rúbrica + tareas + grilla de notas de una materia. Ver auth.guards.ts::subjectAccessGuard para quién puede entrar. */
@@ -37,6 +42,7 @@ import { ToastService } from '../../shared/toast/toast.service';
     RouterLink,
     Page,
     PageHeader,
+    IconArrowRight,
     IconChevronDown,
     IconMessageSquare,
     IconPlus,
@@ -262,12 +268,33 @@ export class Gradebook {
     return this.dirtyAssignmentsFor(studentUid).length > 0;
   }
 
-  protected async onSaveRow(studentUid: string): Promise<void> {
+  /** true si ALGUNA fila tiene cambios sin guardar — oculta la columna "Acciones" entera cuando no hace falta. */
+  protected hasAnyDirtyRow(): boolean {
+    return this.students().some((student) => this.isRowDirty(student.uid));
+  }
+
+  /** Descarta el borrador de una fila (vuelve a lo que ya está guardado), sin tocar Firestore. */
+  protected discardRow(studentUid: string): void {
+    this.editingScores.update((map) => {
+      const rest = { ...map };
+      const prefix = `${studentUid}_`;
+      for (const key of Object.keys(rest)) {
+        if (key.startsWith(prefix)) {
+          delete rest[key];
+        }
+      }
+      return rest;
+    });
+  }
+
+  /** Valida el borrador de una fila; null + toast de error si algo no es válido, si no la lista de cambios a aplicar. */
+  private validateDirtyRow(
+    studentUid: string,
+  ): { assignment: Assignment; score: number | null }[] | null {
     const dirtyAssignments = this.dirtyAssignmentsFor(studentUid);
     if (dirtyAssignments.length === 0) {
-      return;
+      return null;
     }
-
     const updates: { assignment: Assignment; score: number | null }[] = [];
     for (const assignment of dirtyAssignments) {
       const raw = this.editingScores()[this.scoreDraftKey(studentUid, assignment.id)] ?? '';
@@ -278,9 +305,61 @@ export class Gradebook {
         (Number.isNaN(score) || score < 0 || score > assignment.pointsPossible)
       ) {
         this.toast.error(this.i18n.t('gradebook', 'invalidScore'));
-        return;
+        return null;
       }
       updates.push({ assignment, score });
+    }
+    return updates;
+  }
+
+  protected readonly confirmingRowUid = signal<string | null>(null);
+
+  protected confirmingRowStudentName(): string {
+    const student = this.students().find((s) => s.uid === this.confirmingRowUid());
+    return student?.displayName ?? student?.email ?? '';
+  }
+
+  /** Resumen "antes → después" de una fila, para el diálogo de confirmación. */
+  protected rowChangeSummaryFor(
+    studentUid: string,
+  ): { assignmentName: string; from: string; to: string }[] {
+    return this.dirtyAssignmentsFor(studentUid).map((assignment) => {
+      const draft = this.editingScores()[this.scoreDraftKey(studentUid, assignment.id)] ?? '';
+      const saved = this.scoreFor(studentUid, assignment.id);
+      const trimmed = draft.trim();
+      const noGrade = this.i18n.t('gradebook', 'noGradeYet');
+      return {
+        assignmentName: assignment.name,
+        from: saved === null ? noGrade : `${saved}/${assignment.pointsPossible}`,
+        to: trimmed === '' ? noGrade : `${trimmed}/${assignment.pointsPossible}`,
+      };
+    });
+  }
+
+  protected openSaveRowConfirm(studentUid: string): void {
+    if (!this.validateDirtyRow(studentUid)) {
+      return;
+    }
+    this.confirmingRowUid.set(studentUid);
+  }
+
+  protected closeSaveRowConfirm(): void {
+    this.confirmingRowUid.set(null);
+  }
+
+  protected async confirmSaveRow(): Promise<void> {
+    const studentUid = this.confirmingRowUid();
+    if (!studentUid) {
+      return;
+    }
+    this.confirmingRowUid.set(null);
+    await this.onSaveRow(studentUid);
+  }
+
+  private async onSaveRow(studentUid: string): Promise<void> {
+    const updates = this.validateDirtyRow(studentUid);
+    if (!updates) {
+      return;
     }
 
     this.savingRowUid.set(studentUid);

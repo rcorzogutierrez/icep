@@ -506,9 +506,11 @@
             <th class="px-3 py-2 font-medium" rowspan="2">
               {{ i18n.t('gradebook', 'colFinalGrade') }}
             </th>
-            <th class="px-3 py-2 font-medium" rowspan="2">
-              {{ i18n.t('gradebook', 'colActions') }}
-            </th>
+            @if (hasAnyDirtyRow()) {
+              <th class="px-3 py-2 font-medium" rowspan="2">
+                {{ i18n.t('gradebook', 'colActions') }}
+              </th>
+            }
           </tr>
           <tr>
             @for (category of categories(); track category.id) {
@@ -580,22 +582,34 @@
                   }}</span>
                 }
               </td>
-              <td class="px-3 py-3">
-                @if (isRowDirty(student.uid)) {
-                  <app-button
-                    size="sm"
-                    [loading]="savingRowUid() === student.uid"
-                    (pressed)="onSaveRow(student.uid)"
-                  >
-                    {{ i18n.t('gradebook', 'save') }}
-                  </app-button>
-                }
-              </td>
+              @if (hasAnyDirtyRow()) {
+                <td class="px-3 py-3">
+                  @if (isRowDirty(student.uid)) {
+                    <div class="flex gap-1.5">
+                      <app-button
+                        variant="secondary"
+                        size="sm"
+                        [disabled]="savingRowUid() === student.uid"
+                        (pressed)="discardRow(student.uid)"
+                      >
+                        {{ i18n.t('gradebook', 'discard') }}
+                      </app-button>
+                      <app-button
+                        size="sm"
+                        [loading]="savingRowUid() === student.uid"
+                        (pressed)="openSaveRowConfirm(student.uid)"
+                      >
+                        {{ i18n.t('gradebook', 'save') }}
+                      </app-button>
+                    </div>
+                  }
+                </td>
+              }
             </tr>
           } @empty {
             <tr>
               <td
-                [attr.colspan]="assignments().length + 3"
+                [attr.colspan]="assignments().length + 2"
                 class="px-4 py-6 text-center text-text-muted"
               >
                 {{ i18n.t('gradebook', 'noStudents') }}
@@ -654,6 +668,41 @@
         </app-button>
         <app-button size="sm" [loading]="savingComment()" (pressed)="saveComment()">
           {{ i18n.t('gradebook', 'save') }}
+        </app-button>
+      </div>
+    </div>
+  </app-modal>
+}
+
+@if (confirmingRowUid()) {
+  <app-modal
+    [open]="true"
+    [title]="i18n.t('gradebook', 'confirmSaveRowTitle')"
+    (closed)="closeSaveRowConfirm()"
+  >
+    <div class="flex flex-col gap-3">
+      <p class="text-sm text-text-muted">
+        {{ i18n.t('gradebook', 'confirmSaveRowIntro') }}
+        <span class="font-medium text-text">{{ confirmingRowStudentName() }}</span>
+      </p>
+      <ul class="flex flex-col gap-1.5 rounded-2xl border border-border bg-slate-50 p-3 text-sm">
+        @for (change of rowChangeSummaryFor(confirmingRowUid()!); track change.assignmentName) {
+          <li class="flex items-center justify-between gap-3">
+            <span class="text-text">{{ change.assignmentName }}</span>
+            <span class="flex items-center gap-1.5 whitespace-nowrap text-text-muted">
+              {{ change.from }}
+              <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
+              <span class="font-medium text-text">{{ change.to }}</span>
+            </span>
+          </li>
+        }
+      </ul>
+      <div class="flex justify-end gap-2">
+        <app-button variant="secondary" size="sm" (pressed)="closeSaveRowConfirm()">
+          {{ i18n.t('gradebook', 'cancel') }}
+        </app-button>
+        <app-button size="sm" (pressed)="confirmSaveRow()">
+          {{ i18n.t('gradebook', 'confirmSaveAction') }}
         </app-button>
       </div>
     </div>
