@@ -89,6 +89,7 @@ export const translations = {
       studentsLabel: 'estudiantes',
       noCoursesForSubject: 'Sin curso asociado todavía',
       teacherComment: 'Comentario del profesor',
+      viewBreakdown: 'Ver desglose por categoría',
     },
     shell: {
       summary: 'Resumen',
@@ -457,6 +458,7 @@ export const translations = {
       studentsLabel: 'students',
       noCoursesForSubject: 'No course linked yet',
       teacherComment: "Teacher's comment",
+      viewBreakdown: 'View breakdown by category',
     },
     shell: {
       summary: 'Summary',

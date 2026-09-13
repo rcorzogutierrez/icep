@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,10 +13,17 @@ import { CourseStudentsService } from '../../core/courses/course-students.servic
 import { CourseSubjectTeachersService } from '../../core/courses/course-subject-teachers.service';
 import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import { CoursesService } from '../../core/courses/courses.service';
+import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
+import type { Grade, GradeCategory } from '../../core/grades/grades.model';
 import { GradesService } from '../../core/grades/grades.service';
-import { computeFinalGrade } from '../../core/grades/grades.util';
+import {
+  computeCategoryPercent,
+  computeFinalGrade,
+  gradeBand as computeGradeBand,
+  type GradeBand,
+} from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { InvitationsService } from '../../core/invitations/invitations.service';
 import { SubjectAssignmentsService } from '../../core/subjects/subject-assignments.service';
@@ -29,6 +37,7 @@ import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
   IconArrowRight,
   IconBookOpen,
+  IconChevronDown,
   IconGraduationCap,
   IconLayers,
   IconMessageSquare,
@@ -37,6 +46,19 @@ import {
 } from '../../shared/icons/icons';
 
 type StatIcon = 'users' | 'book' | 'mail' | 'graduation';
+
+interface SubjectDetail {
+  categories: GradeCategory[];
+  assignments: Assignment[];
+  grade: Grade | null;
+}
+
+interface CategoryBreakdownRow {
+  category: GradeCategory;
+  percent: number | null;
+  /** Vacío para categorías "de una sola nota" (ver GradeCategory.hasMultipleTasks) — no hay tareas individuales que listar. */
+  assignments: { assignment: Assignment; score: number | null }[];
+}
 
 interface StatCard {
   label: string;
@@ -54,6 +76,7 @@ interface StatCard {
     Button,
     Page,
     PageHeader,
+    DecimalPipe,
     IconArrowRight,
     IconUsers,
     IconBookOpen,
@@ -61,6 +84,7 @@ interface StatCard {
     IconGraduationCap,
     IconLayers,
     IconMessageSquare,
+    IconChevronDown,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',
@@ -86,7 +110,42 @@ export class Dashboard {
   protected readonly mySubjectTeachers = signal<Map<string, string[]>>(new Map());
   protected readonly mySubjectFinalGrades = signal<Map<string, number | null>>(new Map());
   protected readonly mySubjectComments = signal<Map<string, string | null>>(new Map());
+  protected readonly mySubjectDetails = signal<Map<string, SubjectDetail>>(new Map());
   protected readonly loadingMySubjects = signal(false);
+
+  /** Acordeón: una sola materia con el desglose abierto a la vez. */
+  protected readonly expandedSubjectId = signal<string | null>(null);
+
+  protected toggleSubjectDetail(subjectId: string): void {
+    this.expandedSubjectId.update((current) => (current === subjectId ? null : subjectId));
+  }
+
+  protected gradeBand(grade: number | null): GradeBand {
+    return computeGradeBand(grade);
+  }
+
+  /** Desglose por categoría (y por tarea, si la categoría gestiona varias) de una materia, para el estudiante logueado. */
+  protected categoryRowsFor(subjectId: string): CategoryBreakdownRow[] {
+    const detail = this.mySubjectDetails().get(subjectId);
+    if (!detail) {
+      return [];
+    }
+    return detail.categories
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .map((category) => {
+        const categoryAssignments = detail.assignments.filter((a) => a.categoryId === category.id);
+        const percent = computeCategoryPercent(categoryAssignments, detail.grade?.scores);
+        const assignments =
+          category.hasMultipleTasks === false
+            ? []
+            : categoryAssignments.map((assignment) => ({
+                assignment,
+                score: detail.grade?.scores[assignment.id] ?? null,
+              }));
+        return { category, percent, assignments };
+      });
+  }
 
   /** Nombres de los profesores de una materia, unidos con coma (o el fallback si no tiene ninguno). */
   protected teacherNamesFor(subjectId: string): string {
@@ -229,6 +288,7 @@ export class Dashboard {
         this.mySubjectTeachers.set(new Map());
         this.mySubjectFinalGrades.set(new Map());
         this.mySubjectComments.set(new Map());
+        this.mySubjectDetails.set(new Map());
         this.loadingMySubjects.set(false);
         return;
       }
@@ -240,6 +300,7 @@ export class Dashboard {
           this.mySubjectTeachers.set(new Map());
           this.mySubjectFinalGrades.set(new Map());
           this.mySubjectComments.set(new Map());
+          this.mySubjectDetails.set(new Map());
         })
         .finally(() => this.loadingMySubjects.set(false));
     });
@@ -257,6 +318,7 @@ export class Dashboard {
       this.mySubjectTeachers.set(new Map());
       this.mySubjectFinalGrades.set(new Map());
       this.mySubjectComments.set(new Map());
+      this.mySubjectDetails.set(new Map());
       return;
     }
 
@@ -281,8 +343,9 @@ export class Dashboard {
 
     const finalGrades = new Map<string, number | null>();
     const comments = new Map<string, string | null>();
+    const details = new Map<string, SubjectDetail>();
     for (const subjectId of subjectIds) {
-      const grade = grades.find((g) => g?.subjectId === subjectId);
+      const grade = grades.find((g) => g?.subjectId === subjectId) ?? null;
       const subjectCategories = categories.filter((c) => c.subjectId === subjectId);
       const subjectAssignments = assignments.filter((a) => a.subjectId === subjectId);
       finalGrades.set(
@@ -290,9 +353,15 @@ export class Dashboard {
         computeFinalGrade(subjectCategories, subjectAssignments, grade?.scores),
       );
       comments.set(subjectId, grade?.comment ?? null);
+      details.set(subjectId, {
+        categories: subjectCategories,
+        assignments: subjectAssignments,
+        grade,
+      });
     }
     this.mySubjectFinalGrades.set(finalGrades);
     this.mySubjectComments.set(comments);
+    this.mySubjectDetails.set(details);
   }
 
   protected goToAdmin(): void {

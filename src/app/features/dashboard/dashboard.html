@@ -89,6 +89,78 @@
               <p class="text-sm font-medium text-text">
                 {{ i18n.t('dashboard', 'finalGrade') }}: {{ finalGradeLabelFor(subject.id) }}
               </p>
+
+              @if (categoryRowsFor(subject.id).length > 0) {
+                <button
+                  type="button"
+                  class="mt-1.5 flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                  [attr.aria-expanded]="expandedSubjectId() === subject.id"
+                  (click)="toggleSubjectDetail(subject.id)"
+                >
+                  <svg
+                    lucideChevronDown
+                    [size]="12"
+                    class="transition-transform"
+                    [class.-rotate-90]="expandedSubjectId() !== subject.id"
+                    aria-hidden="true"
+                  ></svg>
+                  {{ i18n.t('dashboard', 'viewBreakdown') }}
+                </button>
+
+                @if (expandedSubjectId() === subject.id) {
+                  <div class="mt-2 flex flex-col gap-2.5 border-t border-border pt-2.5">
+                    @for (row of categoryRowsFor(subject.id); track row.category.id) {
+                      <div>
+                        <div class="flex items-center justify-between text-xs">
+                          <span class="text-text"
+                            >{{ row.category.name }}
+                            <span class="text-text-muted">· {{ row.category.weight }}%</span></span
+                          >
+                          <span
+                            class="font-medium"
+                            [class.text-status-active]="gradeBand(row.percent) === 'active'"
+                            [class.text-status-paused]="gradeBand(row.percent) === 'paused'"
+                            [class.text-status-expired]="gradeBand(row.percent) === 'expired'"
+                            [class.text-text-muted]="gradeBand(row.percent) === 'muted'"
+                          >
+                            @if (row.percent !== null) {
+                              {{ row.percent | number: '1.0-0' }}%
+                            } @else {
+                              {{ i18n.t('dashboard', 'noGradeYet') }}
+                            }
+                          </span>
+                        </div>
+                        <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            class="h-full rounded-full"
+                            [class.bg-status-active]="gradeBand(row.percent) === 'active'"
+                            [class.bg-status-paused]="gradeBand(row.percent) === 'paused'"
+                            [class.bg-status-expired]="gradeBand(row.percent) === 'expired'"
+                            [style.width.%]="row.percent ?? 0"
+                          ></div>
+                        </div>
+                        @if (row.assignments.length > 0) {
+                          <ul class="mt-1 flex flex-col gap-0.5 text-xs text-text-muted">
+                            @for (a of row.assignments; track a.assignment.id) {
+                              <li class="flex items-center justify-between">
+                                <span>{{ a.assignment.name }}</span>
+                                <span>
+                                  @if (a.score !== null) {
+                                    {{ a.score }}/{{ a.assignment.pointsPossible }}
+                                  } @else {
+                                    {{ i18n.t('dashboard', 'noGradeYet') }}
+                                  }
+                                </span>
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              }
+
               @if (commentFor(subject.id); as comment) {
                 <div
                   class="mt-2 flex items-start gap-1.5 rounded-xl bg-brand-50 px-2.5 py-2 text-xs text-brand-700"

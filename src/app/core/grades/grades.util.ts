@@ -1,6 +1,22 @@
 import type { Assignment } from './assignments.model';
 import type { GradeCategory, Grade } from './grades.model';
 
+/** Rango de color para una nota o porcentaje (materia, categoría) — mismo criterio visual en cualquier pantalla que muestre notas. */
+export type GradeBand = 'active' | 'paused' | 'expired' | 'muted';
+
+export function gradeBand(grade: number | null): GradeBand {
+  if (grade === null) {
+    return 'muted';
+  }
+  if (grade >= 90) {
+    return 'active';
+  }
+  if (grade >= 70) {
+    return 'paused';
+  }
+  return 'expired';
+}
+
 /**
  * % de una categoría: suma de puntos obtenidos / suma de puntos posibles,
  * contando SOLO las tareas que ya tienen nota cargada (mismo criterio de

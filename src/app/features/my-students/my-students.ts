@@ -7,7 +7,12 @@ import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
 import { GradesService } from '../../core/grades/grades.service';
 import type { GradeCategory } from '../../core/grades/grades.model';
-import { computeCategoryPercent, computeFinalGrade } from '../../core/grades/grades.util';
+import {
+  computeCategoryPercent,
+  computeFinalGrade,
+  gradeBand as computeGradeBand,
+  type GradeBand,
+} from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { CoursesService } from '../../core/courses/courses.service';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
@@ -30,9 +35,6 @@ import {
   IconSearch,
 } from '../../shared/icons/icons';
 import { ToastService } from '../../shared/toast/toast.service';
-
-/** Rango de color para una nota final, mismo criterio visual que la rúbrica (ver gradebook.html). */
-type GradeBand = 'active' | 'paused' | 'expired' | 'muted';
 
 interface SubjectProgress {
   subjectId: string;
@@ -58,19 +60,6 @@ interface CategoryRow {
   percent: number | null;
   /** Solo presente si la categoría es "de una sola nota" (ver GradeCategory.hasMultipleTasks). */
   singleAssignment: Assignment | null;
-}
-
-function gradeBand(grade: number | null): GradeBand {
-  if (grade === null) {
-    return 'muted';
-  }
-  if (grade >= 90) {
-    return 'active';
-  }
-  if (grade >= 70) {
-    return 'paused';
-  }
-  return 'expired';
 }
 
 /**
@@ -281,7 +270,7 @@ export class MyStudents {
   );
 
   protected gradeBand(grade: number | null): GradeBand {
-    return gradeBand(grade);
+    return computeGradeBand(grade);
   }
 
   protected openDrawer(uid: string): void {
