@@ -61,6 +61,8 @@ interface StudentRow {
   /** Cursos en los que está el estudiante (puede ser más de uno: ver CourseStudent). */
   courseNames: string[];
   subjects: SubjectProgress[];
+  /** true si ALGUNO de sus cursos con este profesor todavía no terminó (ver isCourseActive) — decide en qué pestaña aparece. */
+  isActive: boolean;
 }
 
 /** Categoría de la rúbrica ya resuelta para UN estudiante puntual (ver drawer de detalle). */
@@ -118,6 +120,8 @@ export class MyStudents {
   protected readonly search = signal('');
   protected readonly subjectFilter = signal<string | undefined>(undefined);
   protected readonly onlyPending = signal(false);
+  /** "Cursando" primero por defecto — es lo que un profesor quiere ver al entrar, no el historial. */
+  protected readonly courseTab = signal<'active' | 'finished'>('active');
 
   protected readonly openStudentUid = signal<string | null>(null);
   protected readonly editingScores = signal<Record<string, string>>({});
@@ -190,6 +194,12 @@ export class MyStudents {
     return allCourseIds.filter((id) => myCourseIds.has(id));
   }
 
+  /** Sin `endDate` (cursos viejos) o curso no encontrado: se considera activo por defecto, no finalizado. */
+  private isCourseActive(courseId: string): boolean {
+    const endDate = this.coursesService.courses().find((c) => c.id === courseId)?.endDate;
+    return !endDate || endDate.toDate().getTime() >= Date.now();
+  }
+
   /** Todos los estudiantes del profesor, con su progreso en cada materia compartida. */
   protected readonly studentRows = computed<StudentRow[]>(() => {
     const rowsByUid = new Map<string, StudentRow>();
@@ -234,6 +244,7 @@ export class MyStudents {
           email: user.email ?? '',
           courseNames: [],
           subjects: [],
+          isActive: true,
         };
         row.subjects.push({
           subjectId,
@@ -249,20 +260,31 @@ export class MyStudents {
 
     const courseNameById = new Map(this.coursesService.courses().map((c) => [c.id, c.name]));
     for (const row of rowsByUid.values()) {
-      row.courseNames = [...(courseIdsByUid.get(row.uid) ?? [])]
+      const courseIds = [...(courseIdsByUid.get(row.uid) ?? [])];
+      row.courseNames = courseIds
         .map((id) => courseNameById.get(id) ?? id)
         .sort((a, b) => a.localeCompare(b));
+      row.isActive = courseIds.length === 0 || courseIds.some((id) => this.isCourseActive(id));
     }
 
     return [...rowsByUid.values()].sort((a, b) => a.displayName.localeCompare(b.displayName));
   });
 
+  protected readonly activeCount = computed(
+    () => this.studentRows().filter((row) => row.isActive).length,
+  );
+  protected readonly finishedCount = computed(
+    () => this.studentRows().filter((row) => !row.isActive).length,
+  );
+
   protected readonly filteredRows = computed(() => {
     const term = this.search().trim().toLowerCase();
     const subjectId = this.subjectFilter();
     const onlyPending = this.onlyPending();
+    const tab = this.courseTab();
 
     return this.studentRows()
+      .filter((row) => (tab === 'active' ? row.isActive : !row.isActive))
       .map((row) => ({
         ...row,
         subjects: subjectId ? row.subjects.filter((s) => s.subjectId === subjectId) : row.subjects,

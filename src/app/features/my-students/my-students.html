@@ -3,6 +3,31 @@
     <span pageTitle>{{ i18n.t('myStudents', 'title') }}</span>
   </app-page-header>
 
+  <div class="flex w-fit gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
+    <button
+      type="button"
+      class="flex-1 rounded-full px-4 py-1.5 transition-all"
+      [class.bg-surface]="courseTab() === 'active'"
+      [class.text-text]="courseTab() === 'active'"
+      [class.shadow-sm]="courseTab() === 'active'"
+      [class.text-text-muted]="courseTab() !== 'active'"
+      (click)="courseTab.set('active')"
+    >
+      {{ i18n.t('myStudents', 'tabActive') }} ({{ activeCount() }})
+    </button>
+    <button
+      type="button"
+      class="flex-1 rounded-full px-4 py-1.5 transition-all"
+      [class.bg-surface]="courseTab() === 'finished'"
+      [class.text-text]="courseTab() === 'finished'"
+      [class.shadow-sm]="courseTab() === 'finished'"
+      [class.text-text-muted]="courseTab() !== 'finished'"
+      (click)="courseTab.set('finished')"
+    >
+      {{ i18n.t('myStudents', 'tabFinished') }} ({{ finishedCount() }})
+    </button>
+  </div>
+
   <div class="flex flex-wrap items-center gap-3">
     <div class="relative max-w-xs min-w-56 flex-1">
       <svg
@@ -122,8 +147,12 @@
             <td colspan="4" class="px-4 py-6 text-center text-text-muted">
               @if (loading()) {
                 <app-loading />
-              } @else {
+              } @else if (studentRows().length === 0) {
                 {{ i18n.t('myStudents', 'empty') }}
+              } @else if (courseTab() === 'active') {
+                {{ i18n.t('myStudents', 'emptyActive') }}
+              } @else {
+                {{ i18n.t('myStudents', 'emptyFinished') }}
               }
             </td>
           </tr>
