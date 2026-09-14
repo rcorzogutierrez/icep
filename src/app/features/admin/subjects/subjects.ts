@@ -58,7 +58,8 @@ export class AdminSubjects {
       this.name.set('');
       this.code.set('');
       this.toast.success(this.i18n.t('adminSubjects', 'created'));
-    } catch {
+    } catch (error) {
+      console.error('[AdminSubjects]', error);
       this.toast.error(this.i18n.t('adminSubjects', 'errorGeneric'));
     } finally {
       this.creating.set(false);
@@ -92,7 +93,8 @@ export class AdminSubjects {
       });
       this.editingId.set(null);
       this.toast.success(this.i18n.t('adminSubjects', 'updated'));
-    } catch {
+    } catch (error) {
+      console.error('[AdminSubjects]', error);
       this.toast.error(this.i18n.t('adminSubjects', 'errorGeneric'));
     } finally {
       this.savingEdit.set(false);
@@ -108,7 +110,8 @@ export class AdminSubjects {
     try {
       await this.subjectsService.remove(subject.id);
       this.toast.success(this.i18n.t('adminSubjects', 'deleted'));
-    } catch {
+    } catch (error) {
+      console.error('[AdminSubjects]', error);
       this.toast.error(this.i18n.t('adminSubjects', 'errorGeneric'));
     } finally {
       this.removingId.set(null);

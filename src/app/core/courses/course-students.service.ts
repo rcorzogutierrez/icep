@@ -68,7 +68,8 @@ export class CourseStudentsService {
           );
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[CourseStudentsService] courseStudents listener failed:', error);
           this._courseStudents.set([]);
           this._loading.set(false);
         },

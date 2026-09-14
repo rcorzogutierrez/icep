@@ -71,7 +71,8 @@ export class AssignmentsService {
           );
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[AssignmentsService] assignments listener failed:', error);
           this._assignments.set([]);
           this._loading.set(false);
         },

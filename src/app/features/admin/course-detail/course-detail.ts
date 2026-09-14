@@ -125,7 +125,8 @@ export class CourseDetail {
     this.generatingInvitation.set(true);
     try {
       await this.courseInvitationsService.create(course.id, course.name);
-    } catch {
+    } catch (error) {
+      console.error('[CourseDetail]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {
       this.generatingInvitation.set(false);
@@ -136,7 +137,8 @@ export class CourseDetail {
     this.revokingInvitationCode.set(invitation.code);
     try {
       await this.courseInvitationsService.revoke(invitation.code);
-    } catch {
+    } catch (error) {
+      console.error('[CourseDetail]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {
       this.revokingInvitationCode.set(null);
@@ -461,7 +463,8 @@ export class CourseDetail {
       this.draftTeacherIds.set(null);
       this.showSaveSummary.set(false);
       this.toast.success(this.i18n.t('adminCourses', 'changesSaved'));
-    } catch {
+    } catch (error) {
+      console.error('[CourseDetail]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {
       this.savingChanges.set(false);
@@ -514,7 +517,8 @@ export class CourseDetail {
         teacherId,
         teacher.teacherName,
       );
-    } catch {
+    } catch (error) {
+      console.error('[CourseDetail]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     }
   }
@@ -522,7 +526,8 @@ export class CourseDetail {
   protected async onUnassignSubjectTeacher(row: CourseSubjectTeacher): Promise<void> {
     try {
       await this.courseSubjectTeachersService.unassign(row);
-    } catch {
+    } catch (error) {
+      console.error('[CourseDetail]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     }
   }

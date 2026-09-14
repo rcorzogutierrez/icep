@@ -157,7 +157,8 @@ export class Invitations {
       const code = await this.invitationsService.create(this.email(), this.role(), []);
       this.createdCode.set(code);
       this.email.set('');
-    } catch {
+    } catch (error) {
+      console.error('[Invitations]', error);
       this.toast.error(this.i18n.t('invitationsPage', 'errorGeneric'));
     } finally {
       this.creating.set(false);
@@ -176,7 +177,8 @@ export class Invitations {
       await this.invitationsService.revoke(invitation.code);
       this.toast.success(this.i18n.t('invitationsPage', 'revoked'));
       this.clearCreatedCardIfMatches(invitation.code);
-    } catch {
+    } catch (error) {
+      console.error('[Invitations]', error);
       this.toast.error(this.i18n.t('invitationsPage', 'errorGeneric'));
     } finally {
       this.revokingCode.set(null);
@@ -214,7 +216,8 @@ export class Invitations {
       this.createdCode.set(code);
       this.copied.set(false);
       this.toast.success(this.i18n.t('invitationsPage', 'resent'));
-    } catch {
+    } catch (error) {
+      console.error('[Invitations]', error);
       this.toast.error(this.i18n.t('invitationsPage', 'errorGeneric'));
     } finally {
       this.resendingCode.set(null);
@@ -247,7 +250,8 @@ export class Invitations {
       await this.invitationsService.updateEmail(invitation.code, this.editEmail());
       this.editingCode.set(null);
       this.toast.success(this.i18n.t('invitationsPage', 'updated'));
-    } catch {
+    } catch (error) {
+      console.error('[Invitations]', error);
       this.toast.error(this.i18n.t('invitationsPage', 'errorGeneric'));
     } finally {
       this.savingEdit.set(false);
@@ -260,7 +264,8 @@ export class Invitations {
       await this.invitationsService.remove(invitation.code);
       this.toast.success(this.i18n.t('invitationsPage', 'deleted'));
       this.clearCreatedCardIfMatches(invitation.code);
-    } catch {
+    } catch (error) {
+      console.error('[Invitations]', error);
       this.toast.error(this.i18n.t('invitationsPage', 'errorGeneric'));
     } finally {
       this.removingCode.set(null);

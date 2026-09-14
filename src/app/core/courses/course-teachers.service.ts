@@ -68,7 +68,8 @@ export class CourseTeachersService {
           );
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[CourseTeachersService] courseTeachers listener failed:', error);
           this._courseTeachers.set([]);
           this._loading.set(false);
         },

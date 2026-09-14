@@ -55,7 +55,8 @@ export class GradesService {
           this._grades.set(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Grade));
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[GradesService] grades listener failed:', error);
           this._grades.set([]);
           this._loading.set(false);
         },

@@ -283,7 +283,8 @@ export class MyCourseDetail {
         delete rest[assignment.id];
         return rest;
       });
-    } catch {
+    } catch (error) {
+      console.error('[MyCourseDetail]', error);
       this.toast.error(this.i18n.t('myStudents', 'errorGeneric'));
     } finally {
       this.savingAssignmentId.set(null);

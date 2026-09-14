@@ -133,7 +133,8 @@ export class AppShell {
       await this.userProfileService.updateDisplayName(uid, nickname);
       this.editingNickname.set(false);
       this.toast.success(this.i18n.t('shell', 'nicknameUpdated'));
-    } catch {
+    } catch (error) {
+      console.error('[AppShell]', error);
       this.toast.error(this.i18n.t('shell', 'errorGeneric'));
     } finally {
       this.savingNickname.set(false);

@@ -83,7 +83,8 @@ export class CourseSubjectTeachersService {
           );
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[CourseSubjectTeachersService] rows listener failed:', error);
           this._rows.set([]);
           this._loading.set(false);
         },

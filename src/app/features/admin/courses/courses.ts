@@ -192,7 +192,8 @@ export class AdminCourses {
       this.startDate.set('');
       this.endDate.set('');
       this.toast.success(this.i18n.t('adminCourses', 'created'));
-    } catch {
+    } catch (error) {
+      console.error('[AdminCourses]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
       this.creating.set(false);
       return;
@@ -200,7 +201,8 @@ export class AdminCourses {
 
     try {
       await this.courseInvitationsService.create(courseId, name);
-    } catch {
+    } catch (error) {
+      console.error('[AdminCourses]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorInviteGeneric'));
     } finally {
       this.creating.set(false);
@@ -232,7 +234,8 @@ export class AdminCourses {
     this.regeneratingCourseId.set(course.id);
     try {
       await this.courseInvitationsService.create(course.id, course.name);
-    } catch {
+    } catch (error) {
+      console.error('[AdminCourses]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {
       this.regeneratingCourseId.set(null);
@@ -243,7 +246,8 @@ export class AdminCourses {
     this.revokingSelectedCode.set(invitation.code);
     try {
       await this.courseInvitationsService.revoke(invitation.code);
-    } catch {
+    } catch (error) {
+      console.error('[AdminCourses]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {
       this.revokingSelectedCode.set(null);
@@ -278,7 +282,8 @@ export class AdminCourses {
       });
       this.editingId.set(null);
       this.toast.success(this.i18n.t('adminCourses', 'updated'));
-    } catch {
+    } catch (error) {
+      console.error('[AdminCourses]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {
       this.savingEdit.set(false);
@@ -290,7 +295,8 @@ export class AdminCourses {
     try {
       await this.coursesService.remove(course.id);
       this.toast.success(this.i18n.t('adminCourses', 'deleted'));
-    } catch {
+    } catch (error) {
+      console.error('[AdminCourses]', error);
       this.toast.error(this.i18n.t('adminCourses', 'errorGeneric'));
     } finally {
       this.removingId.set(null);

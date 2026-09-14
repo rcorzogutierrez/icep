@@ -265,7 +265,8 @@ export class AssignmentReview {
     }
     try {
       await this.gradesService.setScore(this.subjectId(), studentUid, assignment.id, score);
-    } catch {
+    } catch (error) {
+      console.error('[AssignmentReview]', error);
       this.toast.error(this.i18n.t('assignmentReview', 'errorGeneric'));
     }
   }
@@ -284,7 +285,8 @@ export class AssignmentReview {
       await this.assignmentsService.update(assignment.id, {
         dueDate: rawValue ? new Date(rawValue) : null,
       });
-    } catch {
+    } catch (error) {
+      console.error('[AssignmentReview]', error);
       this.toast.error(this.i18n.t('assignmentReview', 'errorGeneric'));
     }
   }

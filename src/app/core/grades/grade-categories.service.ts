@@ -74,7 +74,8 @@ export class GradeCategoriesService {
           );
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[GradeCategoriesService] categories listener failed:', error);
           this._categories.set([]);
           this._loading.set(false);
         },

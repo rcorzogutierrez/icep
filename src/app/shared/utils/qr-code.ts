@@ -4,7 +4,8 @@ import { toDataURL } from 'qrcode';
 export async function generateQrDataUrl(text: string): Promise<string | null> {
   try {
     return await toDataURL(text, { width: 220, margin: 1 });
-  } catch {
+  } catch (error) {
+    console.error('[generateQrDataUrl] failed:', error);
     return null;
   }
 }

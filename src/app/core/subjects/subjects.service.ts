@@ -95,7 +95,8 @@ export class SubjectsService {
           this._subjects.set(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Subject));
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[SubjectsService] subjects listener failed:', error);
           this._subjects.set([]);
           this._loading.set(false);
         },

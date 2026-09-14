@@ -51,10 +51,18 @@ export class UserProfileService {
       }
 
       this._loading.set(true);
-      const unsubscribe = onSnapshot(doc(this.firestore, 'users', user.uid), (snapshot) => {
-        this._profile.set(snapshot.exists() ? (snapshot.data() as UserProfile) : null);
-        this._loading.set(false);
-      });
+      const unsubscribe = onSnapshot(
+        doc(this.firestore, 'users', user.uid),
+        (snapshot) => {
+          this._profile.set(snapshot.exists() ? (snapshot.data() as UserProfile) : null);
+          this._loading.set(false);
+        },
+        (error) => {
+          console.error('[UserProfileService] profile listener failed:', error);
+          this._profile.set(null);
+          this._loading.set(false);
+        },
+      );
 
       onCleanup(() => unsubscribe());
     });

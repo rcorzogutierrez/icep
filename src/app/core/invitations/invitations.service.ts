@@ -69,7 +69,14 @@ export class InvitationsService {
           this._invitations.set(snapshot.docs.map((d) => d.data() as Invitation));
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          // Igual que en UsersService: un estudiante dispara un
+          // permission-denied esperado acá (ver firestore.rules — "list"
+          // es solo staff), en cada sesión — no es un problema, así que no
+          // se loguea. Cualquier otra causa sí.
+          if (error.code !== 'permission-denied') {
+            console.error('[InvitationsService] invitations listener failed:', error);
+          }
           this._invitations.set([]);
           this._loading.set(false);
         },
@@ -120,7 +127,8 @@ export class InvitationsService {
     let snapshot;
     try {
       snapshot = await getDoc(ref);
-    } catch {
+    } catch (error) {
+      console.error('[InvitationsService] redeem: could not read invitation:', error);
       return null;
     }
     if (!snapshot.exists() || snapshot.data()['status'] !== 'pending') {
@@ -135,7 +143,8 @@ export class InvitationsService {
     const subjectIds = (snapshot.data()['subjectIds'] as string[] | undefined) ?? [];
     try {
       await updateDoc(ref, { status: 'used', usedByUid: uid, usedAt: serverTimestamp() });
-    } catch {
+    } catch (error) {
+      console.error('[InvitationsService] redeem: could not mark invitation used:', error);
       return null;
     }
     return { role, subjectIds };

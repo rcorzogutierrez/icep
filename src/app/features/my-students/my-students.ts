@@ -353,7 +353,8 @@ export class MyStudents {
         return rest;
       });
       this.toast.success(this.i18n.t('myStudents', 'scoreSaved'));
-    } catch {
+    } catch (error) {
+      console.error('[MyStudents]', error);
       this.toast.error(this.i18n.t('myStudents', 'errorGeneric'));
     } finally {
       this.savingAssignmentId.set(null);
@@ -399,7 +400,8 @@ export class MyStudents {
         return rest;
       });
       this.toast.success(this.i18n.t('myStudents', 'commentSaved'));
-    } catch {
+    } catch (error) {
+      console.error('[MyStudents]', error);
       this.toast.error(this.i18n.t('myStudents', 'errorGeneric'));
     } finally {
       this.savingCommentSubjectId.set(null);

@@ -64,7 +64,8 @@ export class CoursesService {
           this._courses.set(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Course));
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[CoursesService] courses listener failed:', error);
           this._courses.set([]);
           this._loading.set(false);
         },

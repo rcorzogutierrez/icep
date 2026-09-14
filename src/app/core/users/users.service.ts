@@ -53,10 +53,16 @@ export class UsersService {
           this._users.set(snapshot.docs.map((d) => d.data() as UserProfile));
           this._loading.set(false);
         },
-        () => {
-          // Un no-admin no tiene permiso de leer esta colección (ver
-          // firestore.rules): el listener falla en silencio para esos casos,
-          // el adminGuard ya evita que lleguen acá.
+        (error) => {
+          // Este servicio se suscribe para cualquier usuario logueado, sin
+          // filtrar por rol — un no-admin/no-profesor no tiene permiso de
+          // leer esta colección (ver firestore.rules) y el listener falla
+          // en silencio para ESE caso puntual, a propósito (pasa en cada
+          // sesión de cada estudiante, no es un problema). Cualquier otra
+          // causa (índice faltante, red caída, etc.) sí se loguea.
+          if (error.code !== 'permission-denied') {
+            console.error('[UsersService] users listener failed:', error);
+          }
           this._users.set([]);
           this._loading.set(false);
         },

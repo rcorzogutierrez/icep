@@ -92,7 +92,8 @@ export class CourseInvitationsService {
           this._invitations.set(snapshot.docs.map((d) => d.data() as CourseInvitation));
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[CourseInvitationsService] invitations listener failed:', error);
           this._invitations.set([]);
           this._loading.set(false);
         },
@@ -164,7 +165,8 @@ export class CourseInvitationsService {
     let snapshot;
     try {
       snapshot = await getDoc(ref);
-    } catch {
+    } catch (error) {
+      console.error('[CourseInvitationsService] redeem: could not read invitation:', error);
       return false;
     }
     if (!snapshot.exists() || snapshot.data()['status'] !== 'active') {
@@ -184,9 +186,10 @@ export class CourseInvitationsService {
     );
     try {
       await updateDoc(ref, { redemptionCount: increment(1) });
-    } catch {
+    } catch (error) {
       // No crítico: el estudiante ya quedó creado y matriculado; en el peor
       // caso el contador de "cuántos se unieron" queda desactualizado.
+      console.error('[CourseInvitationsService] redeem: could not bump redemptionCount:', error);
     }
     return true;
   }

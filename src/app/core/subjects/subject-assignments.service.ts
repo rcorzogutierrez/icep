@@ -74,7 +74,8 @@ export class SubjectAssignmentsService {
           );
           this._loading.set(false);
         },
-        () => {
+        (error) => {
+          console.error('[SubjectAssignmentsService] assignments listener failed:', error);
           this._assignments.set([]);
           this._loading.set(false);
         },
