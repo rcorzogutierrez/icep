@@ -35,7 +35,7 @@
           <div>
             <p class="text-2xl font-bold tracking-tight text-text">
               @if (statsLoading()) {
-                <app-loading [inline]="true" />
+                <app-skeleton styleClass="h-7 w-10" />
               } @else {
                 {{ stat.value }}
               }
@@ -68,7 +68,7 @@
           <div>
             <p class="text-2xl font-bold tracking-tight text-text">
               @if (statsLoading()) {
-                <app-loading [inline]="true" />
+                <app-skeleton styleClass="h-7 w-10" />
               } @else {
                 {{ stat.value }}
               }
@@ -84,7 +84,17 @@
     <section class="flex flex-col gap-3">
       <h2 class="text-sm font-semibold text-text">{{ i18n.t('dashboard', 'mySubjects') }}</h2>
       @if (loadingMySubjects()) {
-        <app-loading />
+        <div class="grid gap-3 sm:grid-cols-2">
+          @for (i of skeletonCards; track i) {
+            <div
+              class="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4 shadow-sm"
+            >
+              <app-skeleton styleClass="h-4 w-2/3" />
+              <app-skeleton styleClass="h-3 w-1/2" />
+              <app-skeleton styleClass="h-3 w-1/3" />
+            </div>
+          }
+        </div>
       } @else if (mySubjects().length > 0) {
         <div class="grid gap-3 sm:grid-cols-2">
           @for (subject of mySubjects(); track subject.id) {
@@ -210,7 +220,19 @@
     <section class="flex flex-col gap-3">
       <h2 class="text-sm font-semibold text-text">{{ i18n.t('dashboard', 'mySubjects') }}</h2>
       @if (subjectsService.loading()) {
-        <app-loading />
+        <div class="grid gap-3 sm:grid-cols-2">
+          @for (i of skeletonCards; track i) {
+            <div
+              class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <app-skeleton styleClass="h-4 w-2/5" />
+                <app-skeleton styleClass="h-8 w-20 rounded-xl" />
+              </div>
+              <app-skeleton styleClass="h-6 w-1/3 rounded-full" />
+            </div>
+          }
+        </div>
       } @else if (subjectsService.mySubjects().length > 0) {
         <div class="grid gap-3 sm:grid-cols-2">
           @for (subject of subjectsService.mySubjects(); track subject.id) {

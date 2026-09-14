@@ -32,7 +32,7 @@ import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
-import { Loading } from '../../shared/components/loading/loading';
+import { Skeleton } from '../../shared/components/skeleton/skeleton';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
@@ -77,7 +77,7 @@ interface StatCard {
   standalone: true,
   imports: [
     Button,
-    Loading,
+    Skeleton,
     Page,
     PageHeader,
     DecimalPipe,
@@ -94,6 +94,9 @@ interface StatCard {
   templateUrl: './dashboard.html',
 })
 export class Dashboard {
+  /** Cuántas tarjetas placeholder mostrar en el skeleton de "Mis materias" mientras carga — cantidad arbitraria, solo para dar la sensación de grilla. */
+  protected readonly skeletonCards = [0, 1];
+
   protected readonly auth = inject(AuthService);
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
