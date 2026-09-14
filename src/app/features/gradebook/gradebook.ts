@@ -13,6 +13,8 @@ import { GradesService } from '../../core/grades/grades.service';
 import type { GradeCategory } from '../../core/grades/grades.model';
 import { computeFinalGrade } from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
+import type { SubjectResource } from '../../core/subjects/subject-resources.model';
+import { SubjectResourcesService } from '../../core/subjects/subject-resources.service';
 import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
@@ -20,6 +22,7 @@ import { Button } from '../../shared/components/button/button';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { Loading } from '../../shared/components/loading/loading';
 import { Modal } from '../../shared/components/modal/modal';
+import { ResourceCard } from '../../shared/components/resource-card/resource-card';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
@@ -40,6 +43,7 @@ import { ToastService } from '../../shared/toast/toast.service';
     ConfirmDialog,
     Loading,
     Modal,
+    ResourceCard,
     Select,
     RouterLink,
     Page,
@@ -70,6 +74,7 @@ export class Gradebook {
   protected readonly categoriesService = inject(GradeCategoriesService);
   protected readonly assignmentsService = inject(AssignmentsService);
   protected readonly gradesService = inject(GradesService);
+  protected readonly resourcesService = inject(SubjectResourcesService);
   protected readonly usersService = inject(UsersService);
   private readonly authService = inject(AuthService);
   protected readonly userProfileService = inject(UserProfileService);
@@ -97,6 +102,8 @@ export class Gradebook {
   protected readonly assignments = computed(() =>
     this.assignmentsService.forSubject(this.subjectId()),
   );
+
+  protected readonly resources = computed(() => this.resourcesService.forSubject(this.subjectId()));
 
   /** Categorías "con varias tareas" — las únicas que gestionan tareas propias (ver grades.model.ts). */
   protected readonly multiTaskCategories = computed(() =>
@@ -207,6 +214,14 @@ export class Gradebook {
   protected readonly savingAssignment = signal(false);
   protected readonly removingAssignmentId = signal<string | null>(null);
   protected readonly confirmingRemoveAssignment = signal<Assignment | null>(null);
+
+  protected readonly resourcesOpen = signal(false);
+  protected readonly showAddResourceForm = signal(false);
+  protected readonly resourceTitle = signal('');
+  protected readonly resourceUrl = signal('');
+  protected readonly creatingResource = signal(false);
+  protected readonly removingResourceId = signal<string | null>(null);
+  protected readonly confirmingRemoveResource = signal<SubjectResource | null>(null);
 
   /** Tareas de una categoría, para agruparlas en la lista y en la grilla. */
   protected assignmentsFor(categoryId: string): Assignment[] {
@@ -624,6 +639,62 @@ export class Gradebook {
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
       this.removingAssignmentId.set(null);
+    }
+  }
+
+  private isValidUrl(value: string): boolean {
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  protected async onCreateResource(): Promise<void> {
+    const title = this.resourceTitle().trim();
+    const url = this.resourceUrl().trim();
+    if (!title || !url) {
+      return;
+    }
+    if (!this.isValidUrl(url)) {
+      this.toast.error(this.i18n.t('gradebook', 'resourceUrlInvalid'));
+      return;
+    }
+
+    this.creatingResource.set(true);
+    try {
+      await this.resourcesService.create(this.subjectId(), title, url);
+      this.closeAddResourceForm();
+      this.toast.success(this.i18n.t('gradebook', 'resourceAdded'));
+    } catch (error) {
+      console.error('[Gradebook]', error);
+      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
+    } finally {
+      this.creatingResource.set(false);
+    }
+  }
+
+  protected openAddResourceForm(): void {
+    this.showAddResourceForm.set(true);
+  }
+
+  protected closeAddResourceForm(): void {
+    this.showAddResourceForm.set(false);
+    this.resourceTitle.set('');
+    this.resourceUrl.set('');
+  }
+
+  protected async onRemoveResource(resource: SubjectResource): Promise<void> {
+    this.removingResourceId.set(resource.id);
+    try {
+      await this.resourcesService.remove(resource.id);
+      this.toast.success(this.i18n.t('gradebook', 'resourceDeleted'));
+    } catch (error) {
+      console.error('[Gradebook]', error);
+      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
+    } finally {
+      this.removingResourceId.set(null);
     }
   }
 

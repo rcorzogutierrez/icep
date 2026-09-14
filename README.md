@@ -83,6 +83,7 @@ Colecciones principales:
 - **`gradeCategories/{id}`** — rúbrica de una materia (categorías con peso; la suma a 100% se valida en el cliente, no en las reglas).
 - **`assignments/{id}`** — una tarea dentro de una categoría.
 - **`grades/{subjectId}_{studentUid}`** — nota de un estudiante en una materia (`scores`: `assignmentId → puntos`, `comment`: comentario opcional del profesor). Id determinístico a propósito, para que el propio estudiante pueda consultar su nota con un `getDoc` directo.
+- **`subjectResources/{id}`** — links a recursos externos (Drive, Dropbox, cualquier URL) que un profesor deja disponibles para una materia. Los links de Drive muestran una miniatura real (endpoint público de Drive, sin backend); el resto se ve con una tarjeta con ícono según el proveedor.
 
 Para el detalle campo por campo, los modelos TypeScript en `src/app/core/*/​*.model.ts` están documentados junto a cada interfaz.
 

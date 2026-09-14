@@ -207,6 +207,16 @@
                   </span>
                 </div>
               }
+
+              @if (resourcesFor(subject.id).length > 0) {
+                <div
+                  class="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2.5 sm:grid-cols-3"
+                >
+                  @for (resource of resourcesFor(subject.id); track resource.id) {
+                    <app-resource-card [resource]="resource" />
+                  }
+                </div>
+              }
             </div>
           }
         </div>

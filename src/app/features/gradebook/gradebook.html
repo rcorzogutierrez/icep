@@ -459,6 +459,95 @@
     }
   </section>
 
+  <section class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+    <button
+      type="button"
+      class="flex w-full items-center gap-2"
+      [attr.aria-expanded]="resourcesOpen()"
+      (click)="resourcesOpen.set(!resourcesOpen())"
+    >
+      <svg
+        lucideChevronDown
+        [size]="16"
+        class="text-text-muted transition-transform"
+        [class.-rotate-90]="!resourcesOpen()"
+        aria-hidden="true"
+      ></svg>
+      <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'resourcesTitle') }}</h2>
+    </button>
+
+    @if (resourcesOpen()) {
+      @if (resourcesService.loading()) {
+        <app-loading />
+      } @else if (resources().length === 0 && !showAddResourceForm()) {
+        <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'noResources') }}</p>
+      } @else if (resources().length > 0) {
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          @for (resource of resources(); track resource.id) {
+            <app-resource-card
+              [resource]="resource"
+              [showRemove]="true"
+              [removeLabel]="i18n.t('gradebook', 'delete')"
+              (remove)="confirmingRemoveResource.set(resource)"
+            />
+          }
+        </div>
+      }
+
+      @if (showAddResourceForm()) {
+        <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
+              <label for="resource-title" class="text-sm font-medium text-text">
+                {{ i18n.t('gradebook', 'resourceTitleLabel') }}
+              </label>
+              <input
+                id="resource-title"
+                type="text"
+                class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                [placeholder]="i18n.t('gradebook', 'resourceTitlePlaceholder')"
+                [value]="resourceTitle()"
+                (input)="resourceTitle.set($any($event.target).value)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="resource-url" class="text-sm font-medium text-text">
+                {{ i18n.t('gradebook', 'resourceUrlLabel') }}
+              </label>
+              <input
+                id="resource-url"
+                type="text"
+                class="h-10 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                [placeholder]="i18n.t('gradebook', 'resourceUrlPlaceholder')"
+                [value]="resourceUrl()"
+                (input)="resourceUrl.set($any($event.target).value)"
+              />
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <app-button
+              [loading]="creatingResource()"
+              [disabled]="!resourceTitle().trim() || !resourceUrl().trim()"
+              (pressed)="onCreateResource()"
+            >
+              {{ i18n.t('gradebook', 'addResource') }}
+            </app-button>
+            <app-button variant="secondary" (pressed)="closeAddResourceForm()">
+              {{ i18n.t('gradebook', 'cancel') }}
+            </app-button>
+          </div>
+        </div>
+      } @else {
+        <div>
+          <app-button variant="secondary" (pressed)="openAddResourceForm()">
+            <svg lucidePlus [size]="14" aria-hidden="true"></svg>
+            {{ i18n.t('gradebook', 'addResource') }}
+          </app-button>
+        </div>
+      }
+    }
+  </section>
+
   <section class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'gradesTitle') }}</h2>
@@ -649,6 +738,17 @@
     [confirmLabel]="i18n.t('gradebook', 'delete')"
     (confirmed)="confirmingRemoveAssignment.set(null); onRemoveAssignment(assignment)"
     (cancelled)="confirmingRemoveAssignment.set(null)"
+  />
+}
+
+@if (confirmingRemoveResource(); as resource) {
+  <app-confirm-dialog
+    [open]="true"
+    [title]="resource.title"
+    [message]="i18n.t('gradebook', 'confirmDeleteResourceMessage')"
+    [confirmLabel]="i18n.t('gradebook', 'delete')"
+    (confirmed)="confirmingRemoveResource.set(null); onRemoveResource(resource)"
+    (cancelled)="confirmingRemoveResource.set(null)"
   />
 }
 

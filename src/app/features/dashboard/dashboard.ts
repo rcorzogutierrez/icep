@@ -27,11 +27,14 @@ import {
 import { I18nService } from '../../core/i18n/i18n.service';
 import { InvitationsService } from '../../core/invitations/invitations.service';
 import { SubjectAssignmentsService } from '../../core/subjects/subject-assignments.service';
+import type { SubjectResource } from '../../core/subjects/subject-resources.model';
+import { SubjectResourcesService } from '../../core/subjects/subject-resources.service';
 import type { Subject } from '../../core/subjects/subjects.model';
 import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
+import { ResourceCard } from '../../shared/components/resource-card/resource-card';
 import { Skeleton } from '../../shared/components/skeleton/skeleton';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
@@ -77,6 +80,7 @@ interface StatCard {
   standalone: true,
   imports: [
     Button,
+    ResourceCard,
     Skeleton,
     Page,
     PageHeader,
@@ -102,6 +106,7 @@ export class Dashboard {
   protected readonly i18n = inject(I18nService);
   protected readonly subjectsService = inject(SubjectsService);
   private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
+  private readonly subjectResourcesService = inject(SubjectResourcesService);
   private readonly courseStudentsService = inject(CourseStudentsService);
   private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
@@ -118,6 +123,7 @@ export class Dashboard {
   protected readonly mySubjectFinalGrades = signal<Map<string, number | null>>(new Map());
   protected readonly mySubjectComments = signal<Map<string, string | null>>(new Map());
   protected readonly mySubjectDetails = signal<Map<string, SubjectDetail>>(new Map());
+  protected readonly mySubjectResources = signal<Map<string, SubjectResource[]>>(new Map());
   protected readonly loadingMySubjects = signal(false);
 
   /** Acordeón: una sola materia con el desglose abierto a la vez. */
@@ -181,6 +187,11 @@ export class Dashboard {
   /** Comentario del profesor para esa materia, o null si no dejó ninguno. */
   protected commentFor(subjectId: string): string | null {
     return this.mySubjectComments().get(subjectId) ?? null;
+  }
+
+  /** Recursos (Drive/Dropbox/links) que el profesor dejó disponibles para esa materia. */
+  protected resourcesFor(subjectId: string): SubjectResource[] {
+    return this.mySubjectResources().get(subjectId) ?? [];
   }
 
   protected goToGradebook(subjectId: string): void {
@@ -313,6 +324,7 @@ export class Dashboard {
         this.mySubjectFinalGrades.set(new Map());
         this.mySubjectComments.set(new Map());
         this.mySubjectDetails.set(new Map());
+        this.mySubjectResources.set(new Map());
         this.loadingMySubjects.set(false);
         return;
       }
@@ -325,6 +337,7 @@ export class Dashboard {
           this.mySubjectFinalGrades.set(new Map());
           this.mySubjectComments.set(new Map());
           this.mySubjectDetails.set(new Map());
+          this.mySubjectResources.set(new Map());
         })
         .finally(() => this.loadingMySubjects.set(false));
     });
@@ -343,18 +356,27 @@ export class Dashboard {
       this.mySubjectFinalGrades.set(new Map());
       this.mySubjectComments.set(new Map());
       this.mySubjectDetails.set(new Map());
+      this.mySubjectResources.set(new Map());
       return;
     }
 
-    const [subjects, teacherAssignments, categories, assignments, grades] = await Promise.all([
-      this.subjectsService.fetchByIds(subjectIds),
-      this.subjectAssignmentsService.fetchBySubjectIds(subjectIds),
-      this.gradeCategoriesService.fetchForSubjectIds(subjectIds),
-      this.assignmentsService.fetchForSubjectIds(subjectIds),
-      Promise.all(subjectIds.map((id) => this.gradesService.fetchOwn(id, uid))),
-    ]);
+    const [subjects, teacherAssignments, categories, assignments, grades, resources] =
+      await Promise.all([
+        this.subjectsService.fetchByIds(subjectIds),
+        this.subjectAssignmentsService.fetchBySubjectIds(subjectIds),
+        this.gradeCategoriesService.fetchForSubjectIds(subjectIds),
+        this.assignmentsService.fetchForSubjectIds(subjectIds),
+        Promise.all(subjectIds.map((id) => this.gradesService.fetchOwn(id, uid))),
+        this.subjectResourcesService.fetchForSubjectIds(subjectIds),
+      ]);
 
     this.mySubjects.set(subjects);
+
+    const byResource = new Map<string, SubjectResource[]>();
+    for (const resource of resources) {
+      byResource.set(resource.subjectId, [...(byResource.get(resource.subjectId) ?? []), resource]);
+    }
+    this.mySubjectResources.set(byResource);
 
     const byTeacher = new Map<string, string[]>();
     for (const assignment of teacherAssignments) {
