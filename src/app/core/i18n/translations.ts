@@ -45,6 +45,12 @@ export const translations = {
       errorEmailInUse: 'Ese email ya tiene una cuenta. Iniciá sesión en vez de registrarte.',
       errorInvalidCredential: 'Email o contraseña incorrectos.',
       errorWeakPassword: 'La contraseña es muy débil (mínimo 6 caracteres).',
+      forgotPassword: '¿Olvidaste tu contraseña?',
+      forgotPasswordSubtitle: 'Ingresá tu email y te mandamos un link para elegir una nueva.',
+      sendResetLink: 'Enviar link de recuperación',
+      resetEmailSent:
+        'Si existe una cuenta con ese email, te enviamos un link para restablecer tu contraseña. Revisá tu bandeja de entrada (y spam).',
+      backToSignIn: 'Volver a iniciar sesión',
       footerDescription:
         'Sistema de calificaciones para estudiantes y profesores del Instituto Evangélico de Teología.',
       footerVerse:
@@ -446,6 +452,12 @@ export const translations = {
       errorEmailInUse: 'That email already has an account. Sign in instead of signing up.',
       errorInvalidCredential: 'Incorrect email or password.',
       errorWeakPassword: 'Password is too weak (minimum 6 characters).',
+      forgotPassword: 'Forgot your password?',
+      forgotPasswordSubtitle: "Enter your email and we'll send you a link to set a new one.",
+      sendResetLink: 'Send reset link',
+      resetEmailSent:
+        'If an account exists for that email, we sent a link to reset your password. Check your inbox (and spam).',
+      backToSignIn: 'Back to sign in',
       footerDescription:
         'A gradebook for students and teachers of the Instituto Evangélico de Teología.',
       footerVerse:

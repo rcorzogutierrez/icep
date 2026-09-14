@@ -59,6 +59,11 @@ export class Login {
   protected readonly submittingEmail = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
+  protected readonly showForgotPassword = signal(false);
+  protected readonly resetEmail = signal('');
+  protected readonly sendingReset = signal(false);
+  protected readonly resetSent = signal(false);
+
   protected readonly emailFieldError = computed(() => {
     const field = this.emailForm.email();
     if (!field.touched() || !field.invalid()) {
@@ -82,6 +87,48 @@ export class Login {
   protected setMode(mode: AuthMode): void {
     this.modeOverride.set(mode);
     this.errorMessage.set(null);
+  }
+
+  protected openForgotPassword(): void {
+    this.resetEmail.set(this.emailForm.email().value());
+    this.resetSent.set(false);
+    this.errorMessage.set(null);
+    this.showForgotPassword.set(true);
+  }
+
+  protected closeForgotPassword(): void {
+    this.showForgotPassword.set(false);
+  }
+
+  /**
+   * Nunca revela si el email existe o no (mismo criterio que el resto de la
+   * app con códigos/invitaciones): auth/user-not-found se trata igual que
+   * un envío exitoso, así un mensaje de "cuenta inexistente" no se vuelve
+   * una forma de enumerar emails registrados.
+   */
+  protected async onSendReset(): Promise<void> {
+    const emailValue = this.resetEmail().trim();
+    if (!emailValue) {
+      return;
+    }
+    this.sendingReset.set(true);
+    this.errorMessage.set(null);
+    try {
+      await this.auth.sendPasswordReset(emailValue);
+      this.resetSent.set(true);
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      if (code === 'auth/invalid-email') {
+        this.errorMessage.set(this.i18n.t('login', 'emailInvalid'));
+      } else if (code === 'auth/user-not-found') {
+        this.resetSent.set(true);
+      } else {
+        console.error('[Login] sendPasswordReset failed:', error);
+        this.errorMessage.set(this.i18n.t('login', 'errorGeneric'));
+      }
+    } finally {
+      this.sendingReset.set(false);
+    }
   }
 
   protected async onGoogleSignIn(): Promise<void> {

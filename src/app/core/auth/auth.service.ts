@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
@@ -65,5 +66,9 @@ export class AuthService {
 
   signOut() {
     return firebaseSignOut(this.auth);
+  }
+
+  sendPasswordReset(email: string) {
+    return sendPasswordResetEmail(this.auth, email);
   }
 }

@@ -126,147 +126,204 @@
         </div>
       }
 
-      <div class="mt-6 flex gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
-        <button
-          type="button"
-          class="flex-1 rounded-full py-1.5 transition-all"
-          [class.bg-surface]="mode() === 'signIn'"
-          [class.text-text]="mode() === 'signIn'"
-          [class.shadow-sm]="mode() === 'signIn'"
-          [class.text-text-muted]="mode() !== 'signIn'"
-          (click)="setMode('signIn')"
-        >
-          {{ i18n.t('login', 'tabSignIn') }}
-        </button>
-        <button
-          type="button"
-          class="flex-1 rounded-full py-1.5 transition-all"
-          [class.bg-surface]="mode() === 'signUp'"
-          [class.text-text]="mode() === 'signUp'"
-          [class.shadow-sm]="mode() === 'signUp'"
-          [class.text-text-muted]="mode() !== 'signUp'"
-          (click)="setMode('signUp')"
-        >
-          {{ i18n.t('login', 'tabSignUp') }}
-        </button>
-      </div>
+      @if (showForgotPassword()) {
+        <form class="mt-6 flex flex-col gap-4" (submit)="$event.preventDefault(); onSendReset()">
+          @if (resetSent()) {
+            <div
+              class="flex items-start gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-sm text-brand-700"
+            >
+              <svg lucideInfo [size]="16" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
+              <span>{{ i18n.t('login', 'resetEmailSent') }}</span>
+            </div>
+          } @else {
+            <p class="text-sm text-text-muted">{{ i18n.t('login', 'forgotPasswordSubtitle') }}</p>
+            <div class="flex flex-col gap-1">
+              <label for="reset-email" class="text-sm font-medium text-text">{{
+                i18n.t('login', 'emailLabel')
+              }}</label>
+              <div class="relative">
+                <svg
+                  lucideMail
+                  [size]="16"
+                  class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+                  aria-hidden="true"
+                ></svg>
+                <input
+                  id="reset-email"
+                  type="email"
+                  class="h-11 w-full rounded-xl border border-border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-500/20 focus-visible:outline-none"
+                  [value]="resetEmail()"
+                  (input)="resetEmail.set($any($event.target).value)"
+                />
+              </div>
+            </div>
+            <app-button
+              type="submit"
+              [fullWidth]="true"
+              [loading]="sendingReset()"
+              [disabled]="!resetEmail().trim()"
+            >
+              {{ i18n.t('login', 'sendResetLink') }}
+            </app-button>
+          }
+          <app-button variant="ghost" [fullWidth]="true" (pressed)="closeForgotPassword()">
+            {{ i18n.t('login', 'backToSignIn') }}
+          </app-button>
+        </form>
+      } @else {
+        <div class="mt-6 flex gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
+          <button
+            type="button"
+            class="flex-1 rounded-full py-1.5 transition-all"
+            [class.bg-surface]="mode() === 'signIn'"
+            [class.text-text]="mode() === 'signIn'"
+            [class.shadow-sm]="mode() === 'signIn'"
+            [class.text-text-muted]="mode() !== 'signIn'"
+            (click)="setMode('signIn')"
+          >
+            {{ i18n.t('login', 'tabSignIn') }}
+          </button>
+          <button
+            type="button"
+            class="flex-1 rounded-full py-1.5 transition-all"
+            [class.bg-surface]="mode() === 'signUp'"
+            [class.text-text]="mode() === 'signUp'"
+            [class.shadow-sm]="mode() === 'signUp'"
+            [class.text-text-muted]="mode() !== 'signUp'"
+            (click)="setMode('signUp')"
+          >
+            {{ i18n.t('login', 'tabSignUp') }}
+          </button>
+        </div>
 
-      <form class="mt-6 flex flex-col gap-4" (submit)="$event.preventDefault(); onEmailSubmit()">
-        @if (mode() === 'signUp' && !code()) {
+        <form class="mt-6 flex flex-col gap-4" (submit)="$event.preventDefault(); onEmailSubmit()">
+          @if (mode() === 'signUp' && !code()) {
+            <div class="flex flex-col gap-1">
+              <label for="invite-code" class="text-sm font-medium text-text">
+                {{ i18n.t('login', 'inviteCodeLabel') }}
+              </label>
+              <input
+                id="invite-code"
+                type="text"
+                class="h-11 rounded-xl border border-border bg-surface px-3 text-sm uppercase text-text transition-shadow focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-500/20 focus-visible:outline-none"
+                [value]="manualCode()"
+                (input)="manualCode.set($any($event.target).value)"
+              />
+            </div>
+          }
+
           <div class="flex flex-col gap-1">
-            <label for="invite-code" class="text-sm font-medium text-text">
-              {{ i18n.t('login', 'inviteCodeLabel') }}
+            <label for="email" class="text-sm font-medium text-text">{{
+              i18n.t('login', 'emailLabel')
+            }}</label>
+            <div class="relative">
+              <svg
+                lucideMail
+                [size]="16"
+                class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+                aria-hidden="true"
+              ></svg>
+              <input
+                id="email"
+                type="email"
+                class="h-11 w-full rounded-xl border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
+                [class.border-border]="!emailFieldError()"
+                [class.focus-visible:border-brand-500]="!emailFieldError()"
+                [class.focus-visible:ring-brand-500/20]="!emailFieldError()"
+                [class.border-status-expired]="emailFieldError()"
+                [value]="emailForm.email().value()"
+                (input)="emailForm.email().value.set($any($event.target).value)"
+              />
+            </div>
+            @if (emailFieldError(); as message) {
+              <p class="text-sm text-status-expired">{{ message }}</p>
+            }
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label for="password" class="text-sm font-medium text-text">
+              {{ i18n.t('login', 'passwordLabel') }}
             </label>
-            <input
-              id="invite-code"
-              type="text"
-              class="h-11 rounded-xl border border-border bg-surface px-3 text-sm uppercase text-text transition-shadow focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-500/20 focus-visible:outline-none"
-              [value]="manualCode()"
-              (input)="manualCode.set($any($event.target).value)"
-            />
+            <div class="relative">
+              <svg
+                lucideLock
+                [size]="16"
+                class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+                aria-hidden="true"
+              ></svg>
+              <input
+                id="password"
+                type="password"
+                class="h-11 w-full rounded-xl border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
+                [class.border-border]="!passwordFieldError()"
+                [class.focus-visible:border-brand-500]="!passwordFieldError()"
+                [class.focus-visible:ring-brand-500/20]="!passwordFieldError()"
+                [class.border-status-expired]="passwordFieldError()"
+                [value]="emailForm.password().value()"
+                (input)="emailForm.password().value.set($any($event.target).value)"
+              />
+            </div>
+            @if (passwordFieldError(); as message) {
+              <p class="text-sm text-status-expired">{{ message }}</p>
+            }
+            @if (mode() === 'signIn') {
+              <button
+                type="button"
+                class="self-end text-xs font-medium text-brand-700 hover:underline"
+                (click)="openForgotPassword()"
+              >
+                {{ i18n.t('login', 'forgotPassword') }}
+              </button>
+            }
           </div>
-        }
 
-        <div class="flex flex-col gap-1">
-          <label for="email" class="text-sm font-medium text-text">{{
-            i18n.t('login', 'emailLabel')
-          }}</label>
-          <div class="relative">
-            <svg
-              lucideMail
-              [size]="16"
-              class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
-              aria-hidden="true"
-            ></svg>
-            <input
-              id="email"
-              type="email"
-              class="h-11 w-full rounded-xl border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
-              [class.border-border]="!emailFieldError()"
-              [class.focus-visible:border-brand-500]="!emailFieldError()"
-              [class.focus-visible:ring-brand-500/20]="!emailFieldError()"
-              [class.border-status-expired]="emailFieldError()"
-              [value]="emailForm.email().value()"
-              (input)="emailForm.email().value.set($any($event.target).value)"
-            />
-          </div>
-          @if (emailFieldError(); as message) {
-            <p class="text-sm text-status-expired">{{ message }}</p>
-          }
+          <app-button type="submit" [fullWidth]="true" [loading]="submittingEmail()">
+            {{
+              mode() === 'signUp'
+                ? i18n.t('login', 'submitSignUp')
+                : i18n.t('login', 'submitSignIn')
+            }}
+          </app-button>
+        </form>
+
+        <div class="my-5 flex items-center gap-3">
+          <div class="h-px flex-1 bg-border"></div>
+          <span class="text-xs text-text-muted">{{ i18n.t('login', 'orContinueWith') }}</span>
+          <div class="h-px flex-1 bg-border"></div>
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label for="password" class="text-sm font-medium text-text">
-            {{ i18n.t('login', 'passwordLabel') }}
-          </label>
-          <div class="relative">
-            <svg
-              lucideLock
-              [size]="16"
-              class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
-              aria-hidden="true"
-            ></svg>
-            <input
-              id="password"
-              type="password"
-              class="h-11 w-full rounded-xl border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
-              [class.border-border]="!passwordFieldError()"
-              [class.focus-visible:border-brand-500]="!passwordFieldError()"
-              [class.focus-visible:ring-brand-500/20]="!passwordFieldError()"
-              [class.border-status-expired]="passwordFieldError()"
-              [value]="emailForm.password().value()"
-              (input)="emailForm.password().value.set($any($event.target).value)"
-            />
-          </div>
-          @if (passwordFieldError(); as message) {
-            <p class="text-sm text-status-expired">{{ message }}</p>
-          }
-        </div>
-
-        <app-button type="submit" [fullWidth]="true" [loading]="submittingEmail()">
-          {{
-            mode() === 'signUp' ? i18n.t('login', 'submitSignUp') : i18n.t('login', 'submitSignIn')
-          }}
+        <app-button
+          class="block"
+          variant="secondary"
+          [fullWidth]="true"
+          [loading]="signingInGoogle()"
+          (pressed)="onGoogleSignIn()"
+        >
+          <span class="flex w-full items-center justify-center gap-2">
+            @if (!signingInGoogle()) {
+              <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="#FFC107"
+                  d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12 c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24 c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+                />
+                <path
+                  fill="#FF3D00"
+                  d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039 l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
+                />
+                <path
+                  fill="#4CAF50"
+                  d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36 c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
+                />
+                <path
+                  fill="#1976D2"
+                  d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571 c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24 C44,22.659,43.862,21.35,43.611,20.083z"
+                />
+              </svg>
+            }
+            {{ i18n.t('login', 'google') }}
+          </span>
         </app-button>
-      </form>
-
-      <div class="my-5 flex items-center gap-3">
-        <div class="h-px flex-1 bg-border"></div>
-        <span class="text-xs text-text-muted">{{ i18n.t('login', 'orContinueWith') }}</span>
-        <div class="h-px flex-1 bg-border"></div>
-      </div>
-
-      <app-button
-        class="block"
-        variant="secondary"
-        [fullWidth]="true"
-        [loading]="signingInGoogle()"
-        (pressed)="onGoogleSignIn()"
-      >
-        <span class="flex w-full items-center justify-center gap-2">
-          @if (!signingInGoogle()) {
-            <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
-              <path
-                fill="#FFC107"
-                d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12 c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24 c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-              />
-              <path
-                fill="#FF3D00"
-                d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039 l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-              />
-              <path
-                fill="#4CAF50"
-                d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36 c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
-              />
-              <path
-                fill="#1976D2"
-                d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571 c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24 C44,22.659,43.862,21.35,43.611,20.083z"
-              />
-            </svg>
-          }
-          {{ i18n.t('login', 'google') }}
-        </span>
-      </app-button>
+      }
 
       @if (errorMessage(); as message) {
         <p class="mt-4 text-sm text-status-expired">{{ message }}</p>
