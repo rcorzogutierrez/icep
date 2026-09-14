@@ -48,7 +48,7 @@
     } @empty {
       <p class="col-span-full py-6 text-center text-sm text-text-muted">
         @if (loading()) {
-          …
+          <app-loading />
         } @else {
           {{ i18n.t('myCourses', 'empty') }}
         }

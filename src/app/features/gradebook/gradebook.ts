@@ -18,6 +18,7 @@ import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
+import { Loading } from '../../shared/components/loading/loading';
 import { Modal } from '../../shared/components/modal/modal';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
@@ -37,6 +38,7 @@ import { ToastService } from '../../shared/toast/toast.service';
   imports: [
     Button,
     ConfirmDialog,
+    Loading,
     Modal,
     Select,
     RouterLink,
@@ -165,6 +167,16 @@ export class Gradebook {
         (a.displayName ?? a.email ?? '').localeCompare(b.displayName ?? b.email ?? ''),
       );
   });
+
+  /** true mientras cualquier dato detrás de `students()`/la grilla de notas todavía no llegó — evita mostrar "sin estudiantes" antes de tiempo. */
+  protected readonly studentsLoading = computed(
+    () =>
+      this.usersService.loading() ||
+      this.courseStudentsService.loading() ||
+      this.courseSubjectsService.loading() ||
+      this.courseSubjectTeachersService.loading() ||
+      this.gradesService.loading(),
+  );
 
   protected readonly rubricOpen = signal(false);
   protected readonly showAddCategoryForm = signal(false);

@@ -20,6 +20,7 @@ import { CourseSubjectsService } from '../../core/courses/course-subjects.servic
 import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
+import { Loading } from '../../shared/components/loading/loading';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
@@ -55,6 +56,7 @@ interface TaskOption {
   selector: 'app-assignment-review',
   standalone: true,
   imports: [
+    Loading,
     Page,
     PageHeader,
     IconCalendar,
@@ -95,6 +97,18 @@ export class AssignmentReview {
 
   protected readonly assignment = computed(() =>
     this.assignmentsService.assignments().find((a) => a.id === this.assignmentId()),
+  );
+
+  /** true mientras cualquier dato detrás de esta página (la tarea misma, o su roster de estudiantes) todavía no llegó. */
+  protected readonly loading = computed(
+    () =>
+      this.assignmentsService.loading() ||
+      this.subjectsService.loading() ||
+      this.usersService.loading() ||
+      this.courseStudentsService.loading() ||
+      this.courseSubjectsService.loading() ||
+      this.courseSubjectTeachersService.loading() ||
+      this.gradesService.loading(),
   );
 
   protected readonly category = computed(() => {

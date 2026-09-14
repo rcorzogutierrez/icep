@@ -15,6 +15,7 @@ export const translations = {
       notifications: 'Notificaciones',
       downloadQr: 'Descargar QR',
       enlargeQr: 'Ampliar QR',
+      loading: 'Cargando…',
     },
     login: {
       title: 'Iniciá sesión',
@@ -383,6 +384,7 @@ export const translations = {
       searchPlaceholder: 'Buscar estudiante...',
       onlyPending: 'Solo pendientes de calificar',
       noStudents: 'Todavía no hay estudiantes inscriptos en esta materia.',
+      notFound: 'No encontramos esta tarea.',
       invalidScore: 'La nota debe ser un número entre 0 y los puntos posibles de la tarea.',
       errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
     },
@@ -397,6 +399,7 @@ export const translations = {
       notifications: 'Notifications',
       downloadQr: 'Download QR',
       enlargeQr: 'Enlarge QR',
+      loading: 'Loading…',
     },
     login: {
       title: 'Sign in',
@@ -765,6 +768,7 @@ export const translations = {
       searchPlaceholder: 'Search student...',
       onlyPending: 'Only pending grades',
       noStudents: 'No students enrolled in this subject yet.',
+      notFound: "We couldn't find this assignment.",
       invalidScore: "The score must be a number between 0 and the assignment's points possible.",
       errorGeneric: "We couldn't complete the action. Please try again.",
     },

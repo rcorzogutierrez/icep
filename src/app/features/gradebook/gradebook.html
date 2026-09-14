@@ -128,7 +128,7 @@
               <tr>
                 <td colspan="3" class="px-4 py-6 text-center text-text-muted">
                   @if (categoriesService.loading()) {
-                    …
+                    <app-loading />
                   } @else {
                     {{ i18n.t('gradebook', 'noCategories') }}
                   }
@@ -368,7 +368,11 @@
                 } @empty {
                   <tr>
                     <td colspan="4" class="px-4 py-4 text-center text-text-muted">
-                      {{ i18n.t('gradebook', 'noAssignments') }}
+                      @if (assignmentsService.loading()) {
+                        <app-loading />
+                      } @else {
+                        {{ i18n.t('gradebook', 'noAssignments') }}
+                      }
                     </td>
                   </tr>
                 }
@@ -612,7 +616,11 @@
                 [attr.colspan]="assignments().length + 2"
                 class="px-4 py-6 text-center text-text-muted"
               >
-                {{ i18n.t('gradebook', 'noStudents') }}
+                @if (studentsLoading()) {
+                  <app-loading />
+                } @else {
+                  {{ i18n.t('gradebook', 'noStudents') }}
+                }
               </td>
             </tr>
           }

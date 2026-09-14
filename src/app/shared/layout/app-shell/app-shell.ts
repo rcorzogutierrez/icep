@@ -1,6 +1,24 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationSkipped,
+  NavigationStart,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UserProfileService } from '../../../core/users/user-profile.service';
@@ -56,6 +74,32 @@ export class AppShell {
 
   /** Sidebar como overlay en mobile (<lg); en desktop siempre visible, este signal no aplica. */
   protected readonly mobileNavOpen = signal(false);
+
+  /**
+   * Barra de progreso mientras se resuelve una navegación (baja el chunk
+   * lazy, corren guards) — sin esto el router-outlet queda en blanco un
+   * instante y no hay ninguna señal de que algo está pasando. `true` desde
+   * `NavigationStart`; los eventos intermedios (guards, resolvers, carga
+   * del chunk) no lo tocan, así se mantiene prendida hasta el cierre real.
+   */
+  private readonly routerEvent = toSignal(this.router.events);
+  protected readonly navigating = signal(false);
+
+  constructor() {
+    effect(() => {
+      const event = this.routerEvent();
+      if (event instanceof NavigationStart) {
+        this.navigating.set(true);
+      } else if (
+        event instanceof NavigationEnd ||
+        event instanceof NavigationCancel ||
+        event instanceof NavigationError ||
+        event instanceof NavigationSkipped
+      ) {
+        this.navigating.set(false);
+      }
+    });
+  }
 
   protected readonly editingNickname = signal(false);
   protected readonly nicknameDraft = signal('');

@@ -12,6 +12,7 @@ import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
+import { Loading } from '../../shared/components/loading/loading';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
@@ -30,7 +31,17 @@ const EXPIRED_CLASS = STATUS_CLASS.revoked;
 @Component({
   selector: 'app-invitations',
   standalone: true,
-  imports: [Button, ConfirmDialog, Select, DatePipe, RouterLink, Page, PageHeader, IconInfo],
+  imports: [
+    Button,
+    ConfirmDialog,
+    Loading,
+    Select,
+    DatePipe,
+    RouterLink,
+    Page,
+    PageHeader,
+    IconInfo,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invitations.html',
 })

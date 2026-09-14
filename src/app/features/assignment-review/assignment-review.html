@@ -226,12 +226,18 @@
           </div>
         </div>
       } @empty {
-        <p class="p-6 text-center text-sm text-text-muted">
-          {{ i18n.t('assignmentReview', 'noStudents') }}
-        </p>
+        <div class="p-6 text-center text-sm text-text-muted">
+          @if (loading()) {
+            <app-loading />
+          } @else {
+            {{ i18n.t('assignmentReview', 'noStudents') }}
+          }
+        </div>
       }
     </div>
   </app-page>
+} @else if (loading()) {
+  <app-loading />
 } @else {
-  <p class="text-sm text-text-muted">…</p>
+  <p class="text-sm text-text-muted">{{ i18n.t('assignmentReview', 'notFound') }}</p>
 }

@@ -6,6 +6,7 @@ import { CourseSubjectTeachersService } from '../../core/courses/course-subject-
 import { CoursesService } from '../../core/courses/courses.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { UsersService } from '../../core/users/users.service';
+import { Loading } from '../../shared/components/loading/loading';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
@@ -35,6 +36,7 @@ interface MyCourseRow {
   standalone: true,
   imports: [
     RouterLink,
+    Loading,
     Page,
     PageHeader,
     IconBookOpen,

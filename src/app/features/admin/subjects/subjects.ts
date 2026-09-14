@@ -5,6 +5,7 @@ import { SubjectsService } from '../../../core/subjects/subjects.service';
 import type { Subject } from '../../../core/subjects/subjects.model';
 import { Button } from '../../../shared/components/button/button';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { Loading } from '../../../shared/components/loading/loading';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -13,7 +14,7 @@ import { ToastService } from '../../../shared/toast/toast.service';
 @Component({
   selector: 'app-admin-subjects',
   standalone: true,
-  imports: [Button, ConfirmDialog, Page, PageHeader],
+  imports: [Button, ConfirmDialog, Loading, Page, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './subjects.html',
 })

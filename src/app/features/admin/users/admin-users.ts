@@ -6,6 +6,7 @@ import type { UserProfile, UserRole, UserStatus } from '../../../core/users/user
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { Loading } from '../../../shared/components/loading/loading';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
@@ -21,7 +22,7 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [Button, ConfirmDialog, Select, DatePipe, Page, PageHeader],
+  imports: [Button, ConfirmDialog, Loading, Select, DatePipe, Page, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-users.html',
 })

@@ -16,6 +16,7 @@ import { SubjectsService } from '../../../core/subjects/subjects.service';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { Drawer } from '../../../shared/components/drawer/drawer';
+import { Loading } from '../../../shared/components/loading/loading';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import {
@@ -78,6 +79,7 @@ function gradeBand(grade: number | null): GradeBand {
   imports: [
     Button,
     Drawer,
+    Loading,
     Page,
     PageHeader,
     DecimalPipe,

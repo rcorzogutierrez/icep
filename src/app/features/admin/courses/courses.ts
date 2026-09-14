@@ -14,6 +14,7 @@ import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { InviteCodeCard } from '../../../shared/components/invite-code-card/invite-code-card';
+import { Loading } from '../../../shared/components/loading/loading';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import {
@@ -47,6 +48,7 @@ function parseLocalDate(dateStr: string): Date {
     ConfirmDialog,
     DatePipe,
     InviteCodeCard,
+    Loading,
     Page,
     PageHeader,
     IconArrowRight,

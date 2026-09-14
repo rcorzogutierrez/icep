@@ -238,6 +238,8 @@
       }
     }
   </app-page>
+} @else if (coursesService.loading()) {
+  <app-loading />
 } @else {
   <p class="text-sm text-text-muted">{{ i18n.t('adminCourses', 'courseNotFound') }}</p>
 }

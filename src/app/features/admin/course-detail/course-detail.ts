@@ -15,6 +15,7 @@ import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { InviteCodeCard } from '../../../shared/components/invite-code-card/invite-code-card';
+import { Loading } from '../../../shared/components/loading/loading';
 import { Modal } from '../../../shared/components/modal/modal';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
 import { TransferList } from '../../../shared/components/transfer-list/transfer-list';
@@ -58,6 +59,7 @@ interface PendingSummary {
     Button,
     ConfirmDialog,
     InviteCodeCard,
+    Loading,
     Modal,
     Page,
     PageHeader,
