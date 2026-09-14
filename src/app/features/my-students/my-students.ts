@@ -346,7 +346,13 @@ export class MyStudents {
 
     this.savingAssignmentId.set(assignment.id);
     try {
-      await this.gradesService.setScore(subjectId, studentUid, assignment.id, score);
+      await this.gradesService.setScore(
+        subjectId,
+        studentUid,
+        assignment.id,
+        assignment.name,
+        score,
+      );
       this.editingScores.update((map) => {
         const rest = { ...map };
         delete rest[assignment.id];

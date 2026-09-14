@@ -357,6 +357,10 @@ export const translations = {
       resourceDeleted: 'Recurso borrado.',
       confirmDeleteResourceMessage:
         '¿Seguro que querés borrar este recurso? Esta acción no se puede deshacer.',
+      historyButtonLabel: 'Historial de cambios',
+      historyModalTitle: 'Historial de la nota',
+      historyEmpty: 'Todavía no hay cambios registrados para este estudiante.',
+      historyBy: 'por',
     },
     myCourses: {
       title: 'Mis cursos',
@@ -764,6 +768,10 @@ export const translations = {
       resourceDeleted: 'Resource deleted.',
       confirmDeleteResourceMessage:
         "Are you sure you want to delete this resource? This can't be undone.",
+      historyButtonLabel: 'Change history',
+      historyModalTitle: 'Grade history',
+      historyEmpty: 'No changes recorded for this student yet.',
+      historyBy: 'by',
     },
     myCourses: {
       title: 'My courses',

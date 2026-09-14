@@ -24,6 +24,7 @@ export {
   LucideCircleCheck as IconCircleCheck,
   LucideGraduationCap as IconGraduationCap,
   LucideHardDrive as IconHardDrive,
+  LucideHistory as IconHistory,
   LucideInfo as IconInfo,
   LucideLayers as IconLayers,
   LucideLayoutDashboard as IconLayoutDashboard,

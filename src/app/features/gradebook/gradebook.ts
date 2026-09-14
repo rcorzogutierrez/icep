@@ -9,6 +9,7 @@ import { CoursesService } from '../../core/courses/courses.service';
 import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
+import { GradeHistoryService } from '../../core/grades/grade-history.service';
 import { GradesService } from '../../core/grades/grades.service';
 import type { GradeCategory } from '../../core/grades/grades.model';
 import { computeFinalGrade } from '../../core/grades/grades.util';
@@ -29,6 +30,7 @@ import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
   IconArrowRight,
   IconChevronDown,
+  IconHistory,
   IconMessageSquare,
   IconPlus,
 } from '../../shared/icons/icons';
@@ -50,6 +52,7 @@ import { ToastService } from '../../shared/toast/toast.service';
     PageHeader,
     IconArrowRight,
     IconChevronDown,
+    IconHistory,
     IconMessageSquare,
     IconPlus,
     DecimalPipe,
@@ -74,6 +77,7 @@ export class Gradebook {
   protected readonly categoriesService = inject(GradeCategoriesService);
   protected readonly assignmentsService = inject(AssignmentsService);
   protected readonly gradesService = inject(GradesService);
+  protected readonly gradeHistoryService = inject(GradeHistoryService);
   protected readonly resourcesService = inject(SubjectResourcesService);
   protected readonly usersService = inject(UsersService);
   private readonly authService = inject(AuthService);
@@ -393,7 +397,13 @@ export class Gradebook {
     try {
       await Promise.all(
         updates.map(({ assignment, score }) =>
-          this.gradesService.setScore(this.subjectId(), studentUid, assignment.id, score),
+          this.gradesService.setScore(
+            this.subjectId(),
+            studentUid,
+            assignment.id,
+            assignment.name,
+            score,
+          ),
         ),
       );
       this.editingScores.update((map) => {
@@ -430,6 +440,29 @@ export class Gradebook {
       name: student.displayName ?? student.email ?? '',
     });
     this.commentDraft.set(this.gradesService.commentFor(this.subjectId(), student.uid) ?? '');
+  }
+
+  protected readonly historyStudent = signal<{
+    uid: string;
+    displayName?: string | null;
+    email?: string | null;
+  } | null>(null);
+
+  protected readonly historyEntries = computed(() => {
+    const student = this.historyStudent();
+    return student ? this.gradeHistoryService.forStudent(this.subjectId(), student.uid) : [];
+  });
+
+  protected openHistory(student: {
+    uid: string;
+    displayName?: string | null;
+    email?: string | null;
+  }): void {
+    this.historyStudent.set(student);
+  }
+
+  protected closeHistory(): void {
+    this.historyStudent.set(null);
   }
 
   protected closeCommentEditor(): void {

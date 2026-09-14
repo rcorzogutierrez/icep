@@ -11,6 +11,7 @@ import {
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
+import { GradeHistoryService } from './grade-history.service';
 import type { Grade } from './grades.model';
 
 /**
@@ -26,6 +27,7 @@ export class GradesService {
   private readonly firestore = inject(FIREBASE_FIRESTORE);
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
+  private readonly gradeHistoryService = inject(GradeHistoryService);
 
   private readonly _grades = signal<Grade[]>([]);
   private readonly _loading = signal(true);
@@ -82,18 +84,45 @@ export class GradesService {
     return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as Grade) : null;
   }
 
-  setScore(
+  /**
+   * `assignmentName` es solo para dejar un registro legible en el
+   * historial (ver GradeHistoryService) — no se guarda en el propio
+   * `grades` doc. Si el puntaje no cambió realmente (ej. re-guardar el
+   * mismo valor), no se agrega una entrada de historial.
+   */
+  async setScore(
     subjectId: string,
     studentUid: string,
-    categoryId: string,
+    assignmentId: string,
+    assignmentName: string,
     score: number | null,
   ): Promise<void> {
+    const previousScore = this.scoreFor(subjectId, studentUid, assignmentId);
     const ref = doc(this.firestore, 'grades', `${subjectId}_${studentUid}`);
-    return setDoc(
+    await setDoc(
       ref,
-      { subjectId, studentUid, scores: { [categoryId]: score }, updatedAt: serverTimestamp() },
+      { subjectId, studentUid, scores: { [assignmentId]: score }, updatedAt: serverTimestamp() },
       { merge: true },
     );
+
+    if (previousScore === score) {
+      return;
+    }
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+    await this.gradeHistoryService.record({
+      subjectId,
+      studentUid,
+      assignmentId,
+      assignmentName,
+      previousScore,
+      newScore: score,
+      changedBy: user.uid,
+      changedByName:
+        this.userProfileService.profile()?.displayName ?? user.displayName ?? user.email ?? '',
+    });
   }
 
   /** Comentario general del profesor para un estudiante en una materia, o null si no puso ninguno. */

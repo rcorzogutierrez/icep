@@ -643,6 +643,14 @@
                   >
                     <svg lucideMessageSquare [size]="15" aria-hidden="true"></svg>
                   </button>
+                  <button
+                    type="button"
+                    class="shrink-0 text-text-muted hover:text-brand-600"
+                    [attr.aria-label]="i18n.t('gradebook', 'historyButtonLabel')"
+                    (click)="openHistory(student)"
+                  >
+                    <svg lucideHistory [size]="15" aria-hidden="true"></svg>
+                  </button>
                   @if (isRowDirty(student.uid)) {
                     <span
                       class="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-amber-700"
@@ -778,6 +786,50 @@
           {{ i18n.t('gradebook', 'save') }}
         </app-button>
       </div>
+    </div>
+  </app-modal>
+}
+
+@if (historyStudent(); as student) {
+  <app-modal
+    [open]="true"
+    [title]="i18n.t('gradebook', 'historyModalTitle')"
+    (closed)="closeHistory()"
+  >
+    <div class="flex flex-col gap-3">
+      <p class="text-sm font-medium text-text">
+        {{ student.displayName ?? student.email }}
+      </p>
+      @if (gradeHistoryService.loading()) {
+        <app-loading />
+      } @else if (historyEntries().length === 0) {
+        <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'historyEmpty') }}</p>
+      } @else {
+        <ul class="flex max-h-96 flex-col gap-2 overflow-y-auto">
+          @for (entry of historyEntries(); track entry.id) {
+            <li class="rounded-xl border border-border bg-slate-50 px-3 py-2 text-sm">
+              <div class="flex items-center justify-between gap-3">
+                <span class="font-medium text-text">{{ entry.assignmentName }}</span>
+                @if (entry.changedAt) {
+                  <span class="shrink-0 text-xs text-text-muted">{{
+                    entry.changedAt.toDate() | date: 'medium'
+                  }}</span>
+                }
+              </div>
+              <div class="mt-1 flex items-center gap-1.5 text-text-muted">
+                <span>{{ entry.previousScore ?? i18n.t('gradebook', 'noGradeYet') }}</span>
+                <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
+                <span class="font-medium text-text">{{
+                  entry.newScore ?? i18n.t('gradebook', 'noGradeYet')
+                }}</span>
+              </div>
+              <p class="mt-1 text-xs text-text-muted">
+                {{ i18n.t('gradebook', 'historyBy') }} {{ entry.changedByName }}
+              </p>
+            </li>
+          }
+        </ul>
+      }
     </div>
   </app-modal>
 }

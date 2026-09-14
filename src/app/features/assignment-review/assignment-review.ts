@@ -264,7 +264,13 @@ export class AssignmentReview {
       return;
     }
     try {
-      await this.gradesService.setScore(this.subjectId(), studentUid, assignment.id, score);
+      await this.gradesService.setScore(
+        this.subjectId(),
+        studentUid,
+        assignment.id,
+        assignment.name,
+        score,
+      );
     } catch (error) {
       console.error('[AssignmentReview]', error);
       this.toast.error(this.i18n.t('assignmentReview', 'errorGeneric'));
