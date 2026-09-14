@@ -55,6 +55,14 @@ export class Login {
   private readonly emailModel = signal<EmailFormModel>({ email: '', password: '' });
   protected readonly emailForm = form(this.emailModel, emailFormSchema);
 
+  /**
+   * Fuera del schema a propósito: solo aplica en modo signUp y depende del
+   * valor de otro campo (password), más simple como signal + validación al
+   * submit que forzar una regla condicional/cross-field en el schema.
+   */
+  protected readonly confirmPassword = signal('');
+  protected readonly confirmPasswordTouched = signal(false);
+
   protected readonly signingInGoogle = signal(false);
   protected readonly submittingEmail = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -84,9 +92,20 @@ export class Login {
       : this.i18n.t('login', 'passwordRequired');
   });
 
+  protected readonly confirmPasswordError = computed(() => {
+    if (this.mode() !== 'signUp' || !this.confirmPasswordTouched()) {
+      return null;
+    }
+    return this.confirmPassword() !== this.emailForm.password().value()
+      ? this.i18n.t('login', 'passwordsDontMatch')
+      : null;
+  });
+
   protected setMode(mode: AuthMode): void {
     this.modeOverride.set(mode);
     this.errorMessage.set(null);
+    this.confirmPassword.set('');
+    this.confirmPasswordTouched.set(false);
   }
 
   protected openForgotPassword(): void {
@@ -157,6 +176,14 @@ export class Login {
 
   protected async onEmailSubmit(): Promise<void> {
     this.errorMessage.set(null);
+
+    if (this.mode() === 'signUp') {
+      this.confirmPasswordTouched.set(true);
+      if (this.confirmPassword() !== this.emailForm.password().value()) {
+        return;
+      }
+    }
+
     await submit(this.emailForm, async () => {
       this.submittingEmail.set(true);
       const { email: emailValue, password } = this.emailModel();

@@ -277,6 +277,37 @@
             }
           </div>
 
+          @if (mode() === 'signUp') {
+            <div class="flex flex-col gap-1">
+              <label for="confirm-password" class="text-sm font-medium text-text">
+                {{ i18n.t('login', 'confirmPasswordLabel') }}
+              </label>
+              <div class="relative">
+                <svg
+                  lucideLock
+                  [size]="16"
+                  class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+                  aria-hidden="true"
+                ></svg>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  class="h-11 w-full rounded-xl border bg-surface pr-3 pl-9 text-sm text-text transition-shadow focus-visible:ring-3 focus-visible:outline-none"
+                  [class.border-border]="!confirmPasswordError()"
+                  [class.focus-visible:border-brand-500]="!confirmPasswordError()"
+                  [class.focus-visible:ring-brand-500/20]="!confirmPasswordError()"
+                  [class.border-status-expired]="confirmPasswordError()"
+                  [value]="confirmPassword()"
+                  (input)="confirmPassword.set($any($event.target).value)"
+                  (blur)="confirmPasswordTouched.set(true)"
+                />
+              </div>
+              @if (confirmPasswordError(); as message) {
+                <p class="text-sm text-status-expired">{{ message }}</p>
+              }
+            </div>
+          }
+
           <app-button type="submit" [fullWidth]="true" [loading]="submittingEmail()">
             {{
               mode() === 'signUp'

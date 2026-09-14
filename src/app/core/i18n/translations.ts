@@ -39,6 +39,8 @@ export const translations = {
       emailInvalid: 'Ingresá un email válido.',
       passwordRequired: 'Ingresá tu contraseña.',
       passwordTooShort: 'La contraseña debe tener al menos 6 caracteres.',
+      confirmPasswordLabel: 'Repetir contraseña',
+      passwordsDontMatch: 'Las contraseñas no coinciden.',
       errorGeneric: 'No pudimos iniciar sesión. Probá de nuevo.',
       errorPopupBlocked:
         'Tu navegador bloqueó la ventana de Google. Habilitá las ventanas emergentes para este sitio e intentá de nuevo, o iniciá sesión con tu email y contraseña.',
@@ -450,6 +452,8 @@ export const translations = {
       emailInvalid: 'Enter a valid email.',
       passwordRequired: 'Enter your password.',
       passwordTooShort: 'Password must be at least 6 characters.',
+      confirmPasswordLabel: 'Confirm password',
+      passwordsDontMatch: "Passwords don't match.",
       errorGeneric: "We couldn't sign you in. Please try again.",
       errorPopupBlocked:
         "Your browser blocked Google's sign-in window. Please allow pop-ups for this site and try again, or sign in with your email and password instead.",
