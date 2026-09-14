@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  OnDestroy,
   effect,
   inject,
   signal,
@@ -20,6 +21,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { IdleTimeoutService } from '../../../core/auth/idle-timeout.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UserProfileService } from '../../../core/users/user-profile.service';
 import { Button } from '../../components/button/button';
@@ -65,10 +67,11 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app-shell.html',
 })
-export class AppShell {
+export class AppShell implements OnDestroy {
   protected readonly auth = inject(AuthService);
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
+  protected readonly idleTimeoutService = inject(IdleTimeoutService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
@@ -99,6 +102,15 @@ export class AppShell {
         this.navigating.set(false);
       }
     });
+
+    // AppShell es la única raíz de las rutas logueadas — arranca acá una
+    // sola vez, se apaga en ngOnDestroy (que corre cuando se navega afuera,
+    // sea por cierre de sesión manual o por el propio timeout).
+    this.idleTimeoutService.start();
+  }
+
+  ngOnDestroy(): void {
+    this.idleTimeoutService.stop();
   }
 
   protected readonly editingNickname = signal(false);
@@ -110,7 +122,18 @@ export class AppShell {
     this.mobileNavOpen.set(false);
   }
 
+  /** Actividad real del usuario — mantiene viva la sesión (ver IdleTimeoutService). Throttleada adentro del servicio, no acá. */
+  @HostListener('document:mousemove')
+  @HostListener('document:keydown')
+  @HostListener('document:click')
+  @HostListener('document:scroll')
+  @HostListener('document:touchstart')
+  protected onUserActivity(): void {
+    this.idleTimeoutService.registerActivity();
+  }
+
   protected async onSignOut(): Promise<void> {
+    this.idleTimeoutService.stop();
     await this.auth.signOut();
     await this.router.navigateByUrl('/login');
   }

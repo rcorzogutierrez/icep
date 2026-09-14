@@ -117,6 +117,15 @@
         }
       </p>
 
+      @if (idle()) {
+        <div
+          class="mt-3 flex items-start gap-1.5 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700"
+        >
+          <svg lucideInfo [size]="14" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
+          <span>{{ i18n.t('login', 'idleLoggedOut') }}</span>
+        </div>
+      }
+
       <div class="mt-6 flex gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
         <button
           type="button"

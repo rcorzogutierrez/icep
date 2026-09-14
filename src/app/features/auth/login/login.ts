@@ -8,7 +8,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { InvitationsService } from '../../../core/invitations/invitations.service';
 import { UserProfileService } from '../../../core/users/user-profile.service';
 import { Button } from '../../../shared/components/button/button';
-import { IconCheck, IconLock, IconMail } from '../../../shared/icons/icons';
+import { IconCheck, IconInfo, IconLock, IconMail } from '../../../shared/icons/icons';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -28,7 +28,7 @@ const emailFormSchema = schema<EmailFormModel>((p) => {
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [Button, IconMail, IconLock, IconCheck],
+  imports: [Button, IconMail, IconLock, IconCheck, IconInfo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
 })
@@ -42,6 +42,8 @@ export class Login {
 
   /** Código de invitación de la URL (/invite/:code), vía withComponentInputBinding. */
   readonly code = input<string | undefined>(undefined);
+  /** `?idle=1` — llegó acá porque IdleTimeoutService cerró la sesión sola. */
+  readonly idle = input<string | undefined>(undefined);
 
   private readonly modeOverride = signal<AuthMode | null>(null);
   protected readonly mode = computed<AuthMode>(

@@ -22,6 +22,8 @@ export const translations = {
       subtitle: 'El registro es solo por invitación de tu profesor o del administrador.',
       inviteSubtitle: 'Fuiste invitado a IET Gradebook. Completá tu registro para continuar.',
       inviteAlreadyRegisteredSubtitle: 'Ya tenés una cuenta — iniciá sesión normalmente.',
+      idleLoggedOut:
+        'Cerramos tu sesión por inactividad, para proteger las notas si dejaste la PC sin atender. Iniciá sesión de nuevo para continuar.',
       tabSignIn: 'Iniciar sesión',
       tabSignUp: 'Registrarme',
       emailLabel: 'Email',
@@ -106,6 +108,9 @@ export const translations = {
       save: 'Guardar',
       nicknameUpdated: 'Apodo actualizado.',
       errorGeneric: 'No pudimos completar la acción. Probá de nuevo.',
+      idleWarningTitle: '¿Seguís ahí?',
+      idleWarningMessage: 'Por tu seguridad, vamos a cerrar la sesión por inactividad en:',
+      idleWarningStay: 'Seguir conectado',
     },
     adminUsers: {
       title: 'Usuarios',
@@ -406,6 +411,8 @@ export const translations = {
       subtitle: 'Registration is invite-only, from a teacher or the administrator.',
       inviteSubtitle: "You've been invited to IET Gradebook. Finish signing up to continue.",
       inviteAlreadyRegisteredSubtitle: 'You already have an account — just sign in.',
+      idleLoggedOut:
+        'We signed you out due to inactivity, to protect grades in case you left the computer unattended. Sign in again to continue.',
       tabSignIn: 'Sign in',
       tabSignUp: 'Sign up',
       emailLabel: 'Email',
@@ -489,6 +496,9 @@ export const translations = {
       save: 'Save',
       nicknameUpdated: 'Nickname updated.',
       errorGeneric: "We couldn't complete the action. Please try again.",
+      idleWarningTitle: 'Still there?',
+      idleWarningMessage: "For your security, we're about to sign you out due to inactivity in:",
+      idleWarningStay: 'Stay signed in',
     },
     adminUsers: {
       title: 'Users',

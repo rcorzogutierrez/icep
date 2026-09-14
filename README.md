@@ -71,6 +71,8 @@ Con los emuladores corriendo, la UI en `http://localhost:4200` ya conecta a ello
 
 Las reglas de Firestore (`firestore.rules`) son la única fuente de verdad de autorización — los guards de Angular (`core/auth/auth.guards.ts`) son UX, no seguridad; asumen que el usuario pudo entrar, no lo autorizan a leer/escribir nada por sí solos. Antes de agregar una feature que toque `firestore.rules` (sobre todo cualquier cosa tipo invitación/código, o una acción de admin sobre otro usuario), leé la sección **Security** de [`CLAUDE.md`](CLAUDE.md): son patrones sacados de vulnerabilidades reales ya encontradas y corregidas en este repo, no una checklist genérica.
 
+Además, cualquier sesión (estudiante, profesor o admin) se cierra sola a los 30 minutos sin actividad real (mouse, teclado, click, scroll), con un aviso de 1 minuto antes — para que una sesión abierta en una PC compartida no deje notas/comentarios de estudiantes expuestos indefinidamente. Ver `IdleTimeoutService` (`core/auth/idle-timeout.service.ts`).
+
 Colecciones principales:
 
 - **`users/{uid}`** — perfil de acceso (`role`: student/teacher/admin, `status`: approved/rejected). Se crea únicamente al canjear una invitación (individual o de curso). `displayName` es autoeditable por el propio usuario (apodo opcional) — el resto de los campos no.
