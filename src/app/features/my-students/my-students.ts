@@ -11,7 +11,12 @@ import {
   computeCategoryPercent,
   computeFinalGrade,
   gradeBand as computeGradeBand,
+  gradeCreditStatus,
+  gradeLetter,
+  isFullyGraded,
   type GradeBand,
+  type GradeCreditStatus,
+  type GradeLetter,
 } from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { CoursesService } from '../../core/courses/courses.service';
@@ -24,6 +29,7 @@ import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { Drawer } from '../../shared/components/drawer/drawer';
+import { GradeStatusBadge } from '../../shared/components/grade-status-badge/grade-status-badge';
 import { Loading } from '../../shared/components/loading/loading';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
@@ -44,6 +50,8 @@ interface SubjectProgress {
   finalGrade: number | null;
   /** false si la materia todavía no tiene ninguna categoría de rúbrica creada — distinto de "tiene rúbrica pero sin notas cargadas". */
   hasRubric: boolean;
+  /** true solo si TODA la rúbrica está calificada — ver isFullyGraded en grades.util.ts. */
+  fullyGraded: boolean;
 }
 
 interface StudentRow {
@@ -75,6 +83,7 @@ interface CategoryRow {
   imports: [
     Button,
     Drawer,
+    GradeStatusBadge,
     Loading,
     Select,
     Page,
@@ -232,6 +241,7 @@ export class MyStudents {
           subjectName: subject.name,
           finalGrade,
           hasRubric: categories.length > 0,
+          fullyGraded: isFullyGraded(categories, assignments, grade?.scores),
         });
         rowsByUid.set(studentUid, row);
       }
@@ -273,6 +283,22 @@ export class MyStudents {
 
   protected gradeBand(grade: number | null): GradeBand {
     return computeGradeBand(grade);
+  }
+
+  /**
+   * Sin alerta de "curso por vencer" acá a propósito: un mismo estudiante
+   * puede estar en más de un curso a la vez (ver StudentRow.courseNames),
+   * así que no hay una única fecha fin que aplique — solo se muestra
+   * Aprobado/Desaprobado una vez que la rúbrica está completa.
+   */
+  protected creditStatusFor(subject: SubjectProgress): GradeCreditStatus | null {
+    return gradeCreditStatus(subject.fullyGraded, subject.finalGrade, false);
+  }
+
+  protected creditLetterFor(subject: SubjectProgress): GradeLetter | null {
+    return subject.fullyGraded && subject.finalGrade !== null
+      ? gradeLetter(subject.finalGrade)
+      : null;
   }
 
   protected openDrawer(uid: string): void {

@@ -108,8 +108,12 @@
               <p class="text-sm text-text-muted">
                 {{ i18n.t('dashboard', 'taughtBy') }}: {{ teacherNamesFor(subject.id) }}
               </p>
-              <p class="text-sm font-medium text-text">
+              <p class="flex items-center gap-1.5 text-sm font-medium text-text">
                 {{ i18n.t('dashboard', 'finalGrade') }}: {{ finalGradeLabelFor(subject.id) }}
+                <app-grade-status-badge
+                  [status]="creditStatusFor(subject.id)"
+                  [letter]="creditLetterFor(subject.id)"
+                />
               </p>
 
               @if (categoryRowsFor(subject.id).length > 0) {

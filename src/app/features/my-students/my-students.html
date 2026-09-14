@@ -102,6 +102,10 @@
                         —
                       }
                     </span>
+                    <app-grade-status-badge
+                      [status]="creditStatusFor(s)"
+                      [letter]="creditLetterFor(s)"
+                    />
                   </span>
                 }
               </div>
@@ -157,21 +161,24 @@
               <span class="font-mono text-xs text-text-muted">{{ s.subjectCode }}</span>
               <span class="text-sm font-semibold text-text">{{ s.subjectName }}</span>
             </div>
-            <span
-              class="text-sm font-semibold"
-              [class.text-status-active]="gradeBand(s.finalGrade) === 'active'"
-              [class.text-status-paused]="gradeBand(s.finalGrade) === 'paused'"
-              [class.text-status-expired]="gradeBand(s.finalGrade) === 'expired'"
-              [class.text-text-muted]="gradeBand(s.finalGrade) === 'muted'"
-            >
-              @if (s.finalGrade !== null) {
-                {{ s.finalGrade | number: '1.0-0' }}%
-              } @else if (s.hasRubric) {
-                {{ i18n.t('myStudents', 'noGradeYet') }}
-              } @else {
-                {{ i18n.t('myStudents', 'noRubricYet') }}
-              }
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span
+                class="text-sm font-semibold"
+                [class.text-status-active]="gradeBand(s.finalGrade) === 'active'"
+                [class.text-status-paused]="gradeBand(s.finalGrade) === 'paused'"
+                [class.text-status-expired]="gradeBand(s.finalGrade) === 'expired'"
+                [class.text-text-muted]="gradeBand(s.finalGrade) === 'muted'"
+              >
+                @if (s.finalGrade !== null) {
+                  {{ s.finalGrade | number: '1.0-0' }}%
+                } @else if (s.hasRubric) {
+                  {{ i18n.t('myStudents', 'noGradeYet') }}
+                } @else {
+                  {{ i18n.t('myStudents', 'noRubricYet') }}
+                }
+              </span>
+              <app-grade-status-badge [status]="creditStatusFor(s)" [letter]="creditLetterFor(s)" />
+            </div>
           </button>
 
           @if (expandedSubjectId() === s.subjectId) {

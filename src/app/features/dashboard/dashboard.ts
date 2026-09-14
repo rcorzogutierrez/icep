@@ -22,7 +22,12 @@ import {
   computeCategoryPercent,
   computeFinalGrade,
   gradeBand as computeGradeBand,
+  gradeCreditStatus,
+  gradeLetter,
+  isFullyGraded,
   type GradeBand,
+  type GradeCreditStatus,
+  type GradeLetter,
 } from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { InvitationsService } from '../../core/invitations/invitations.service';
@@ -34,6 +39,7 @@ import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
+import { GradeStatusBadge } from '../../shared/components/grade-status-badge/grade-status-badge';
 import { ResourceCard } from '../../shared/components/resource-card/resource-card';
 import { Skeleton } from '../../shared/components/skeleton/skeleton';
 import { Page } from '../../shared/layout/page/page';
@@ -80,6 +86,7 @@ interface StatCard {
   standalone: true,
   imports: [
     Button,
+    GradeStatusBadge,
     ResourceCard,
     Skeleton,
     Page,
@@ -187,6 +194,33 @@ export class Dashboard {
   /** Comentario del profesor para esa materia, o null si no dejó ninguno. */
   protected commentFor(subjectId: string): string | null {
     return this.mySubjectComments().get(subjectId) ?? null;
+  }
+
+  /**
+   * Sin alerta de "curso por vencer" acá a propósito (mismo motivo que
+   * MyStudents): el dashboard del estudiante no está anclado a un curso
+   * puntual. Solo muestra Aprobado/Desaprobado una vez que la rúbrica está
+   * completa.
+   */
+  protected creditStatusFor(subjectId: string): GradeCreditStatus | null {
+    const detail = this.mySubjectDetails().get(subjectId);
+    if (!detail) {
+      return null;
+    }
+    const fullyGraded = isFullyGraded(detail.categories, detail.assignments, detail.grade?.scores);
+    return gradeCreditStatus(
+      fullyGraded,
+      this.mySubjectFinalGrades().get(subjectId) ?? null,
+      false,
+    );
+  }
+
+  protected creditLetterFor(subjectId: string): GradeLetter | null {
+    const status = this.creditStatusFor(subjectId);
+    const grade = this.mySubjectFinalGrades().get(subjectId);
+    return status && (status === 'passed' || status === 'failed') && grade != null
+      ? gradeLetter(grade)
+      : null;
   }
 
   /** Recursos (Drive/Dropbox/links) que el profesor dejó disponibles para esa materia. */

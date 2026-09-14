@@ -569,6 +569,24 @@
         </p>
       }
     </div>
+
+    @if (course() && courseEndingSoon() && unfinishedCount() > 0) {
+      <div
+        class="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      >
+        <svg lucideCircleAlert [size]="16" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
+        <p>
+          @if (daysUntilCourseEnd()! > 0) {
+            {{ i18n.t('common', 'courseEndingSoonDays') }} {{ daysUntilCourseEnd() }}
+            {{ i18n.t('common', 'courseEndingSoonDaysUnit') }}
+          } @else {
+            {{ i18n.t('common', 'courseAlreadyEndedMessage') }}
+          }
+          {{ unfinishedCount() }} {{ i18n.t('common', 'unfinishedStudentsCount') }}
+        </p>
+      </div>
+    }
+
     <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
       <table class="w-full text-left text-sm">
         <thead class="border-b border-border bg-slate-50 text-text-muted">
@@ -675,13 +693,19 @@
                 }
               }
               <td class="px-3 py-3 font-semibold text-text">
-                @if (finalGradeFor(student.uid) !== null) {
-                  {{ finalGradeFor(student.uid) | number: '1.0-1' }}%
-                } @else {
-                  <span class="font-normal text-text-muted">{{
-                    i18n.t('gradebook', 'noGradeYet')
-                  }}</span>
-                }
+                <div class="flex flex-col items-start gap-1">
+                  @if (finalGradeFor(student.uid) !== null) {
+                    <span>{{ finalGradeFor(student.uid) | number: '1.0-1' }}%</span>
+                  } @else {
+                    <span class="font-normal text-text-muted">{{
+                      i18n.t('gradebook', 'noGradeYet')
+                    }}</span>
+                  }
+                  <app-grade-status-badge
+                    [status]="creditStatusFor(student.uid)"
+                    [letter]="creditLetterFor(student.uid)"
+                  />
+                </div>
               </td>
               @if (hasAnyDirtyRow()) {
                 <td class="px-3 py-3">

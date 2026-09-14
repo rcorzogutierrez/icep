@@ -12,7 +12,16 @@ import { GradeCategoriesService } from '../../core/grades/grade-categories.servi
 import { GradeHistoryService } from '../../core/grades/grade-history.service';
 import { GradesService } from '../../core/grades/grades.service';
 import type { GradeCategory } from '../../core/grades/grades.model';
-import { computeFinalGrade } from '../../core/grades/grades.util';
+import {
+  computeFinalGrade,
+  daysUntil,
+  gradeCreditStatus,
+  gradeLetter,
+  isCourseEndingSoon,
+  isFullyGraded,
+  type GradeCreditStatus,
+  type GradeLetter,
+} from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
 import type { SubjectResource } from '../../core/subjects/subject-resources.model';
 import { SubjectResourcesService } from '../../core/subjects/subject-resources.service';
@@ -21,6 +30,7 @@ import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
+import { GradeStatusBadge } from '../../shared/components/grade-status-badge/grade-status-badge';
 import { Loading } from '../../shared/components/loading/loading';
 import { Modal } from '../../shared/components/modal/modal';
 import { ResourceCard } from '../../shared/components/resource-card/resource-card';
@@ -30,6 +40,7 @@ import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
   IconArrowRight,
   IconChevronDown,
+  IconCircleAlert,
   IconHistory,
   IconMessageSquare,
   IconPlus,
@@ -43,6 +54,7 @@ import { ToastService } from '../../shared/toast/toast.service';
   imports: [
     Button,
     ConfirmDialog,
+    GradeStatusBadge,
     Loading,
     Modal,
     ResourceCard,
@@ -52,6 +64,7 @@ import { ToastService } from '../../shared/toast/toast.service';
     PageHeader,
     IconArrowRight,
     IconChevronDown,
+    IconCircleAlert,
     IconHistory,
     IconMessageSquare,
     IconPlus,
@@ -130,6 +143,24 @@ export class Gradebook {
       return undefined;
     }
     return this.coursesService.courses().find((c) => c.id === id);
+  });
+
+  /** null si no hay curso en foco o el curso no tiene fecha fin cargada (cursos viejos, ver Course.endDate). */
+  protected readonly daysUntilCourseEnd = computed(() => {
+    const endDate = this.course()?.endDate;
+    return endDate ? daysUntil(endDate.toDate()) : null;
+  });
+
+  protected readonly courseEndingSoon = computed(() =>
+    isCourseEndingSoon(this.course()?.endDate?.toDate() ?? null),
+  );
+
+  /** Cuántos estudiantes de la materia (dentro del curso en foco) siguen sin nota final estando el curso por vencer — ver gradeCreditStatus. */
+  protected readonly unfinishedCount = computed(() => {
+    if (!this.course()) {
+      return 0;
+    }
+    return this.students().filter((s) => this.creditStatusFor(s.uid) === 'unfinished').length;
   });
 
   /**
@@ -247,6 +278,29 @@ export class Gradebook {
       .forSubject(this.subjectId())
       .find((g) => g.studentUid === studentUid);
     return computeFinalGrade(this.categories(), this.assignments(), grade?.scores);
+  }
+
+  private fullyGradedFor(studentUid: string): boolean {
+    const grade = this.gradesService
+      .forSubject(this.subjectId())
+      .find((g) => g.studentUid === studentUid);
+    return isFullyGraded(this.categories(), this.assignments(), grade?.scores);
+  }
+
+  protected creditStatusFor(studentUid: string): GradeCreditStatus | null {
+    return gradeCreditStatus(
+      this.fullyGradedFor(studentUid),
+      this.finalGradeFor(studentUid),
+      this.courseEndingSoon(),
+    );
+  }
+
+  protected creditLetterFor(studentUid: string): GradeLetter | null {
+    if (!this.fullyGradedFor(studentUid)) {
+      return null;
+    }
+    const grade = this.finalGradeFor(studentUid);
+    return grade !== null ? gradeLetter(grade) : null;
   }
 
   protected scoreFor(studentUid: string, assignmentId: string): number | null {

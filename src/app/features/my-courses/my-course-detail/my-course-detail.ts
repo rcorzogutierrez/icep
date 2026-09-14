@@ -7,7 +7,17 @@ import { AssignmentsService } from '../../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../../core/grades/grade-categories.service';
 import { GradesService } from '../../../core/grades/grades.service';
 import type { GradeCategory } from '../../../core/grades/grades.model';
-import { computeCategoryPercent, computeFinalGrade } from '../../../core/grades/grades.util';
+import {
+  computeCategoryPercent,
+  computeFinalGrade,
+  daysUntil,
+  gradeCreditStatus,
+  gradeLetter,
+  isCourseEndingSoon,
+  isFullyGraded,
+  type GradeCreditStatus,
+  type GradeLetter,
+} from '../../../core/grades/grades.util';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { CourseStudentsService } from '../../../core/courses/course-students.service';
 import { CourseSubjectTeachersService } from '../../../core/courses/course-subject-teachers.service';
@@ -16,6 +26,7 @@ import { SubjectsService } from '../../../core/subjects/subjects.service';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { Drawer } from '../../../shared/components/drawer/drawer';
+import { GradeStatusBadge } from '../../../shared/components/grade-status-badge/grade-status-badge';
 import { Loading } from '../../../shared/components/loading/loading';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
@@ -23,6 +34,7 @@ import {
   IconArrowUpRight,
   IconCheck,
   IconChevronRight,
+  IconCircleAlert,
   IconSearch,
   IconUserPlus,
 } from '../../../shared/icons/icons';
@@ -37,6 +49,8 @@ interface SubjectProgress {
   finalGrade: number | null;
   /** false si la materia todavía no tiene ninguna categoría de rúbrica creada — distinto de "tiene rúbrica pero sin notas cargadas". */
   hasRubric: boolean;
+  /** true solo si TODA la rúbrica está calificada — ver isFullyGraded en grades.util.ts. */
+  fullyGraded: boolean;
 }
 
 interface StudentRow {
@@ -79,6 +93,7 @@ function gradeBand(grade: number | null): GradeBand {
   imports: [
     Button,
     Drawer,
+    GradeStatusBadge,
     Loading,
     Page,
     PageHeader,
@@ -86,6 +101,7 @@ function gradeBand(grade: number | null): GradeBand {
     IconArrowUpRight,
     IconCheck,
     IconChevronRight,
+    IconCircleAlert,
     IconSearch,
     IconUserPlus,
   ],
@@ -129,6 +145,35 @@ export class MyCourseDetail {
   protected readonly course = computed(() =>
     this.coursesService.courses().find((c) => c.id === this.courseId()),
   );
+
+  /** null si el curso todavía no tiene fecha fin cargada (cursos viejos, ver Course.endDate). */
+  protected readonly daysUntilCourseEnd = computed(() => {
+    const endDate = this.course()?.endDate;
+    return endDate ? daysUntil(endDate.toDate()) : null;
+  });
+
+  protected readonly courseEndingSoon = computed(() =>
+    isCourseEndingSoon(this.course()?.endDate?.toDate() ?? null),
+  );
+
+  /** Cuántas materias (de todos los estudiantes de este curso) siguen sin nota final estando el curso por vencer. */
+  protected readonly unfinishedCount = computed(() =>
+    this.studentRows().reduce(
+      (sum, row) =>
+        sum + row.subjects.filter((s) => this.creditStatusFor(s) === 'unfinished').length,
+      0,
+    ),
+  );
+
+  protected creditStatusFor(subject: SubjectProgress): GradeCreditStatus | null {
+    return gradeCreditStatus(subject.fullyGraded, subject.finalGrade, this.courseEndingSoon());
+  }
+
+  protected creditLetterFor(subject: SubjectProgress): GradeLetter | null {
+    return subject.fullyGraded && subject.finalGrade !== null
+      ? gradeLetter(subject.finalGrade)
+      : null;
+  }
 
   /** Materias de este curso que el profesor logueado dicta acá (no todas las del curso). */
   private readonly mySubjectIds = computed(() => {
@@ -184,6 +229,7 @@ export class MyCourseDetail {
           subjectName: subject.name,
           finalGrade,
           hasRubric: categories.length > 0,
+          fullyGraded: isFullyGraded(categories, assignments, grade?.scores),
         });
         rowsByUid.set(cs.studentUid, row);
       }

@@ -8,6 +8,23 @@
       <span pageTitle>{{ c.name }}</span>
     </app-page-header>
 
+    @if (courseEndingSoon() && unfinishedCount() > 0) {
+      <div
+        class="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      >
+        <svg lucideCircleAlert [size]="16" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
+        <p>
+          @if (daysUntilCourseEnd()! > 0) {
+            {{ i18n.t('common', 'courseEndingSoonDays') }} {{ daysUntilCourseEnd() }}
+            {{ i18n.t('common', 'courseEndingSoonDaysUnit') }}
+          } @else {
+            {{ i18n.t('common', 'courseAlreadyEndedMessage') }}
+          }
+          {{ unfinishedCount() }} {{ i18n.t('common', 'unfinishedGradesCount') }}
+        </p>
+      </div>
+    }
+
     <div class="flex flex-wrap items-center gap-3">
       <div class="relative max-w-xs min-w-56 flex-1">
         <svg
@@ -90,6 +107,10 @@
                           —
                         }
                       </span>
+                      <app-grade-status-badge
+                        [status]="creditStatusFor(s)"
+                        [letter]="creditLetterFor(s)"
+                      />
                     </span>
                   }
                 </div>
@@ -133,21 +154,27 @@
                 <span class="font-mono text-xs text-text-muted">{{ s.subjectCode }}</span>
                 <span class="text-sm font-semibold text-text">{{ s.subjectName }}</span>
               </div>
-              <span
-                class="text-sm font-semibold"
-                [class.text-status-active]="gradeBand(s.finalGrade) === 'active'"
-                [class.text-status-paused]="gradeBand(s.finalGrade) === 'paused'"
-                [class.text-status-expired]="gradeBand(s.finalGrade) === 'expired'"
-                [class.text-text-muted]="gradeBand(s.finalGrade) === 'muted'"
-              >
-                @if (s.finalGrade !== null) {
-                  {{ s.finalGrade | number: '1.0-0' }}%
-                } @else if (s.hasRubric) {
-                  {{ i18n.t('myStudents', 'noGradeYet') }}
-                } @else {
-                  {{ i18n.t('myStudents', 'noRubricYet') }}
-                }
-              </span>
+              <div class="flex items-center gap-1.5">
+                <span
+                  class="text-sm font-semibold"
+                  [class.text-status-active]="gradeBand(s.finalGrade) === 'active'"
+                  [class.text-status-paused]="gradeBand(s.finalGrade) === 'paused'"
+                  [class.text-status-expired]="gradeBand(s.finalGrade) === 'expired'"
+                  [class.text-text-muted]="gradeBand(s.finalGrade) === 'muted'"
+                >
+                  @if (s.finalGrade !== null) {
+                    {{ s.finalGrade | number: '1.0-0' }}%
+                  } @else if (s.hasRubric) {
+                    {{ i18n.t('myStudents', 'noGradeYet') }}
+                  } @else {
+                    {{ i18n.t('myStudents', 'noRubricYet') }}
+                  }
+                </span>
+                <app-grade-status-badge
+                  [status]="creditStatusFor(s)"
+                  [letter]="creditLetterFor(s)"
+                />
+              </div>
             </div>
 
             @for (catRow of categoryRowsFor(s.subjectId, student.uid); track catRow.category.id) {
