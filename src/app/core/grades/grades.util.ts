@@ -77,6 +77,11 @@ export function gradeCreditStatus(
   return courseEndingSoon ? 'unfinished' : null;
 }
 
+/** Letra a mostrar junto al chip de acreditación — `null` hasta que la materia esté completamente calificada, igual que `gradeCreditStatus`. */
+export function creditLetterFor(fullyGraded: boolean, finalGrade: number | null): GradeLetter | null {
+  return fullyGraded && finalGrade !== null ? gradeLetter(finalGrade) : null;
+}
+
 /** Rango de color para una nota o porcentaje (materia, categoría) — mismo criterio visual en cualquier pantalla que muestre notas. */
 export type GradeBand = 'active' | 'paused' | 'expired' | 'muted';
 

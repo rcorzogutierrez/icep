@@ -8,22 +8,12 @@
       <span pageTitle>{{ c.name }}</span>
     </app-page-header>
 
-    @if (courseEndingSoon() && unfinishedCount() > 0) {
-      <div
-        class="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-      >
-        <svg lucideCircleAlert [size]="16" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
-        <p>
-          @if (daysUntilCourseEnd()! > 0) {
-            {{ i18n.t('common', 'courseEndingSoonDays') }} {{ daysUntilCourseEnd() }}
-            {{ i18n.t('common', 'courseEndingSoonDaysUnit') }}
-          } @else {
-            {{ i18n.t('common', 'courseAlreadyEndedMessage') }}
-          }
-          {{ unfinishedCount() }} {{ i18n.t('common', 'unfinishedGradesCount') }}
-        </p>
-      </div>
-    }
+    <app-course-ending-alert
+      [show]="courseEndingSoon() && unfinishedCount() > 0"
+      [daysUntilCourseEnd]="daysUntilCourseEnd()"
+      [unfinishedCount]="unfinishedCount()"
+      unfinishedLabelKey="unfinishedGradesCount"
+    />
 
     <div class="flex flex-wrap items-center gap-3">
       <div class="relative max-w-xs min-w-56 flex-1">
@@ -86,32 +76,12 @@
               <td class="px-4 py-3">
                 <div class="flex flex-wrap gap-2">
                   @for (s of row.subjects; track s.subjectId) {
-                    <span
-                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs"
-                      [class.bg-green-50]="gradeBand(s.finalGrade) === 'active'"
-                      [class.bg-amber-50]="gradeBand(s.finalGrade) === 'paused'"
-                      [class.bg-red-50]="gradeBand(s.finalGrade) === 'expired'"
-                      [class.bg-slate-100]="gradeBand(s.finalGrade) === 'muted'"
-                    >
-                      <span class="font-mono text-text-muted">{{ s.subjectCode }}</span>
-                      <span
-                        class="font-semibold"
-                        [class.text-status-active]="gradeBand(s.finalGrade) === 'active'"
-                        [class.text-status-paused]="gradeBand(s.finalGrade) === 'paused'"
-                        [class.text-status-expired]="gradeBand(s.finalGrade) === 'expired'"
-                        [class.text-text-muted]="gradeBand(s.finalGrade) === 'muted'"
-                      >
-                        @if (s.finalGrade !== null) {
-                          {{ s.finalGrade | number: '1.0-0' }}%
-                        } @else {
-                          —
-                        }
-                      </span>
-                      <app-grade-status-badge
-                        [status]="creditStatusFor(s)"
-                        [letter]="creditLetterFor(s)"
-                      />
-                    </span>
+                    <app-subject-grade-chip
+                      [subjectCode]="s.subjectCode"
+                      [finalGrade]="s.finalGrade"
+                      [creditStatus]="creditStatusFor(s)"
+                      [creditLetter]="creditLetterFor(s)"
+                    />
                   }
                 </div>
               </td>

@@ -11,7 +11,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   selector: 'app-skeleton',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: ` <div class="animate-pulse rounded-md bg-slate-200 {{ styleClass() }}"></div> `,
+  template: ` <div class="animate-pulse rounded-xl bg-slate-200 {{ styleClass() }}"></div> `,
 })
 export class Skeleton {
   readonly styleClass = input('h-4 w-full');

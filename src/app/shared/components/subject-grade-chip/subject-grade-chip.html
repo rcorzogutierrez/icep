@@ -1,0 +1,23 @@
+<span
+  class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs"
+  [class.bg-status-active-soft]="gradeBand(finalGrade()) === 'active'"
+  [class.bg-status-paused-soft]="gradeBand(finalGrade()) === 'paused'"
+  [class.bg-status-expired-soft]="gradeBand(finalGrade()) === 'expired'"
+  [class.bg-slate-100]="gradeBand(finalGrade()) === 'muted'"
+>
+  <span class="font-mono text-text-muted">{{ subjectCode() }}</span>
+  <span
+    class="font-semibold"
+    [class.text-status-active]="gradeBand(finalGrade()) === 'active'"
+    [class.text-status-paused]="gradeBand(finalGrade()) === 'paused'"
+    [class.text-status-expired]="gradeBand(finalGrade()) === 'expired'"
+    [class.text-text-muted]="gradeBand(finalGrade()) === 'muted'"
+  >
+    @if (finalGrade() !== null) {
+      {{ finalGrade() | number: '1.0-0' }}%
+    } @else {
+      —
+    }
+  </span>
+  <app-grade-status-badge [status]="creditStatus()" [letter]="creditLetter()" />
+</span>

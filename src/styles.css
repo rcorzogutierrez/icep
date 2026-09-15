@@ -22,6 +22,17 @@
   --color-status-expired: #dc2626;
 
   /*
+   * Variante "suave" (fondo tenue) de cada estado, para chips/banners de
+   * baja énfasis — referencian la escala verde/ámbar/roja que Tailwind v4
+   * ya trae por defecto, mismo criterio que --color-surface/-text/-border
+   * arriba en vez de hardcodear un hex nuevo. Combinar siempre con el texto
+   * en el color sólido de arriba (ej. `bg-status-active-soft text-status-active`).
+   */
+  --color-status-active-soft: var(--color-green-50);
+  --color-status-paused-soft: var(--color-amber-50);
+  --color-status-expired-soft: var(--color-red-50);
+
+  /*
    * Tokens semánticos de superficie/texto/borde. Referencian la escala
    * neutral "slate" que Tailwind v4 ya trae por defecto
    * (--color-slate-50 ... --color-slate-900) en vez de redefinirla.
