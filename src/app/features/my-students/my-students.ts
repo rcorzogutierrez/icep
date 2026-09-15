@@ -5,6 +5,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
+import type { GradeComment } from '../../core/grades/grade-comments.model';
+import { GradeCommentsService } from '../../core/grades/grade-comments.service';
 import { GradeHistoryService } from '../../core/grades/grade-history.service';
 import { GradesService } from '../../core/grades/grades.service';
 import type { GradeCategory } from '../../core/grades/grades.model';
@@ -124,6 +126,7 @@ export class MyStudents {
   private readonly assignmentsService = inject(AssignmentsService);
   private readonly gradesService = inject(GradesService);
   protected readonly gradeHistoryService = inject(GradeHistoryService);
+  protected readonly gradeCommentsService = inject(GradeCommentsService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -137,9 +140,10 @@ export class MyStudents {
   protected readonly openStudentUid = signal<string | null>(null);
   protected readonly editingScores = signal<Record<string, string>>({});
   protected readonly savingAssignmentId = signal<string | null>(null);
-  /** Borrador del comentario por materia, para el estudiante del drawer abierto (ver closeDrawer, que lo limpia al cambiar de estudiante). */
-  protected readonly commentDrafts = signal<Record<string, string>>({});
-  protected readonly savingCommentSubjectId = signal<string | null>(null);
+  /** Borrador del comentario NUEVO por materia, para el estudiante del drawer abierto (ver closeDrawer, que los limpia al cambiar de estudiante). */
+  protected readonly newCommentDrafts = signal<Record<string, string>>({});
+  protected readonly newCommentCategoryDrafts = signal<Record<string, string | undefined>>({});
+  protected readonly addingCommentSubjectId = signal<string | null>(null);
   /** Acordeón: una sola materia expandida a la vez dentro del drawer — arranca cerrado, ver openDrawer/closeDrawer. */
   protected readonly expandedSubjectId = signal<string | null>(null);
 
@@ -342,7 +346,8 @@ export class MyStudents {
   protected closeDrawer(): void {
     this.openStudentUid.set(null);
     this.editingScores.set({});
-    this.commentDrafts.set({});
+    this.newCommentDrafts.set({});
+    this.newCommentCategoryDrafts.set({});
     this.expandedSubjectId.set(null);
     this.historySubject.set(null);
   }
@@ -457,46 +462,62 @@ export class MyStudents {
     this.router.navigate(['/subjects', subjectId, 'gradebook']);
   }
 
-  protected commentDraftFor(subjectId: string, studentUid: string): string {
-    const draft = this.commentDrafts()[subjectId];
-    if (draft !== undefined) {
-      return draft;
-    }
-    return this.gradesService.commentFor(subjectId, studentUid) ?? '';
+  protected commentsFor(subjectId: string, studentUid: string): GradeComment[] {
+    return this.gradeCommentsService.forStudent(subjectId, studentUid);
   }
 
-  protected onCommentInput(subjectId: string, value: string): void {
-    this.commentDrafts.update((map) => ({ ...map, [subjectId]: value }));
+  protected newCommentTextFor(subjectId: string): string {
+    return this.newCommentDrafts()[subjectId] ?? '';
   }
 
-  protected isCommentDirty(subjectId: string, studentUid: string): boolean {
-    const draft = this.commentDrafts()[subjectId];
-    if (draft === undefined) {
-      return false;
-    }
-    const saved = this.gradesService.commentFor(subjectId, studentUid) ?? '';
-    return draft.trim() !== saved;
+  protected onNewCommentInput(subjectId: string, value: string): void {
+    this.newCommentDrafts.update((map) => ({ ...map, [subjectId]: value }));
   }
 
-  protected async onSaveComment(subjectId: string, studentUid: string): Promise<void> {
-    const draft = this.commentDrafts()[subjectId];
-    if (draft === undefined) {
+  protected newCommentCategoryFor(subjectId: string): string | undefined {
+    return this.newCommentCategoryDrafts()[subjectId];
+  }
+
+  protected onNewCommentCategoryChange(subjectId: string, categoryId: string | undefined): void {
+    this.newCommentCategoryDrafts.update((map) => ({ ...map, [subjectId]: categoryId }));
+  }
+
+  /** Todas las categorías de la materia (no solo "con varias tareas") — un comentario puede referirse a cualquiera. */
+  protected commentCategoryOptionsFor(subjectId: string): SelectOption<string>[] {
+    return this.gradeCategoriesService
+      .forSubject(subjectId)
+      .map((category) => ({ value: category.id, label: category.name }));
+  }
+
+  protected async onAddComment(subjectId: string, studentUid: string): Promise<void> {
+    const text = (this.newCommentDrafts()[subjectId] ?? '').trim();
+    if (!text) {
       return;
     }
-    this.savingCommentSubjectId.set(subjectId);
+    const categoryId = this.newCommentCategoryDrafts()[subjectId] ?? null;
+    const categoryName = categoryId
+      ? (this.gradeCategoriesService.forSubject(subjectId).find((c) => c.id === categoryId)?.name ??
+        null)
+      : null;
+    this.addingCommentSubjectId.set(subjectId);
     try {
-      await this.gradesService.setComment(subjectId, studentUid, draft);
-      this.commentDrafts.update((map) => {
+      await this.gradeCommentsService.add(subjectId, studentUid, text, categoryId, categoryName);
+      this.newCommentDrafts.update((map) => {
         const rest = { ...map };
         delete rest[subjectId];
         return rest;
       });
-      this.toast.success(this.i18n.t('myStudents', 'commentSaved'));
+      this.newCommentCategoryDrafts.update((map) => {
+        const rest = { ...map };
+        delete rest[subjectId];
+        return rest;
+      });
+      this.toast.success(this.i18n.t('myStudents', 'commentAdded'));
     } catch (error) {
       console.error('[MyStudents]', error);
       this.toast.error(this.i18n.t('myStudents', 'errorGeneric'));
     } finally {
-      this.savingCommentSubjectId.set(null);
+      this.addingCommentSubjectId.set(null);
     }
   }
 }

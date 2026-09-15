@@ -119,60 +119,12 @@ export class GradesService {
       return;
     }
     await this.gradeHistoryService.record({
-      kind: 'score',
       subjectId,
       studentUid,
       assignmentId,
       assignmentName,
       previousScore,
       newScore: score,
-      changedBy: user.uid,
-      changedByName:
-        this.userProfileService.profile()?.displayName ?? user.displayName ?? user.email ?? '',
-    });
-  }
-
-  /** Comentario general del profesor para un estudiante en una materia, o null si no puso ninguno. */
-  commentFor(subjectId: string, studentUid: string): string | null {
-    const grade = this.forSubject(subjectId).find((g) => g.studentUid === studentUid);
-    return grade?.comment ?? null;
-  }
-
-  /**
-   * El comentario en sí sigue siendo un único valor "vigente" (lo que ve el
-   * estudiante), pero cada reemplazo queda registrado en el historial (ver
-   * GradeHistoryService) — así un profesor puede escribir un comentario
-   * nuevo en cada instancia de evaluación sin perder los anteriores. Sin
-   * entrada de historial si el comentario no cambió realmente.
-   */
-  async setComment(subjectId: string, studentUid: string, comment: string): Promise<void> {
-    const previousComment = this.commentFor(subjectId, studentUid);
-    const newComment = comment.trim() || null;
-    const ref = doc(this.firestore, 'grades', `${subjectId}_${studentUid}`);
-    await setDoc(
-      ref,
-      {
-        subjectId,
-        studentUid,
-        comment: newComment,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true },
-    );
-
-    if (previousComment === newComment) {
-      return;
-    }
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-    await this.gradeHistoryService.record({
-      kind: 'comment',
-      subjectId,
-      studentUid,
-      previousComment,
-      newComment,
       changedBy: user.uid,
       changedByName:
         this.userProfileService.profile()?.displayName ?? user.displayName ?? user.email ?? '',

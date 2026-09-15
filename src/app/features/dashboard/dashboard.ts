@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,6 +16,8 @@ import { CoursesService } from '../../core/courses/courses.service';
 import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
+import type { GradeComment } from '../../core/grades/grade-comments.model';
+import { GradeCommentsService } from '../../core/grades/grade-comments.service';
 import type { Grade, GradeCategory } from '../../core/grades/grades.model';
 import { GradesService } from '../../core/grades/grades.service';
 import {
@@ -92,6 +94,7 @@ interface StatCard {
     Page,
     PageHeader,
     DecimalPipe,
+    DatePipe,
     IconArrowRight,
     IconUsers,
     IconBookOpen,
@@ -121,6 +124,7 @@ export class Dashboard {
   private readonly gradeCategoriesService = inject(GradeCategoriesService);
   private readonly assignmentsService = inject(AssignmentsService);
   private readonly gradesService = inject(GradesService);
+  private readonly gradeCommentsService = inject(GradeCommentsService);
   private readonly usersService = inject(UsersService);
   private readonly invitationsService = inject(InvitationsService);
   private readonly router = inject(Router);
@@ -128,7 +132,7 @@ export class Dashboard {
   protected readonly mySubjects = signal<Subject[]>([]);
   protected readonly mySubjectTeachers = signal<Map<string, string[]>>(new Map());
   protected readonly mySubjectFinalGrades = signal<Map<string, number | null>>(new Map());
-  protected readonly mySubjectComments = signal<Map<string, string | null>>(new Map());
+  protected readonly mySubjectComments = signal<Map<string, GradeComment[]>>(new Map());
   protected readonly mySubjectDetails = signal<Map<string, SubjectDetail>>(new Map());
   protected readonly mySubjectResources = signal<Map<string, SubjectResource[]>>(new Map());
   protected readonly loadingMySubjects = signal(false);
@@ -191,9 +195,9 @@ export class Dashboard {
       : this.i18n.t('dashboard', 'noGradeYet');
   }
 
-  /** Comentario del profesor para esa materia, o null si no dejó ninguno. */
-  protected commentFor(subjectId: string): string | null {
-    return this.mySubjectComments().get(subjectId) ?? null;
+  /** Comentarios del profesor para esa materia, los más nuevos primero, vacío si no dejó ninguno. */
+  protected commentsFor(subjectId: string): GradeComment[] {
+    return this.mySubjectComments().get(subjectId) ?? [];
   }
 
   /**
@@ -394,7 +398,7 @@ export class Dashboard {
       return;
     }
 
-    const [subjects, teacherAssignments, categories, assignments, grades, resources] =
+    const [subjects, teacherAssignments, categories, assignments, grades, resources, comments] =
       await Promise.all([
         this.subjectsService.fetchByIds(subjectIds),
         this.subjectAssignmentsService.fetchBySubjectIds(subjectIds),
@@ -402,6 +406,7 @@ export class Dashboard {
         this.assignmentsService.fetchForSubjectIds(subjectIds),
         Promise.all(subjectIds.map((id) => this.gradesService.fetchOwn(id, uid))),
         this.subjectResourcesService.fetchForSubjectIds(subjectIds),
+        this.gradeCommentsService.fetchOwn(uid),
       ]);
 
     this.mySubjects.set(subjects);
@@ -421,8 +426,16 @@ export class Dashboard {
     }
     this.mySubjectTeachers.set(byTeacher);
 
+    const byComment = new Map<string, GradeComment[]>();
+    for (const comment of comments) {
+      byComment.set(comment.subjectId, [...(byComment.get(comment.subjectId) ?? []), comment]);
+    }
+    for (const list of byComment.values()) {
+      list.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
+    }
+    this.mySubjectComments.set(byComment);
+
     const finalGrades = new Map<string, number | null>();
-    const comments = new Map<string, string | null>();
     const details = new Map<string, SubjectDetail>();
     for (const subjectId of subjectIds) {
       const grade = grades.find((g) => g?.subjectId === subjectId) ?? null;
@@ -432,7 +445,6 @@ export class Dashboard {
         subjectId,
         computeFinalGrade(subjectCategories, subjectAssignments, grade?.scores),
       );
-      comments.set(subjectId, grade?.comment ?? null);
       details.set(subjectId, {
         categories: subjectCategories,
         assignments: subjectAssignments,
@@ -440,7 +452,6 @@ export class Dashboard {
       });
     }
     this.mySubjectFinalGrades.set(finalGrades);
-    this.mySubjectComments.set(comments);
     this.mySubjectDetails.set(details);
   }
 

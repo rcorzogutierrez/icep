@@ -787,28 +787,74 @@
 @if (commentEditorFor(); as target) {
   <app-modal
     [open]="true"
-    [title]="i18n.t('gradebook', 'commentModalTitle')"
+    [title]="i18n.t('gradebook', 'commentsTitle')"
     (closed)="closeCommentEditor()"
   >
     <div class="flex flex-col gap-3">
       <p class="text-sm font-medium text-text">{{ target.name }}</p>
-      <div class="flex flex-col gap-1">
+
+      @if (gradeCommentsService.loading()) {
+        <app-loading />
+      } @else if (commentEntries().length === 0) {
+        <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'noComments') }}</p>
+      } @else {
+        <ul class="flex max-h-72 flex-col gap-2 overflow-y-auto">
+          @for (entry of commentEntries(); track entry.id) {
+            <li class="rounded-xl border border-border bg-slate-50 px-3 py-2 text-sm">
+              <div class="flex items-center justify-between gap-3">
+                @if (entry.categoryName) {
+                  <span
+                    class="inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700"
+                  >
+                    {{ entry.categoryName }}
+                  </span>
+                } @else {
+                  <span></span>
+                }
+                @if (entry.createdAt) {
+                  <span class="shrink-0 text-xs text-text-muted">{{
+                    entry.createdAt.toDate() | date: 'medium'
+                  }}</span>
+                }
+              </div>
+              <p class="mt-1 text-text">{{ entry.text }}</p>
+              <p class="mt-1 text-xs text-text-muted">
+                {{ i18n.t('gradebook', 'commentBy') }}
+                {{ entry.createdByName || i18n.t('gradebook', 'legacyComment') }}
+              </p>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="flex flex-col gap-2 border-t border-border pt-3">
         <textarea
-          rows="4"
+          rows="3"
           class="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           [placeholder]="i18n.t('gradebook', 'commentPlaceholder')"
-          [value]="commentDraft()"
-          (input)="commentDraft.set($any($event.target).value)"
+          [value]="newCommentText()"
+          (input)="newCommentText.set($any($event.target).value)"
         ></textarea>
-        <p class="text-xs text-text-muted">{{ i18n.t('gradebook', 'commentHint') }}</p>
-      </div>
-      <div class="flex justify-end gap-2">
-        <app-button variant="secondary" size="sm" (pressed)="closeCommentEditor()">
-          {{ i18n.t('gradebook', 'cancel') }}
-        </app-button>
-        <app-button size="sm" [loading]="savingComment()" (pressed)="saveComment()">
-          {{ i18n.t('gradebook', 'save') }}
-        </app-button>
+        <app-select
+          [label]="i18n.t('gradebook', 'commentCategoryLabel')"
+          [placeholder]="i18n.t('gradebook', 'commentCategoryGeneral')"
+          [options]="commentCategoryOptions()"
+          [value]="newCommentCategoryId()"
+          (valueChange)="newCommentCategoryId.set($event)"
+        />
+        <div class="flex justify-end gap-2">
+          <app-button variant="secondary" size="sm" (pressed)="closeCommentEditor()">
+            {{ i18n.t('gradebook', 'cancel') }}
+          </app-button>
+          <app-button
+            size="sm"
+            [loading]="addingComment()"
+            [disabled]="!newCommentText().trim()"
+            (pressed)="addComment()"
+          >
+            {{ i18n.t('gradebook', 'addComment') }}
+          </app-button>
+        </div>
       </div>
     </div>
   </app-modal>
@@ -833,41 +879,20 @@
           @for (entry of historyEntries(); track entry.id) {
             <li class="rounded-xl border border-border bg-slate-50 px-3 py-2 text-sm">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-medium text-text">
-                  @if (entry.kind === 'score') {
-                    {{ entry.assignmentName }}
-                  } @else {
-                    {{ i18n.t('gradebook', 'historyCommentLabel') }}
-                  }
-                </span>
+                <span class="font-medium text-text">{{ entry.assignmentName }}</span>
                 @if (entry.changedAt) {
                   <span class="shrink-0 text-xs text-text-muted">{{
                     entry.changedAt.toDate() | date: 'medium'
                   }}</span>
                 }
               </div>
-              @if (entry.kind === 'score') {
-                <div class="mt-1 flex items-center gap-1.5 text-text-muted">
-                  <span>{{ entry.previousScore ?? i18n.t('gradebook', 'noGradeYet') }}</span>
-                  <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
-                  <span class="font-medium text-text">{{
-                    entry.newScore ?? i18n.t('gradebook', 'noGradeYet')
-                  }}</span>
-                </div>
-              } @else {
-                <div class="mt-1 flex flex-col gap-1 text-xs">
-                  @if (entry.previousComment) {
-                    <p class="text-text-muted">
-                      {{ i18n.t('gradebook', 'historyBefore') }}: "{{ entry.previousComment }}"
-                    </p>
-                  }
-                  <p class="text-text">
-                    {{ i18n.t('gradebook', 'historyAfter') }}: "{{
-                      entry.newComment ?? i18n.t('gradebook', 'historyCommentRemoved')
-                    }}"
-                  </p>
-                </div>
-              }
+              <div class="mt-1 flex items-center gap-1.5 text-text-muted">
+                <span>{{ entry.previousScore ?? i18n.t('gradebook', 'noGradeYet') }}</span>
+                <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
+                <span class="font-medium text-text">{{
+                  entry.newScore ?? i18n.t('gradebook', 'noGradeYet')
+                }}</span>
+              </div>
               <p class="mt-1 text-xs text-text-muted">
                 {{ i18n.t('gradebook', 'historyBy') }} {{ entry.changedByName }}
               </p>

@@ -47,10 +47,12 @@ export interface Grade {
    */
   scores: Record<string, number | null>;
   /**
-   * Comentario opcional del profesor sobre el desempeño general del
-   * estudiante en la materia — uno solo por materia+estudiante, no por
-   * tarea individual (ver GradesService.setComment). `null`/ausente =
-   * sin comentario.
+   * @deprecated Campo viejo: un único comentario por materia+estudiante,
+   * reemplazado para siempre en cada edición. Reemplazado por
+   * `gradeComments/{id}` (ver GradeCommentsService — varios comentarios,
+   * con fecha, visibles para el estudiante). Solo se lee acá para migrar
+   * el último valor la primera vez que alguien con acceso entra (ver
+   * GradeCommentsService); nada nuevo debería escribir este campo.
    */
   comment?: string | null;
   updatedAt: Timestamp;

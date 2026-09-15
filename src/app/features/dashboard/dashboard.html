@@ -195,20 +195,32 @@
                 }
               }
 
-              @if (commentFor(subject.id); as comment) {
-                <div
-                  class="mt-2 flex items-start gap-1.5 rounded-xl bg-brand-50 px-2.5 py-2 text-xs text-brand-700"
-                >
-                  <svg
-                    lucideMessageSquare
-                    [size]="13"
-                    class="mt-0.5 shrink-0"
-                    aria-hidden="true"
-                  ></svg>
-                  <span>
-                    <span class="font-semibold">{{ i18n.t('dashboard', 'teacherComment') }}:</span>
-                    {{ comment }}
+              @if (commentsFor(subject.id).length > 0) {
+                <div class="mt-2 flex flex-col gap-1.5 border-t border-border pt-2.5">
+                  <span class="flex items-center gap-1.5 text-xs font-semibold text-text-muted">
+                    <svg lucideMessageSquare [size]="13" aria-hidden="true"></svg>
+                    {{ i18n.t('dashboard', 'teacherComments') }}
                   </span>
+                  @for (comment of commentsFor(subject.id); track comment.id) {
+                    <div class="rounded-xl bg-brand-50 px-2.5 py-2 text-xs text-brand-700">
+                      <div class="flex items-center justify-between gap-2">
+                        @if (comment.categoryName) {
+                          <span class="font-semibold"
+                            >{{ i18n.t('dashboard', 'commentCategoryPrefix') }}
+                            {{ comment.categoryName }}</span
+                          >
+                        } @else {
+                          <span></span>
+                        }
+                        @if (comment.createdAt) {
+                          <span class="shrink-0 text-brand-600/80">{{
+                            comment.createdAt.toDate() | date: 'mediumDate'
+                          }}</span>
+                        }
+                      </div>
+                      <p class="mt-0.5">{{ comment.text }}</p>
+                    </div>
+                  }
                 </div>
               }
 

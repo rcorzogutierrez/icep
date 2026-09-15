@@ -287,17 +287,31 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // gradeHistory/{id}: auditoría inmutable de cada cambio de nota o de
-    // comentario (ver GradesService.setScore/setComment) — quién, cuándo,
-    // valor anterior y nuevo. Lectura solo staff (misma razón que
-    // grades.list: es una herramienta de revisión, no algo que el
-    // estudiante consulta directo). Nunca se edita ni se borra, ni
-    // siquiera el admin — es lo que hace confiable la respuesta a "¿por
-    // qué cambió mi nota?" o "¿qué decía el comentario antes?".
+    // gradeHistory/{id}: auditoría inmutable de cada cambio de nota (ver
+    // GradesService.setScore) — quién, cuándo, valor anterior y nuevo.
+    // Lectura solo staff (misma razón que grades.list: es una herramienta
+    // de revisión, no algo que el estudiante consulta directo). Nunca se
+    // edita ni se borra, ni siquiera el admin — es lo que hace confiable
+    // la respuesta a "¿por qué cambió mi nota?".
     match /gradeHistory/{entryId} {
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow create: if request.auth != null
         && request.resource.data.changedBy == request.auth.uid
+        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
+      allow update, delete: if false;
+    }
+
+    // gradeComments/{id}: comentarios del profesor a un estudiante en una
+    // materia (ver grade-comments.model.ts) — varios en el tiempo, no un
+    // único valor reemplazable. A diferencia de gradeHistory, el propio
+    // estudiante SÍ puede leer los suyos (son para él); sigue siendo
+    // inmutable (nunca update/delete) para que "lo que el profesor
+    // escribió" no cambie después en silencio.
+    match /gradeComments/{id} {
+      allow read: if request.auth != null
+        && (isAdmin() || isTeacher() || resource.data.studentUid == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.createdBy == request.auth.uid
         && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
       allow update, delete: if false;
     }

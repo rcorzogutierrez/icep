@@ -320,26 +320,65 @@
               </div>
             }
 
-            <div class="flex flex-col gap-1.5 border-t border-border pt-3">
-              <label [for]="'comment-' + s.subjectId" class="text-xs font-medium text-text-muted">
-                {{ i18n.t('myStudents', 'commentLabel') }}
-              </label>
+            <div class="flex flex-col gap-2 border-t border-border pt-3">
+              <span class="text-xs font-medium text-text-muted">{{
+                i18n.t('myStudents', 'commentsTitle')
+              }}</span>
+
+              @if (commentsFor(s.subjectId, student.uid).length === 0) {
+                <p class="text-xs text-text-muted">{{ i18n.t('myStudents', 'noComments') }}</p>
+              } @else {
+                <ul class="flex flex-col gap-1.5">
+                  @for (entry of commentsFor(s.subjectId, student.uid); track entry.id) {
+                    <li class="rounded-xl border border-border bg-slate-50 px-2.5 py-2 text-xs">
+                      <div class="flex items-center justify-between gap-2">
+                        @if (entry.categoryName) {
+                          <span
+                            class="inline-block rounded-full bg-brand-50 px-2 py-0.5 font-medium text-brand-700"
+                          >
+                            {{ entry.categoryName }}
+                          </span>
+                        } @else {
+                          <span></span>
+                        }
+                        @if (entry.createdAt) {
+                          <span class="shrink-0 text-text-muted">{{
+                            entry.createdAt.toDate() | date: 'medium'
+                          }}</span>
+                        }
+                      </div>
+                      <p class="mt-1 text-text">{{ entry.text }}</p>
+                      <p class="mt-1 text-text-muted">
+                        {{ i18n.t('myStudents', 'commentBy') }}
+                        {{ entry.createdByName || i18n.t('myStudents', 'legacyComment') }}
+                      </p>
+                    </li>
+                  }
+                </ul>
+              }
+
               <textarea
                 [id]="'comment-' + s.subjectId"
                 rows="2"
                 class="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                 [placeholder]="i18n.t('myStudents', 'commentPlaceholder')"
-                [value]="commentDraftFor(s.subjectId, student.uid)"
-                (input)="onCommentInput(s.subjectId, $any($event.target).value)"
+                [value]="newCommentTextFor(s.subjectId)"
+                (input)="onNewCommentInput(s.subjectId, $any($event.target).value)"
               ></textarea>
-              @if (isCommentDirty(s.subjectId, student.uid)) {
+              <app-select
+                [placeholder]="i18n.t('myStudents', 'commentCategoryGeneral')"
+                [options]="commentCategoryOptionsFor(s.subjectId)"
+                [value]="newCommentCategoryFor(s.subjectId)"
+                (valueChange)="onNewCommentCategoryChange(s.subjectId, $event)"
+              />
+              @if (newCommentTextFor(s.subjectId).trim()) {
                 <div class="flex justify-end">
                   <app-button
                     size="sm"
-                    [loading]="savingCommentSubjectId() === s.subjectId"
-                    (pressed)="onSaveComment(s.subjectId, student.uid)"
+                    [loading]="addingCommentSubjectId() === s.subjectId"
+                    (pressed)="onAddComment(s.subjectId, student.uid)"
                   >
-                    {{ i18n.t('myStudents', 'save') }}
+                    {{ i18n.t('myStudents', 'addComment') }}
                   </app-button>
                 </div>
               }
@@ -377,41 +416,20 @@
           @for (entry of historyEntries(); track entry.id) {
             <li class="rounded-xl border border-border bg-slate-50 px-3 py-2 text-sm">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-medium text-text">
-                  @if (entry.kind === 'score') {
-                    {{ entry.assignmentName }}
-                  } @else {
-                    {{ i18n.t('myStudents', 'historyCommentLabel') }}
-                  }
-                </span>
+                <span class="font-medium text-text">{{ entry.assignmentName }}</span>
                 @if (entry.changedAt) {
                   <span class="shrink-0 text-xs text-text-muted">{{
                     entry.changedAt.toDate() | date: 'medium'
                   }}</span>
                 }
               </div>
-              @if (entry.kind === 'score') {
-                <div class="mt-1 flex items-center gap-1.5 text-text-muted">
-                  <span>{{ entry.previousScore ?? i18n.t('myStudents', 'noGradeYet') }}</span>
-                  <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
-                  <span class="font-medium text-text">{{
-                    entry.newScore ?? i18n.t('myStudents', 'noGradeYet')
-                  }}</span>
-                </div>
-              } @else {
-                <div class="mt-1 flex flex-col gap-1 text-xs">
-                  @if (entry.previousComment) {
-                    <p class="text-text-muted">
-                      {{ i18n.t('myStudents', 'historyBefore') }}: "{{ entry.previousComment }}"
-                    </p>
-                  }
-                  <p class="text-text">
-                    {{ i18n.t('myStudents', 'historyAfter') }}: "{{
-                      entry.newComment ?? i18n.t('myStudents', 'historyCommentRemoved')
-                    }}"
-                  </p>
-                </div>
-              }
+              <div class="mt-1 flex items-center gap-1.5 text-text-muted">
+                <span>{{ entry.previousScore ?? i18n.t('myStudents', 'noGradeYet') }}</span>
+                <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
+                <span class="font-medium text-text">{{
+                  entry.newScore ?? i18n.t('myStudents', 'noGradeYet')
+                }}</span>
+              </div>
               <p class="mt-1 text-xs text-text-muted">
                 {{ i18n.t('myStudents', 'historyBy') }} {{ entry.changedByName }}
               </p>

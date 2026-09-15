@@ -9,6 +9,7 @@ import { CoursesService } from '../../core/courses/courses.service';
 import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
+import { GradeCommentsService } from '../../core/grades/grade-comments.service';
 import { GradeHistoryService } from '../../core/grades/grade-history.service';
 import { GradesService } from '../../core/grades/grades.service';
 import type { GradeCategory } from '../../core/grades/grades.model';
@@ -91,6 +92,7 @@ export class Gradebook {
   protected readonly assignmentsService = inject(AssignmentsService);
   protected readonly gradesService = inject(GradesService);
   protected readonly gradeHistoryService = inject(GradeHistoryService);
+  protected readonly gradeCommentsService = inject(GradeCommentsService);
   protected readonly resourcesService = inject(SubjectResourcesService);
   protected readonly usersService = inject(UsersService);
   private readonly authService = inject(AuthService);
@@ -477,12 +479,23 @@ export class Gradebook {
   }
 
   protected hasComment(studentUid: string): boolean {
-    return this.gradesService.commentFor(this.subjectId(), studentUid) !== null;
+    return this.gradeCommentsService.forStudent(this.subjectId(), studentUid).length > 0;
   }
 
   protected readonly commentEditorFor = signal<{ uid: string; name: string } | null>(null);
-  protected readonly commentDraft = signal('');
-  protected readonly savingComment = signal(false);
+  protected readonly newCommentText = signal('');
+  protected readonly newCommentCategoryId = signal<string | undefined>(undefined);
+  protected readonly addingComment = signal(false);
+
+  protected readonly commentEntries = computed(() => {
+    const target = this.commentEditorFor();
+    return target ? this.gradeCommentsService.forStudent(this.subjectId(), target.uid) : [];
+  });
+
+  /** Todas las categorías (no solo "con varias tareas") — un comentario puede referirse a cualquiera. */
+  protected readonly commentCategoryOptions = computed<SelectOption<string>[]>(() =>
+    this.categories().map((category) => ({ value: category.id, label: category.name })),
+  );
 
   protected openCommentEditor(student: {
     uid: string;
@@ -493,7 +506,8 @@ export class Gradebook {
       uid: student.uid,
       name: student.displayName ?? student.email ?? '',
     });
-    this.commentDraft.set(this.gradesService.commentFor(this.subjectId(), student.uid) ?? '');
+    this.newCommentText.set('');
+    this.newCommentCategoryId.set(undefined);
   }
 
   protected readonly historyStudent = signal<{
@@ -521,24 +535,38 @@ export class Gradebook {
 
   protected closeCommentEditor(): void {
     this.commentEditorFor.set(null);
-    this.commentDraft.set('');
+    this.newCommentText.set('');
+    this.newCommentCategoryId.set(undefined);
   }
 
-  protected async saveComment(): Promise<void> {
+  /** Agrega un comentario nuevo a la lista — no reemplaza ni oculta los anteriores, ver GradeCommentsService. */
+  protected async addComment(): Promise<void> {
     const target = this.commentEditorFor();
-    if (!target) {
+    const text = this.newCommentText().trim();
+    if (!target || !text) {
       return;
     }
-    this.savingComment.set(true);
+    const categoryId = this.newCommentCategoryId() ?? null;
+    const categoryName = categoryId
+      ? (this.categories().find((c) => c.id === categoryId)?.name ?? null)
+      : null;
+    this.addingComment.set(true);
     try {
-      await this.gradesService.setComment(this.subjectId(), target.uid, this.commentDraft());
-      this.toast.success(this.i18n.t('gradebook', 'commentSaved'));
-      this.closeCommentEditor();
+      await this.gradeCommentsService.add(
+        this.subjectId(),
+        target.uid,
+        text,
+        categoryId,
+        categoryName,
+      );
+      this.toast.success(this.i18n.t('gradebook', 'commentAdded'));
+      this.newCommentText.set('');
+      this.newCommentCategoryId.set(undefined);
     } catch (error) {
       console.error('[Gradebook]', error);
       this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
     } finally {
-      this.savingComment.set(false);
+      this.addingComment.set(false);
     }
   }
 
