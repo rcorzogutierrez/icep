@@ -14,8 +14,8 @@ import { PageHeader } from '../../../shared/layout/page-header/page-header';
 /** Chip de estado relleno (fondo + texto), mismo patrón que el resto de la app. */
 const STATUS_CLASS: Record<UserStatus, string> = {
   pending: 'bg-slate-100 text-status-paused',
-  approved: 'bg-green-50 text-status-active',
-  rejected: 'bg-red-50 text-status-expired',
+  approved: 'bg-status-active-soft text-status-active',
+  rejected: 'bg-status-expired-soft text-status-expired',
 };
 
 /** Panel de admin: lista todos los usuarios y permite revocar/restaurar su acceso. */

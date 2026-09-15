@@ -31,6 +31,7 @@ import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Button } from '../../shared/components/button/button';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
+import { CourseEndingAlert } from '../../shared/components/course-ending-alert/course-ending-alert';
 import { GradeStatusBadge } from '../../shared/components/grade-status-badge/grade-status-badge';
 import { Loading } from '../../shared/components/loading/loading';
 import { Modal } from '../../shared/components/modal/modal';
@@ -41,7 +42,6 @@ import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
   IconArrowRight,
   IconChevronDown,
-  IconCircleAlert,
   IconHistory,
   IconMessageSquare,
   IconPlus,
@@ -55,6 +55,7 @@ import { ToastService } from '../../shared/toast/toast.service';
   imports: [
     Button,
     ConfirmDialog,
+    CourseEndingAlert,
     GradeStatusBadge,
     Loading,
     Modal,
@@ -65,7 +66,6 @@ import { ToastService } from '../../shared/toast/toast.service';
     PageHeader,
     IconArrowRight,
     IconChevronDown,
-    IconCircleAlert,
     IconHistory,
     IconMessageSquare,
     IconPlus,

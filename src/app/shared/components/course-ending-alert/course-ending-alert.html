@@ -1,0 +1,16 @@
+@if (show()) {
+  <div
+    class="flex items-start gap-2 rounded-2xl border border-status-paused/30 bg-status-paused-soft px-4 py-3 text-sm text-status-paused"
+  >
+    <svg lucideCircleAlert [size]="16" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
+    <p>
+      @if (daysUntilCourseEnd()! > 0) {
+        {{ i18n.t('common', 'courseEndingSoonDays') }} {{ daysUntilCourseEnd() }}
+        {{ i18n.t('common', 'courseEndingSoonDaysUnit') }}
+      } @else {
+        {{ i18n.t('common', 'courseAlreadyEndedMessage') }}
+      }
+      {{ unfinishedCount() }} {{ i18n.t('common', unfinishedLabelKey()) }}
+    </p>
+  </div>
+}

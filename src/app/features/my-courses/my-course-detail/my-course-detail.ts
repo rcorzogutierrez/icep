@@ -13,11 +13,13 @@ import type { GradeCategory } from '../../../core/grades/grades.model';
 import {
   computeCategoryPercent,
   computeFinalGrade,
+  creditLetterFor as computeCreditLetter,
   daysUntil,
+  gradeBand as computeGradeBand,
   gradeCreditStatus,
-  gradeLetter,
   isCourseEndingSoon,
   isFullyGraded,
+  type GradeBand,
   type GradeCreditStatus,
   type GradeLetter,
 } from '../../../core/grades/grades.util';
@@ -28,11 +30,13 @@ import { CoursesService } from '../../../core/courses/courses.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
+import { CourseEndingAlert } from '../../../shared/components/course-ending-alert/course-ending-alert';
 import { Drawer } from '../../../shared/components/drawer/drawer';
 import { GradeStatusBadge } from '../../../shared/components/grade-status-badge/grade-status-badge';
 import { Loading } from '../../../shared/components/loading/loading';
 import { Modal } from '../../../shared/components/modal/modal';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
+import { SubjectGradeChip } from '../../../shared/components/subject-grade-chip/subject-grade-chip';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import {
@@ -40,14 +44,11 @@ import {
   IconArrowUpRight,
   IconCheck,
   IconChevronRight,
-  IconCircleAlert,
   IconHistory,
   IconSearch,
   IconUserPlus,
 } from '../../../shared/icons/icons';
 import { ToastService } from '../../../shared/toast/toast.service';
-
-type GradeBand = 'active' | 'paused' | 'expired' | 'muted';
 
 interface SubjectProgress {
   subjectId: string;
@@ -76,19 +77,6 @@ interface CategoryRow {
   assignments: Assignment[];
 }
 
-function gradeBand(grade: number | null): GradeBand {
-  if (grade === null) {
-    return 'muted';
-  }
-  if (grade >= 90) {
-    return 'active';
-  }
-  if (grade >= 70) {
-    return 'paused';
-  }
-  return 'expired';
-}
-
 /**
  * Roster de UN curso puntual: sus estudiantes, con su progreso SOLO en las
  * materias que el profesor logueado dicta en ESTE curso (no todas las del
@@ -101,11 +89,13 @@ function gradeBand(grade: number | null): GradeBand {
   standalone: true,
   imports: [
     Button,
+    CourseEndingAlert,
     Drawer,
     GradeStatusBadge,
     Loading,
     Modal,
     Select,
+    SubjectGradeChip,
     Page,
     PageHeader,
     DecimalPipe,
@@ -114,7 +104,6 @@ function gradeBand(grade: number | null): GradeBand {
     IconArrowUpRight,
     IconCheck,
     IconChevronRight,
-    IconCircleAlert,
     IconHistory,
     IconSearch,
     IconUserPlus,
@@ -190,9 +179,7 @@ export class MyCourseDetail {
   }
 
   protected creditLetterFor(subject: SubjectProgress): GradeLetter | null {
-    return subject.fullyGraded && subject.finalGrade !== null
-      ? gradeLetter(subject.finalGrade)
-      : null;
+    return computeCreditLetter(subject.fullyGraded, subject.finalGrade);
   }
 
   /** Materias de este curso que el profesor logueado dicta acá (no todas las del curso). */
@@ -277,7 +264,7 @@ export class MyCourseDetail {
   );
 
   protected gradeBand(grade: number | null): GradeBand {
-    return gradeBand(grade);
+    return computeGradeBand(grade);
   }
 
   protected openDrawer(uid: string): void {

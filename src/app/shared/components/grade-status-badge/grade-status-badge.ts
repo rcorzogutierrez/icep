@@ -4,9 +4,9 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 
 /** Mismo patrón de "chip relleno" (fondo + texto) que ya usan los estados de usuario/invitación. */
 const STATUS_CLASS: Record<GradeCreditStatus, string> = {
-  passed: 'bg-green-50 text-status-active',
-  failed: 'bg-red-50 text-status-expired',
-  unfinished: 'bg-amber-50 text-status-paused',
+  passed: 'bg-status-active-soft text-status-active',
+  failed: 'bg-status-expired-soft text-status-expired',
+  unfinished: 'bg-status-paused-soft text-status-paused',
 };
 
 /**

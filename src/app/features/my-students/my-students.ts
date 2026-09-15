@@ -13,9 +13,9 @@ import type { GradeCategory } from '../../core/grades/grades.model';
 import {
   computeCategoryPercent,
   computeFinalGrade,
+  creditLetterFor as computeCreditLetter,
   gradeBand as computeGradeBand,
   gradeCreditStatus,
-  gradeLetter,
   isFullyGraded,
   type GradeBand,
   type GradeCreditStatus,
@@ -36,6 +36,7 @@ import { GradeStatusBadge } from '../../shared/components/grade-status-badge/gra
 import { Loading } from '../../shared/components/loading/loading';
 import { Modal } from '../../shared/components/modal/modal';
 import { Select, type SelectOption } from '../../shared/components/select/select';
+import { SubjectGradeChip } from '../../shared/components/subject-grade-chip/subject-grade-chip';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
 import {
@@ -97,6 +98,7 @@ interface CategoryRow {
     Loading,
     Modal,
     Select,
+    SubjectGradeChip,
     Page,
     PageHeader,
     DecimalPipe,
@@ -333,9 +335,7 @@ export class MyStudents {
   }
 
   protected creditLetterFor(subject: SubjectProgress): GradeLetter | null {
-    return subject.fullyGraded && subject.finalGrade !== null
-      ? gradeLetter(subject.finalGrade)
-      : null;
+    return computeCreditLetter(subject.fullyGraded, subject.finalGrade);
   }
 
   protected openDrawer(uid: string): void {
