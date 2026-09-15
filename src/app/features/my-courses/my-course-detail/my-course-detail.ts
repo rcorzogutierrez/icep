@@ -65,6 +65,8 @@ interface CategoryRow {
   category: GradeCategory;
   percent: number | null;
   singleAssignment: Assignment | null;
+  /** Tareas de la categoría cuando es "con varias tareas" — vacío en una "de una sola nota" (ver singleAssignment). Se califican inline acá mismo, sin salir del drawer. */
+  assignments: Assignment[];
 }
 
 function gradeBand(grade: number | null): GradeBand {
@@ -279,7 +281,12 @@ export class MyCourseDetail {
       const percent = computeCategoryPercent(categoryAssignments, grade?.scores);
       const singleAssignment =
         category.hasMultipleTasks === false ? (categoryAssignments[0] ?? null) : null;
-      return { category, percent, singleAssignment };
+      return {
+        category,
+        percent,
+        singleAssignment,
+        assignments: singleAssignment ? [] : categoryAssignments,
+      };
     });
   }
 

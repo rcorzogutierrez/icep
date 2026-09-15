@@ -275,16 +275,40 @@
                         {{ i18n.t('myStudents', 'save') }}
                       </app-button>
                     }
-                  } @else {
-                    <button
-                      type="button"
-                      class="text-xs whitespace-nowrap text-brand-700 hover:underline"
-                      (click)="goToGradebook(s.subjectId)"
-                    >
-                      {{ i18n.t('myStudents', 'viewTasks') }}
-                    </button>
                   }
                 </div>
+
+                @if (catRow.assignments.length > 0) {
+                  <div class="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
+                    @for (assignment of catRow.assignments; track assignment.id) {
+                      <div class="flex items-center gap-2">
+                        <span class="min-w-0 flex-1 truncate text-xs text-text-muted">{{
+                          assignment.name
+                        }}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          [max]="assignment.pointsPossible"
+                          class="h-7 w-14 rounded-xl border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                          [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
+                          (input)="onScoreInput(assignment.id, $any($event.target).value)"
+                        />
+                        <span class="w-9 shrink-0 text-xs text-text-muted"
+                          >/{{ assignment.pointsPossible }}</span
+                        >
+                        @if (isDirty(s.subjectId, student.uid, assignment.id)) {
+                          <app-button
+                            size="sm"
+                            [loading]="savingAssignmentId() === assignment.id"
+                            (pressed)="onSaveScore(s.subjectId, student.uid, assignment)"
+                          >
+                            {{ i18n.t('myStudents', 'save') }}
+                          </app-button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
 

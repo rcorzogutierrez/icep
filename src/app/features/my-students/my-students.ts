@@ -71,6 +71,8 @@ interface CategoryRow {
   percent: number | null;
   /** Solo presente si la categoría es "de una sola nota" (ver GradeCategory.hasMultipleTasks). */
   singleAssignment: Assignment | null;
+  /** Tareas de la categoría cuando es "con varias tareas" — vacío en una "de una sola nota". Se califican inline acá mismo, sin salir del drawer. */
+  assignments: Assignment[];
 }
 
 /**
@@ -350,7 +352,12 @@ export class MyStudents {
       const percent = computeCategoryPercent(categoryAssignments, grade?.scores);
       const singleAssignment =
         category.hasMultipleTasks === false ? (categoryAssignments[0] ?? null) : null;
-      return { category, percent, singleAssignment };
+      return {
+        category,
+        percent,
+        singleAssignment,
+        assignments: singleAssignment ? [] : categoryAssignments,
+      };
     });
   }
 
