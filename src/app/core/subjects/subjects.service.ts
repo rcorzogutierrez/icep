@@ -1,7 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import {
   collection,
-  deleteDoc,
   doc,
   documentId,
   getDocs,
@@ -12,6 +11,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
   type DocumentData,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
@@ -141,7 +141,8 @@ export class SubjectsService {
    * Borra la materia y, con ella, todo lo que cuelga de ella: asignaciones
    * de profesor (globales y por curso), rúbrica (categorías, que a su vez
    * cascadean sus tareas), notas cargadas, y los vínculos con los cursos
-   * que la incluían.
+   * que la incluían — todo en un solo `writeBatch` (o se borra todo, o no
+   * se borra nada; ver el comentario equivalente en CoursesService.remove).
    */
   async remove(id: string): Promise<void> {
     const assignments = await this.subjectAssignmentsService.fetchBySubjectIds([id]);
@@ -152,17 +153,21 @@ export class SubjectsService {
       this.courseSubjectTeachersService.forCourse(cs.courseId).filter((r) => r.subjectId === id),
     );
 
+    const batch = writeBatch(this.firestore);
     await Promise.all(
-      courseSubjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row)),
+      courseSubjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row, batch)),
     );
 
     await Promise.all([
-      ...assignments.map((assignment) => this.subjectAssignmentsService.unassign(assignment.id)),
-      ...categories.map((category) => this.gradeCategoriesService.remove(category.id)),
-      ...grades.map((grade) => this.gradesService.remove(grade.id)),
-      ...courseSubjectRows.map((row) => this.courseSubjectsService.unassign(row.id)),
+      ...assignments.map((assignment) =>
+        this.subjectAssignmentsService.unassign(assignment.id, batch),
+      ),
+      ...categories.map((category) => this.gradeCategoriesService.remove(category.id, batch)),
+      ...grades.map((grade) => this.gradesService.remove(grade.id, batch)),
+      ...courseSubjectRows.map((row) => this.courseSubjectsService.unassign(row.id, batch)),
     ]);
 
-    await deleteDoc(doc(this.firestore, 'subjects', id));
+    batch.delete(doc(this.firestore, 'subjects', id));
+    await batch.commit();
   }
 }

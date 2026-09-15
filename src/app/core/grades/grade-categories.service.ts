@@ -11,6 +11,7 @@ import {
   updateDoc,
   where,
   type DocumentData,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
@@ -217,9 +218,16 @@ export class GradeCategoriesService {
     }
   }
 
-  async remove(id: string): Promise<void> {
+  /** `batch`: si se pasa, encola esta categoría y sus tareas en vez de commitear cada una — para cascadas atómicas (ver SubjectsService.remove). */
+  async remove(id: string, batch?: WriteBatch): Promise<void> {
     const assignments = this.assignmentsService.forCategory(id);
+    const ref = doc(this.firestore, 'gradeCategories', id);
+    if (batch) {
+      await Promise.all(assignments.map((a) => this.assignmentsService.remove(a.id, batch)));
+      batch.delete(ref);
+      return;
+    }
     await Promise.all(assignments.map((a) => this.assignmentsService.remove(a.id)));
-    await deleteDoc(doc(this.firestore, 'gradeCategories', id));
+    await deleteDoc(ref);
   }
 }

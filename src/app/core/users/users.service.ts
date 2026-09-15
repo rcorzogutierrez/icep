@@ -1,13 +1,14 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import {
   collection,
-  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   updateDoc,
+  writeBatch,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { CourseStudentsService } from '../courses/course-students.service';
@@ -103,33 +104,42 @@ export class UsersService {
    * habilita nada por sí sola), pero dejarla inflaría de por vida el
    * contador de "estudiantes" de esos cursos con alguien que ya no lo es.
    */
+  /** El cambio de rol y la revocación de accesos van en el mismo `writeBatch` — o se aplica todo, o no se aplica nada (ver el comentario en CoursesService.remove sobre por qué). */
   async updateRole(uid: string, role: UserRole): Promise<void> {
+    const batch = writeBatch(this.firestore);
     if (role === 'student') {
-      await this.revokeTeachingAccess(uid);
+      await this.revokeTeachingAccess(uid, batch);
     } else {
-      await this.revokeStudentEnrollments(uid);
+      await this.revokeStudentEnrollments(uid, batch);
     }
-    await updateDoc(doc(this.firestore, 'users', uid), {
+    batch.update(doc(this.firestore, 'users', uid), {
       role,
       updatedAt: serverTimestamp(),
     });
+    await batch.commit();
   }
 
-  private async revokeTeachingAccess(uid: string): Promise<void> {
+  private async revokeTeachingAccess(uid: string, batch: WriteBatch): Promise<void> {
     const [courseTeacherRows, courseSubjectTeacherRows] = await Promise.all([
       this.courseTeachersService.fetchForTeacher(uid),
       this.courseSubjectTeachersService.fetchForTeacher(uid),
     ]);
 
     await Promise.all(
-      courseSubjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row)),
+      courseSubjectTeacherRows.map((row) =>
+        this.courseSubjectTeachersService.unassign(row, batch),
+      ),
     );
-    await Promise.all(courseTeacherRows.map((row) => this.courseTeachersService.unassign(row.id)));
+    await Promise.all(
+      courseTeacherRows.map((row) => this.courseTeachersService.unassign(row.id, batch)),
+    );
   }
 
-  private async revokeStudentEnrollments(uid: string): Promise<void> {
+  private async revokeStudentEnrollments(uid: string, batch: WriteBatch): Promise<void> {
     const courseStudentRows = await this.courseStudentsService.fetchForStudent(uid);
-    await Promise.all(courseStudentRows.map((row) => this.courseStudentsService.unassign(row.id)));
+    await Promise.all(
+      courseStudentRows.map((row) => this.courseStudentsService.unassign(row.id, batch)),
+    );
   }
 
   /**
@@ -154,14 +164,18 @@ export class UsersService {
       this.courseSubjectTeachersService.fetchForTeacher(uid),
     ]);
 
+    const batch = writeBatch(this.firestore);
     await Promise.all(
-      courseSubjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row)),
+      courseSubjectTeacherRows.map((row) =>
+        this.courseSubjectTeachersService.unassign(row, batch),
+      ),
     );
     await Promise.all([
-      ...courseStudentRows.map((row) => this.courseStudentsService.unassign(row.id)),
-      ...courseTeacherRows.map((row) => this.courseTeachersService.unassign(row.id)),
+      ...courseStudentRows.map((row) => this.courseStudentsService.unassign(row.id, batch)),
+      ...courseTeacherRows.map((row) => this.courseTeachersService.unassign(row.id, batch)),
     ]);
 
-    await deleteDoc(doc(this.firestore, 'users', uid));
+    batch.delete(doc(this.firestore, 'users', uid));
+    await batch.commit();
   }
 }

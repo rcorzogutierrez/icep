@@ -451,16 +451,14 @@ export class Gradebook {
 
     this.savingRowUid.set(studentUid);
     try {
-      await Promise.all(
-        updates.map(({ assignment, score }) =>
-          this.gradesService.setScore(
-            this.subjectId(),
-            studentUid,
-            assignment.id,
-            assignment.name,
-            score,
-          ),
-        ),
+      await this.gradesService.setScores(
+        this.subjectId(),
+        studentUid,
+        updates.map(({ assignment, score }) => ({
+          assignmentId: assignment.id,
+          assignmentName: assignment.name,
+          score,
+        })),
       );
       this.editingScores.update((map) => {
         const rest = { ...map };
