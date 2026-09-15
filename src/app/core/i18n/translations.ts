@@ -410,6 +410,10 @@ export const translations = {
       commentLabel: 'Comentario para el estudiante',
       commentPlaceholder: 'Unas líneas sobre su desempeño en la materia (opcional)...',
       commentSaved: 'Comentario guardado.',
+      historyButtonLabel: 'Historial de cambios',
+      historyModalTitle: 'Historial de la nota',
+      historyEmpty: 'Todavía no hay cambios registrados para este estudiante.',
+      historyBy: 'por',
     },
     assignmentReview: {
       backToGradebook: 'Volver a Calificaciones',
@@ -834,6 +838,10 @@ export const translations = {
       commentLabel: 'Comment for the student',
       commentPlaceholder: 'A few lines about their performance in the subject (optional)...',
       commentSaved: 'Comment saved.',
+      historyButtonLabel: 'Change history',
+      historyModalTitle: 'Grade history',
+      historyEmpty: 'No changes recorded for this student yet.',
+      historyBy: 'by',
     },
     assignmentReview: {
       backToGradebook: 'Back to Grades',

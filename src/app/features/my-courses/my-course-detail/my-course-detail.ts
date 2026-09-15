@@ -1,10 +1,11 @@
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import type { Assignment } from '../../../core/grades/assignments.model';
 import { AssignmentsService } from '../../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../../core/grades/grade-categories.service';
+import { GradeHistoryService } from '../../../core/grades/grade-history.service';
 import { GradesService } from '../../../core/grades/grades.service';
 import type { GradeCategory } from '../../../core/grades/grades.model';
 import {
@@ -28,13 +29,16 @@ import { Button } from '../../../shared/components/button/button';
 import { Drawer } from '../../../shared/components/drawer/drawer';
 import { GradeStatusBadge } from '../../../shared/components/grade-status-badge/grade-status-badge';
 import { Loading } from '../../../shared/components/loading/loading';
+import { Modal } from '../../../shared/components/modal/modal';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
 import {
+  IconArrowRight,
   IconArrowUpRight,
   IconCheck,
   IconChevronRight,
   IconCircleAlert,
+  IconHistory,
   IconSearch,
   IconUserPlus,
 } from '../../../shared/icons/icons';
@@ -97,13 +101,17 @@ function gradeBand(grade: number | null): GradeBand {
     Drawer,
     GradeStatusBadge,
     Loading,
+    Modal,
     Page,
     PageHeader,
     DecimalPipe,
+    DatePipe,
+    IconArrowRight,
     IconArrowUpRight,
     IconCheck,
     IconChevronRight,
     IconCircleAlert,
+    IconHistory,
     IconSearch,
     IconUserPlus,
   ],
@@ -122,6 +130,7 @@ export class MyCourseDetail {
   private readonly gradeCategoriesService = inject(GradeCategoriesService);
   private readonly assignmentsService = inject(AssignmentsService);
   private readonly gradesService = inject(GradesService);
+  protected readonly gradeHistoryService = inject(GradeHistoryService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -269,6 +278,28 @@ export class MyCourseDetail {
   protected closeDrawer(): void {
     this.openStudentUid.set(null);
     this.editingScores.set({});
+    this.historySubject.set(null);
+  }
+
+  /** Materia cuyo historial de cambios se está mostrando (modal aparte, sobre el drawer). */
+  protected readonly historySubject = signal<{ subjectId: string; subjectName: string } | null>(
+    null,
+  );
+
+  protected readonly historyEntries = computed(() => {
+    const subject = this.historySubject();
+    const student = this.openStudent();
+    return subject && student
+      ? this.gradeHistoryService.forStudent(subject.subjectId, student.uid)
+      : [];
+  });
+
+  protected openHistory(subjectId: string, subjectName: string): void {
+    this.historySubject.set({ subjectId, subjectName });
+  }
+
+  protected closeHistory(): void {
+    this.historySubject.set(null);
   }
 
   /** Rúbrica de una materia ya resuelta para el estudiante del drawer abierto. */
