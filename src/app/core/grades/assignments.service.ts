@@ -11,6 +11,7 @@ import {
   updateDoc,
   where,
   type DocumentData,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
@@ -140,7 +141,13 @@ export class AssignmentsService {
     return updateDoc(doc(this.firestore, 'assignments', id), fields as DocumentData);
   }
 
-  remove(id: string) {
-    return deleteDoc(doc(this.firestore, 'assignments', id));
+  /** `batch`: si se pasa, encola el borrado en vez de commitear solo — para cascadas atómicas (ver GradeCategoriesService.remove). */
+  async remove(id: string, batch?: WriteBatch): Promise<void> {
+    const ref = doc(this.firestore, 'assignments', id);
+    if (batch) {
+      batch.delete(ref);
+      return;
+    }
+    await deleteDoc(ref);
   }
 }

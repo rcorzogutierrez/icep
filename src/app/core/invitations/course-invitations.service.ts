@@ -15,6 +15,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { CourseStudentsService } from '../courses/course-students.service';
@@ -148,8 +149,14 @@ export class CourseInvitationsService {
     return updateDoc(doc(this.firestore, 'courseInvitations', code), { status: 'revoked' });
   }
 
-  remove(code: string) {
-    return deleteDoc(doc(this.firestore, 'courseInvitations', code));
+  /** `batch`: si se pasa, encola el borrado en vez de commitear solo — para cascadas atómicas (ver CoursesService.remove). */
+  async remove(code: string, batch?: WriteBatch): Promise<void> {
+    const ref = doc(this.firestore, 'courseInvitations', code);
+    if (batch) {
+      batch.delete(ref);
+      return;
+    }
+    await deleteDoc(ref);
   }
 
   /**

@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
@@ -162,12 +163,22 @@ export class CourseSubjectTeachersService {
     }
   }
 
-  async unassign(row: CourseSubjectTeacher): Promise<void> {
-    await deleteDoc(doc(this.firestore, 'courseSubjectTeachers', row.id));
-
+  /** `batch`: si se pasa, encola los borrados (esta fila y, si corresponde, subjectAssignments) en vez de commitear cada uno — para cascadas atómicas (ver CoursesService.remove / UsersService.remove). */
+  async unassign(row: CourseSubjectTeacher, batch?: WriteBatch): Promise<void> {
+    const ref = doc(this.firestore, 'courseSubjectTeachers', row.id);
     const stillTeachesElsewhere = this._rows().some(
       (r) => r.id !== row.id && r.subjectId === row.subjectId && r.teacherId === row.teacherId,
     );
+
+    if (batch) {
+      batch.delete(ref);
+      if (!stillTeachesElsewhere) {
+        await this.subjectAssignmentsService.unassign(`${row.subjectId}_${row.teacherId}`, batch);
+      }
+      return;
+    }
+
+    await deleteDoc(ref);
     if (!stillTeachesElsewhere) {
       await this.subjectAssignmentsService.unassign(`${row.subjectId}_${row.teacherId}`);
     }

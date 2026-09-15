@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
@@ -120,7 +121,13 @@ export class CourseSubjectsService {
     });
   }
 
-  unassign(id: string) {
-    return deleteDoc(doc(this.firestore, 'courseSubjects', id));
+  /** `batch`: si se pasa, encola el borrado en vez de commitear solo — para cascadas atómicas (ver CoursesService.remove). */
+  async unassign(id: string, batch?: WriteBatch): Promise<void> {
+    const ref = doc(this.firestore, 'courseSubjects', id);
+    if (batch) {
+      batch.delete(ref);
+      return;
+    }
+    await deleteDoc(ref);
   }
 }

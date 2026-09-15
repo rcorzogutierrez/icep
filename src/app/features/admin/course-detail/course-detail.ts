@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { writeBatch } from 'firebase/firestore';
 import { CourseInvitationsService } from '../../../core/invitations/course-invitations.service';
 import type { CourseInvitation } from '../../../core/invitations/course-invitations.model';
 import { CourseStudentsService } from '../../../core/courses/course-students.service';
@@ -9,6 +10,7 @@ import { CourseSubjectsService } from '../../../core/courses/course-subjects.ser
 import { CourseTeachersService } from '../../../core/courses/course-teachers.service';
 import { CoursesService } from '../../../core/courses/courses.service';
 import type { CourseSubjectTeacher } from '../../../core/courses/courses.model';
+import { FIREBASE_FIRESTORE } from '../../../core/firebase/firebase.tokens';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import { UsersService } from '../../../core/users/users.service';
@@ -84,6 +86,7 @@ export class CourseDetail {
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
+  private readonly firestore = inject(FIREBASE_FIRESTORE);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
@@ -395,15 +398,20 @@ export class CourseDetail {
         .filter(
           (row) => removedSubjectIds.has(row.subjectId) || removedTeacherIds.has(row.teacherId),
         );
+      // Toda la fase de quitar (a diferencia de agregar, más abajo, que
+      // necesita leer el resultado ya confirmado de esta) va en un solo
+      // writeBatch: o se quita todo lo que corresponde, o no se quita nada
+      // — nunca a medio camino (mismo motivo que CoursesService.remove).
+      const removeBatch = writeBatch(this.firestore);
       await Promise.all(
-        staleAssignments.map((row) => this.courseSubjectTeachersService.unassign(row)),
+        staleAssignments.map((row) => this.courseSubjectTeachersService.unassign(row, removeBatch)),
       );
-
       await Promise.all([
-        ...subjectsToRemove.map((cs) => this.courseSubjectsService.unassign(cs.id)),
-        ...studentsToRemove.map((cs) => this.courseStudentsService.unassign(cs.id)),
-        ...teachersToRemove.map((ct) => this.courseTeachersService.unassign(ct.id)),
+        ...subjectsToRemove.map((cs) => this.courseSubjectsService.unassign(cs.id, removeBatch)),
+        ...studentsToRemove.map((cs) => this.courseStudentsService.unassign(cs.id, removeBatch)),
+        ...teachersToRemove.map((ct) => this.courseTeachersService.unassign(ct.id, removeBatch)),
       ]);
+      await removeBatch.commit();
 
       await Promise.all([
         ...subjectsToAdd.map((subjectId) => {

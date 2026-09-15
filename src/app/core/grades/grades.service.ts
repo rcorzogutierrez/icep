@@ -7,6 +7,7 @@ import {
   onSnapshot,
   serverTimestamp,
   setDoc,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
@@ -131,7 +132,80 @@ export class GradesService {
     });
   }
 
-  remove(id: string): Promise<void> {
-    return deleteDoc(doc(this.firestore, 'grades', id));
+  /**
+   * Guarda varias notas del mismo estudiante en la misma materia en una
+   * sola escritura — pensado para "guardar fila" en Gradebook, donde el
+   * profesor puede tocar varias tareas antes de guardar. Llamar `setScore`
+   * una vez por tarea hacía N `setDoc` al MISMO documento (todas comparten
+   * `grades/{subjectId}_{studentUid}`): N round-trips en vez de 1, y si la
+   * red se cortaba a mitad de camino, la fila quedaba con algunas notas
+   * guardadas y otras no, sin manera simple de saber cuáles. Un registro de
+   * historial por nota que realmente cambió, igual que `setScore` (eso sí
+   * se mantiene separado a propósito — cada entrada es un cambio puntual).
+   */
+  async setScores(
+    subjectId: string,
+    studentUid: string,
+    changes: { assignmentId: string; assignmentName: string; score: number | null }[],
+  ): Promise<void> {
+    if (changes.length === 0) {
+      return;
+    }
+
+    const scores: Record<string, number | null> = {};
+    const changed: {
+      assignmentId: string;
+      assignmentName: string;
+      previousScore: number | null;
+      newScore: number | null;
+    }[] = [];
+    for (const { assignmentId, assignmentName, score } of changes) {
+      scores[assignmentId] = score;
+      const previousScore = this.scoreFor(subjectId, studentUid, assignmentId);
+      if (previousScore !== score) {
+        changed.push({ assignmentId, assignmentName, previousScore, newScore: score });
+      }
+    }
+
+    const ref = doc(this.firestore, 'grades', `${subjectId}_${studentUid}`);
+    await setDoc(
+      ref,
+      { subjectId, studentUid, scores, updatedAt: serverTimestamp() },
+      { merge: true },
+    );
+
+    if (changed.length === 0) {
+      return;
+    }
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+    const changedByName =
+      this.userProfileService.profile()?.displayName ?? user.displayName ?? user.email ?? '';
+    await Promise.all(
+      changed.map((c) =>
+        this.gradeHistoryService.record({
+          subjectId,
+          studentUid,
+          assignmentId: c.assignmentId,
+          assignmentName: c.assignmentName,
+          previousScore: c.previousScore,
+          newScore: c.newScore,
+          changedBy: user.uid,
+          changedByName,
+        }),
+      ),
+    );
+  }
+
+  /** `batch`: si se pasa, encola el borrado en vez de commitear solo — para cascadas atómicas (ver SubjectsService.remove). */
+  async remove(id: string, batch?: WriteBatch): Promise<void> {
+    const ref = doc(this.firestore, 'grades', id);
+    if (batch) {
+      batch.delete(ref);
+      return;
+    }
+    await deleteDoc(ref);
   }
 }

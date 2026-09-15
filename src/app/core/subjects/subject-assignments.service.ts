@@ -10,6 +10,7 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
@@ -112,7 +113,13 @@ export class SubjectAssignmentsService {
     await setDoc(ref, { subjectId, teacherId, teacherName, createdAt: serverTimestamp() });
   }
 
-  unassign(assignmentId: string) {
-    return deleteDoc(doc(this.firestore, 'subjectAssignments', assignmentId));
+  /** `batch`: si se pasa, encola el borrado en vez de commitear solo — para cascadas atómicas (ver CoursesService.remove / SubjectsService.remove). */
+  async unassign(assignmentId: string, batch?: WriteBatch): Promise<void> {
+    const ref = doc(this.firestore, 'subjectAssignments', assignmentId);
+    if (batch) {
+      batch.delete(ref);
+      return;
+    }
+    await deleteDoc(ref);
   }
 }

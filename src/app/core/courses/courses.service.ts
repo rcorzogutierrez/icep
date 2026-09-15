@@ -2,7 +2,6 @@ import { Injectable, effect, inject, signal } from '@angular/core';
 import {
   Timestamp,
   collection,
-  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
@@ -10,6 +9,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
   type DocumentData,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
@@ -98,6 +98,12 @@ export class CoursesService {
    * rule de `courseStudents` solo chequea que el código esté activo y
    * vigente, no que el curso exista) — quedarían "matriculados" en un
    * curso fantasma.
+   *
+   * Todo el borrado (curso + cascada) va en un solo `writeBatch`: o se borra
+   * todo, o no se borra nada. Antes cada fila era su propio `deleteDoc` en
+   * paralelo vía `Promise.all` — ni atómico (una falla a mitad de camino
+   * dejaba el curso "a medio borrar": estudiantes sin curso, o un curso
+   * fantasma con matrículas colgando) ni un solo round-trip.
    */
   async remove(id: string): Promise<void> {
     const [
@@ -113,17 +119,20 @@ export class CoursesService {
       this.courseSubjectTeachersService.fetchForCourseIds([id]),
       this.courseInvitationsService.fetchForCourseIds([id]),
     ]);
+
+    const batch = writeBatch(this.firestore);
     // Las asignaciones materia-profesor primero (pueden revocar
-    // subjectAssignments), después el resto.
+    // subjectAssignments), después el resto — mismo orden que antes.
     await Promise.all(
-      courseSubjectTeachers.map((row) => this.courseSubjectTeachersService.unassign(row)),
+      courseSubjectTeachers.map((row) => this.courseSubjectTeachersService.unassign(row, batch)),
     );
     await Promise.all([
-      ...courseSubjects.map((cs) => this.courseSubjectsService.unassign(cs.id)),
-      ...courseStudents.map((cs) => this.courseStudentsService.unassign(cs.id)),
-      ...courseTeachers.map((ct) => this.courseTeachersService.unassign(ct.id)),
-      ...courseInvitations.map((inv) => this.courseInvitationsService.remove(inv.code)),
+      ...courseSubjects.map((cs) => this.courseSubjectsService.unassign(cs.id, batch)),
+      ...courseStudents.map((cs) => this.courseStudentsService.unassign(cs.id, batch)),
+      ...courseTeachers.map((ct) => this.courseTeachersService.unassign(ct.id, batch)),
+      ...courseInvitations.map((inv) => this.courseInvitationsService.remove(inv.code, batch)),
     ]);
-    await deleteDoc(doc(this.firestore, 'courses', id));
+    batch.delete(doc(this.firestore, 'courses', id));
+    await batch.commit();
   }
 }
