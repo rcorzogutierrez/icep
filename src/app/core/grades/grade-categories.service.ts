@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
+import { SubjectAssignmentsService } from '../subjects/subject-assignments.service';
 import { UserProfileService } from '../users/user-profile.service';
 import type { Assignment } from './assignments.model';
 import { AssignmentsService } from './assignments.service';
@@ -43,6 +44,7 @@ export class GradeCategoriesService {
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
   private readonly assignmentsService = inject(AssignmentsService);
+  private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
 
   private readonly _categories = signal<GradeCategory[]>([]);
   private readonly _loading = signal(true);
@@ -82,6 +84,58 @@ export class GradeCategoriesService {
       );
 
       onCleanup(() => unsubscribe());
+    });
+
+    /**
+     * Autorepara categorías "de una sola nota" creadas antes de que
+     * `pointsPossible` se sincronizara con `weight` en create()/update() —
+     * sin esto, una categoría vieja se quedaba con un máximo fijo (ej. 100)
+     * para siempre aunque su peso fuera, digamos, 10, obligando al
+     * profesor a convertir cada nota a mano a la escala vieja en vez de
+     * cargarla directamente sobre el peso. Corre en cuanto las tres
+     * colecciones necesarias ya cargaron; es idempotente — en cuanto el
+     * mismatch desaparece deja de escribir nada — y solo toca lo que esta
+     * cuenta puede escribir de verdad (el admin corrige cualquier materia,
+     * un profesor solo las suyas, mismo criterio que la regla de
+     * `assignments`) para no dispararle un `permission-denied` silencioso
+     * por cada materia ajena.
+     */
+    effect(() => {
+      if (
+        this._loading() ||
+        this.assignmentsService.loading() ||
+        this.subjectAssignmentsService.loading()
+      ) {
+        return;
+      }
+
+      const isAdmin = this.userProfileService.isAdmin();
+      const uid = this.authService.user()?.uid;
+      const mySubjectIds = isAdmin
+        ? null
+        : new Set(
+            this.subjectAssignmentsService
+              .assignments()
+              .filter((a) => a.teacherId === uid)
+              .map((a) => a.subjectId),
+          );
+
+      for (const category of this._categories()) {
+        if (category.hasMultipleTasks !== false) {
+          continue;
+        }
+        if (!isAdmin && !mySubjectIds!.has(category.subjectId)) {
+          continue;
+        }
+        const [soleAssignment] = this.assignmentsService.forCategory(category.id);
+        if (soleAssignment && soleAssignment.pointsPossible !== category.weight) {
+          this.assignmentsService
+            .update(soleAssignment.id, { pointsPossible: category.weight })
+            .catch((error) => {
+              console.error('[GradeCategoriesService] auto-fix pointsPossible failed:', error);
+            });
+        }
+      }
     });
   }
 
