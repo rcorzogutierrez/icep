@@ -161,13 +161,13 @@ export class Dashboard {
             ? []
             : categoryAssignments.map((assignment) => ({
                 assignment,
-                score: detail.grade?.scores[assignment.id] ?? null,
+                score: detail.grade?.scores?.[assignment.id] ?? null,
               }));
         const soleAssignment =
           category.hasMultipleTasks === false ? categoryAssignments[0] : undefined;
         const singleScore = soleAssignment
           ? {
-              earned: detail.grade?.scores[soleAssignment.id] ?? null,
+              earned: detail.grade?.scores?.[soleAssignment.id] ?? null,
               possible: soleAssignment.pointsPossible,
             }
           : null;

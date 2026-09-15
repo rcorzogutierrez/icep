@@ -73,9 +73,15 @@ export class GradesService {
     return this._grades().filter((grade) => grade.subjectId === subjectId);
   }
 
+  /**
+   * `grade.scores` puede faltar en la práctica (ej. un documento creado
+   * solo por `setComment` antes de cargar cualquier nota) aunque el tipo
+   * `Grade` lo declare obligatorio — de ahí el `?.` extra, no solo en
+   * `grade`.
+   */
   scoreFor(subjectId: string, studentUid: string, categoryId: string): number | null {
     const grade = this.forSubject(subjectId).find((g) => g.studentUid === studentUid);
-    return grade?.scores[categoryId] ?? null;
+    return grade?.scores?.[categoryId] ?? null;
   }
 
   /** Fetch puntual (no reactivo) de la propia nota, para el dashboard del estudiante. */

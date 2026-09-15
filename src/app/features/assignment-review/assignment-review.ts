@@ -244,7 +244,7 @@ export class AssignmentReview {
   private gradedCountFor(assignmentId: string): number {
     return this.students().filter((s) => {
       const grade = this.grades().find((g) => g.studentUid === s.uid);
-      return grade?.scores[assignmentId] != null;
+      return grade?.scores?.[assignmentId] != null;
     }).length;
   }
 
