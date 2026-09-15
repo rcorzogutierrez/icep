@@ -58,62 +58,66 @@
       </app-button>
     </div>
 
-    @if (selectedCourse(); as course) {
-      <div class="relative rounded-xl border border-border bg-slate-50 p-4 pr-10">
-        <button
-          type="button"
-          class="absolute top-3 right-3 text-text-muted hover:text-text"
-          [attr.aria-label]="i18n.t('common', 'close')"
-          (click)="closeInvitationPanel()"
-        >
-          <svg lucideX [size]="16" aria-hidden="true"></svg>
-        </button>
-        @if (selectedInvitation(); as invitation) {
-          <app-invite-code-card
-            [code]="invitation.code"
-            [label]="i18n.t('adminCourses', 'inviteCardTitle') + ' — ' + course.name"
+    @defer (when selectedCourseId() !== null) {
+      @if (selectedCourse(); as course) {
+        <div class="relative rounded-xl border border-border bg-slate-50 p-4 pr-10">
+          <button
+            type="button"
+            class="absolute top-3 right-3 text-text-muted hover:text-text"
+            [attr.aria-label]="i18n.t('common', 'close')"
+            (click)="closeInvitationPanel()"
           >
-            <p class="text-xs text-text-muted">
-              {{ invitation.redemptionCount }}
-              {{ i18n.t('adminCourses', 'inviteRedemptionsLabel') }} ·
-              {{ i18n.t('adminCourses', 'inviteExpiresOn') }}
-              {{ invitation.expiresAt.toDate() | date: 'mediumDate' }}
-            </p>
-            <app-button
-              variant="warning"
-              size="sm"
-              class="mt-1 w-fit"
-              [loading]="revokingSelectedCode() === invitation.code"
-              (pressed)="onRevokeSelected(invitation)"
+            <svg lucideX [size]="16" aria-hidden="true"></svg>
+          </button>
+          @if (selectedInvitation(); as invitation) {
+            <app-invite-code-card
+              [code]="invitation.code"
+              [label]="i18n.t('adminCourses', 'inviteCardTitle') + ' — ' + course.name"
             >
-              {{ i18n.t('adminCourses', 'revokeInvite') }}
-            </app-button>
-          </app-invite-code-card>
-        } @else {
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p class="text-sm font-semibold text-text">
-                {{ i18n.t('adminCourses', 'inviteCardTitle') }} — {{ course.name }}
+              <p class="text-xs text-text-muted">
+                {{ invitation.redemptionCount }}
+                {{ i18n.t('adminCourses', 'inviteRedemptionsLabel') }} ·
+                {{ i18n.t('adminCourses', 'inviteExpiresOn') }}
+                {{ invitation.expiresAt.toDate() | date: 'mediumDate' }}
               </p>
-              <p class="mt-0.5 text-sm text-text-muted">
-                {{ i18n.t('adminCourses', 'inviteNoActive') }}
-              </p>
+              <app-button
+                variant="warning"
+                size="sm"
+                class="mt-1 w-fit"
+                [loading]="revokingSelectedCode() === invitation.code"
+                (pressed)="onRevokeSelected(invitation)"
+              >
+                {{ i18n.t('adminCourses', 'revokeInvite') }}
+              </app-button>
+            </app-invite-code-card>
+          } @else {
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold text-text">
+                  {{ i18n.t('adminCourses', 'inviteCardTitle') }} — {{ course.name }}
+                </p>
+                <p class="mt-0.5 text-sm text-text-muted">
+                  {{ i18n.t('adminCourses', 'inviteNoActive') }}
+                </p>
+              </div>
+              <app-button
+                size="sm"
+                [loading]="regeneratingCourseId() === course.id"
+                (pressed)="onGenerateForSelected()"
+              >
+                <svg lucidePlus [size]="14" aria-hidden="true"></svg>
+                @if (hasInvitationHistory(course.id)) {
+                  {{ i18n.t('adminCourses', 'regenerateInvite') }}
+                } @else {
+                  {{ i18n.t('adminCourses', 'generateInvite') }}
+                }
+              </app-button>
             </div>
-            <app-button
-              size="sm"
-              [loading]="regeneratingCourseId() === course.id"
-              (pressed)="onGenerateForSelected()"
-            >
-              <svg lucidePlus [size]="14" aria-hidden="true"></svg>
-              @if (hasInvitationHistory(course.id)) {
-                {{ i18n.t('adminCourses', 'regenerateInvite') }}
-              } @else {
-                {{ i18n.t('adminCourses', 'generateInvite') }}
-              }
-            </app-button>
-          </div>
-        }
-      </div>
+          }
+        </div>
+      }
+    } @loading {
+      <app-loading [inline]="true" />
     }
   </section>
 
