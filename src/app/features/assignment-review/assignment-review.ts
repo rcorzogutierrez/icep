@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  HostListener,
   computed,
   inject,
   input,
@@ -67,6 +66,7 @@ interface TaskOption {
     IconSearch,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'closeTaskPicker()' },
   templateUrl: './assignment-review.html',
 })
 export class AssignmentReview {
@@ -297,7 +297,6 @@ export class AssignmentReview {
     }
   }
 
-  @HostListener('document:keydown.escape')
   protected closeTaskPicker(): void {
     this.taskPickerOpen.set(false);
   }

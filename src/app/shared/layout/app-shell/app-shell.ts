@@ -2,7 +2,6 @@ import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  HostListener,
   OnDestroy,
   effect,
   inject,
@@ -65,6 +64,16 @@ import {
     IconLogOut,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Actividad de usuario para IdleTimeoutService (ver onUserActivity) +
+  // Escape para cerrar el nav mobile (ver onEscape).
+  host: {
+    '(document:keydown.escape)': 'onEscape()',
+    '(document:mousemove)': 'onUserActivity()',
+    '(document:keydown)': 'onUserActivity()',
+    '(document:click)': 'onUserActivity()',
+    '(document:scroll)': 'onUserActivity()',
+    '(document:touchstart)': 'onUserActivity()',
+  },
   templateUrl: './app-shell.html',
 })
 export class AppShell implements OnDestroy {
@@ -117,17 +126,11 @@ export class AppShell implements OnDestroy {
   protected readonly nicknameDraft = signal('');
   protected readonly savingNickname = signal(false);
 
-  @HostListener('document:keydown.escape')
   protected onEscape(): void {
     this.mobileNavOpen.set(false);
   }
 
   /** Actividad real del usuario — mantiene viva la sesión (ver IdleTimeoutService). Throttleada adentro del servicio, no acá. */
-  @HostListener('document:mousemove')
-  @HostListener('document:keydown')
-  @HostListener('document:click')
-  @HostListener('document:scroll')
-  @HostListener('document:touchstart')
   protected onUserActivity(): void {
     this.idleTimeoutService.registerActivity();
   }
