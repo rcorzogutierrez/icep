@@ -371,6 +371,10 @@ export const translations = {
       historyModalTitle: 'Historial de la nota',
       historyEmpty: 'Todavía no hay cambios registrados para este estudiante.',
       historyBy: 'por',
+      historyCommentLabel: 'Comentario',
+      historyBefore: 'Antes',
+      historyAfter: 'Ahora',
+      historyCommentRemoved: '(sin comentario)',
     },
     myCourses: {
       title: 'Mis cursos',
@@ -414,6 +418,10 @@ export const translations = {
       historyModalTitle: 'Historial de la nota',
       historyEmpty: 'Todavía no hay cambios registrados para este estudiante.',
       historyBy: 'por',
+      historyCommentLabel: 'Comentario',
+      historyBefore: 'Antes',
+      historyAfter: 'Ahora',
+      historyCommentRemoved: '(sin comentario)',
     },
     assignmentReview: {
       backToGradebook: 'Volver a Calificaciones',
@@ -799,6 +807,10 @@ export const translations = {
       historyModalTitle: 'Grade history',
       historyEmpty: 'No changes recorded for this student yet.',
       historyBy: 'by',
+      historyCommentLabel: 'Comment',
+      historyBefore: 'Before',
+      historyAfter: 'Now',
+      historyCommentRemoved: '(no comment)',
     },
     myCourses: {
       title: 'My courses',
@@ -842,6 +854,10 @@ export const translations = {
       historyModalTitle: 'Grade history',
       historyEmpty: 'No changes recorded for this student yet.',
       historyBy: 'by',
+      historyCommentLabel: 'Comment',
+      historyBefore: 'Before',
+      historyAfter: 'Now',
+      historyCommentRemoved: '(no comment)',
     },
     assignmentReview: {
       backToGradebook: 'Back to Grades',

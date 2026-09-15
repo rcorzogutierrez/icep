@@ -377,20 +377,41 @@
           @for (entry of historyEntries(); track entry.id) {
             <li class="rounded-xl border border-border bg-slate-50 px-3 py-2 text-sm">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-medium text-text">{{ entry.assignmentName }}</span>
+                <span class="font-medium text-text">
+                  @if (entry.kind === 'score') {
+                    {{ entry.assignmentName }}
+                  } @else {
+                    {{ i18n.t('myStudents', 'historyCommentLabel') }}
+                  }
+                </span>
                 @if (entry.changedAt) {
                   <span class="shrink-0 text-xs text-text-muted">{{
                     entry.changedAt.toDate() | date: 'medium'
                   }}</span>
                 }
               </div>
-              <div class="mt-1 flex items-center gap-1.5 text-text-muted">
-                <span>{{ entry.previousScore ?? i18n.t('myStudents', 'noGradeYet') }}</span>
-                <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
-                <span class="font-medium text-text">{{
-                  entry.newScore ?? i18n.t('myStudents', 'noGradeYet')
-                }}</span>
-              </div>
+              @if (entry.kind === 'score') {
+                <div class="mt-1 flex items-center gap-1.5 text-text-muted">
+                  <span>{{ entry.previousScore ?? i18n.t('myStudents', 'noGradeYet') }}</span>
+                  <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
+                  <span class="font-medium text-text">{{
+                    entry.newScore ?? i18n.t('myStudents', 'noGradeYet')
+                  }}</span>
+                </div>
+              } @else {
+                <div class="mt-1 flex flex-col gap-1 text-xs">
+                  @if (entry.previousComment) {
+                    <p class="text-text-muted">
+                      {{ i18n.t('myStudents', 'historyBefore') }}: "{{ entry.previousComment }}"
+                    </p>
+                  }
+                  <p class="text-text">
+                    {{ i18n.t('myStudents', 'historyAfter') }}: "{{
+                      entry.newComment ?? i18n.t('myStudents', 'historyCommentRemoved')
+                    }}"
+                  </p>
+                </div>
+              }
               <p class="mt-1 text-xs text-text-muted">
                 {{ i18n.t('myStudents', 'historyBy') }} {{ entry.changedByName }}
               </p>

@@ -287,12 +287,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // gradeHistory/{id}: auditoría inmutable de cada cambio de nota (ver
-    // GradesService.setScore) — quién, cuándo, valor anterior y nuevo.
-    // Lectura solo staff (misma razón que grades.list: es una herramienta
-    // de revisión, no algo que el estudiante consulta directo). Nunca se
-    // edita ni se borra, ni siquiera el admin — es lo que hace confiable
-    // la respuesta a "¿por qué cambió mi nota?".
+    // gradeHistory/{id}: auditoría inmutable de cada cambio de nota o de
+    // comentario (ver GradesService.setScore/setComment) — quién, cuándo,
+    // valor anterior y nuevo. Lectura solo staff (misma razón que
+    // grades.list: es una herramienta de revisión, no algo que el
+    // estudiante consulta directo). Nunca se edita ni se borra, ni
+    // siquiera el admin — es lo que hace confiable la respuesta a "¿por
+    // qué cambió mi nota?" o "¿qué decía el comentario antes?".
     match /gradeHistory/{entryId} {
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow create: if request.auth != null

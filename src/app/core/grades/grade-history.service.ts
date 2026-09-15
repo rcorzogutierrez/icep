@@ -6,6 +6,13 @@ import { UserProfileService } from '../users/user-profile.service';
 import type { GradeHistoryEntry } from './grade-history.model';
 
 /**
+ * `Omit` no distribuye sobre una unión discriminada — `Omit<A|B, K>` se
+ * aplana a los campos en común, perdiendo `assignmentId`/`previousComment`/
+ * etc. de cada variante. Esta sí distribuye.
+ */
+type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
+
+/**
  * Auditoría de cambios de nota (ver grade-history.model.ts). Solo staff
  * puede leerla (mismo motivo que `grades.list`: es una herramienta de
  * revisión, no algo que el estudiante consulta directo); `GradesService`
@@ -44,7 +51,13 @@ export class GradeHistoryService {
         collection(this.firestore, 'gradeHistory'),
         (snapshot) => {
           this._entries.set(
-            snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as GradeHistoryEntry),
+            snapshot.docs.map((d) => {
+              const data = d.data();
+              // Documentos de antes de que existiera `kind` (todos eran de
+              // nota) — sin esto quedarían sin `kind` y el template no
+              // sabría cómo renderizarlos.
+              return { id: d.id, kind: 'score', ...data } as GradeHistoryEntry;
+            }),
           );
           this._loading.set(false);
         },
@@ -66,7 +79,7 @@ export class GradeHistoryService {
       .sort((a, b) => (b.changedAt?.toMillis() ?? 0) - (a.changedAt?.toMillis() ?? 0));
   }
 
-  record(entry: Omit<GradeHistoryEntry, 'id' | 'changedAt'>): Promise<void> {
+  record(entry: DistributiveOmit<GradeHistoryEntry, 'id' | 'changedAt'>): Promise<void> {
     const ref = doc(collection(this.firestore, 'gradeHistory'));
     return setDoc(ref, { ...entry, changedAt: serverTimestamp() });
   }
