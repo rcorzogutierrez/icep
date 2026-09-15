@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  HostListener,
-  inject,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { IconX } from '../../icons/icons';
 
@@ -21,6 +14,7 @@ import { IconX } from '../../icons/icons';
   standalone: true,
   imports: [IconX],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'onEscape()' },
   templateUrl: './drawer.html',
 })
 export class Drawer {
@@ -33,7 +27,6 @@ export class Drawer {
 
   protected readonly i18n = inject(I18nService);
 
-  @HostListener('document:keydown.escape')
   protected onEscape(): void {
     if (this.open()) {
       this.closed.emit();

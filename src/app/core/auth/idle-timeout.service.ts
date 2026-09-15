@@ -25,8 +25,8 @@ const STORAGE_KEY = 'icep:lastActivity';
  * medir "inactivo" a ese mismo nivel, no por pestaña.
  *
  * `start()` lo llama `AppShell` (la única raíz de las rutas logueadas) una
- * vez; los listeners de actividad real viven ahí como `@HostListener`
- * (limpieza automática al destruirse el componente). Este servicio solo
+ * vez; los listeners de actividad real viven ahí en la metadata `host` del
+ * componente (limpieza automática al destruirse). Este servicio solo
  * expone el estado del aviso ("¿seguís ahí?") y arma/cancela los timers.
  */
 @Injectable({ providedIn: 'root' })
@@ -77,10 +77,10 @@ export class IdleTimeoutService {
 
   /**
    * Actividad real del usuario — llamado (throttleado acá adentro) por los
-   * `@HostListener` de `AppShell`, y también por el botón "Seguir conectado"
-   * del aviso (ese caso sí debe resetear siempre, por eso el throttle
-   * compara contra la última vez que efectivamente se registró, no bloquea
-   * el primer llamado tras mostrar el aviso).
+   * listeners de `host` de `AppShell`, y también por el botón "Seguir
+   * conectado" del aviso (ese caso sí debe resetear siempre, por eso el
+   * throttle compara contra la última vez que efectivamente se registró,
+   * no bloquea el primer llamado tras mostrar el aviso).
    */
   registerActivity(): void {
     const now = Date.now();
