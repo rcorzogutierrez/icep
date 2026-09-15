@@ -1,6 +1,12 @@
 import { type FirebaseApp, initializeApp } from 'firebase/app';
 import { type Auth, connectAuthEmulator, getAuth } from 'firebase/auth';
-import { type Firestore, connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import {
+  type Firestore,
+  connectFirestoreEmulator,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore';
 import { type FirebaseStorage, connectStorageEmulator, getStorage } from 'firebase/storage';
 import { environment } from '../../../environments/environment';
 
@@ -19,7 +25,15 @@ import { environment } from '../../../environments/environment';
 export const firebaseApp: FirebaseApp = initializeApp(environment.firebase);
 
 export const firebaseAuth: Auth = getAuth(firebaseApp);
-export const firestore: Firestore = getFirestore(firebaseApp);
+// initializeFirestore (no getFirestore) para pedir cache persistente en
+// IndexedDB en vez del cache en memoria por defecto: lecturas repetidas de
+// datos que cambian poco (materias, cursos, rúbricas) salen de cache en vez
+// de red, y una recarga con mala conexión sigue mostrando lo último visto
+// en vez de una pantalla en blanco. persistentMultipleTabManager porque la
+// app puede quedar abierta en varias pestañas del mismo navegador a la vez.
+export const firestore: Firestore = initializeFirestore(firebaseApp, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
 export const firebaseStorage: FirebaseStorage = getStorage(firebaseApp);
 
 if (environment.useEmulators && environment.emulators) {
