@@ -137,6 +137,19 @@ export class AppShell implements OnDestroy {
 
   protected async onSignOut(): Promise<void> {
     this.idleTimeoutService.stop();
+    // Antes de signOut(): "último acceso" en el panel de admin (ver
+    // IdleTimeoutService, que hace lo mismo para el logout automático por
+    // inactividad — este es el camino del cierre de sesión manual, que no
+    // pasa por ahí). Esperado, no fire-and-forget, por la misma razón que
+    // ahí: signOut() invalida el uid para la regla de auto-actualización.
+    const uid = this.auth.user()?.uid;
+    if (uid) {
+      try {
+        await this.userProfileService.touchLastActive(uid);
+      } catch (error) {
+        console.error('[AppShell] touchLastActive failed:', error);
+      }
+    }
     await this.auth.signOut();
     await this.router.navigateByUrl('/login');
   }

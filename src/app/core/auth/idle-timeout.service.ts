@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { UserProfileService } from '../users/user-profile.service';
 import { AuthService } from './auth.service';
 
 /**
@@ -32,6 +33,7 @@ const STORAGE_KEY = 'icep:lastActivity';
 @Injectable({ providedIn: 'root' })
 export class IdleTimeoutService {
   private readonly authService = inject(AuthService);
+  private readonly userProfileService = inject(UserProfileService);
   private readonly router = inject(Router);
 
   private readonly _showWarning = signal(false);
@@ -67,6 +69,10 @@ export class IdleTimeoutService {
     } else {
       this.registerActivity();
     }
+    // "Login" para efectos de lastActiveAt — ver syncLastActive. No se
+    // espera (a diferencia de logout()): no hay ningún signOut() inminente
+    // que le gane la carrera al write.
+    void this.syncLastActive();
   }
 
   stop(): void {
@@ -90,6 +96,27 @@ export class IdleTimeoutService {
     this.lastRegisteredAt = now;
     localStorage.setItem(STORAGE_KEY, String(now));
     this.scheduleFrom(now);
+  }
+
+  /**
+   * `users/{uid}.lastActiveAt` (panel de admin) solo se toca en dos
+   * momentos — login (ver start()) y logout (ver logout(), más abajo,
+   * manual o por este mismo timeout) — no en cada actividad real: es un
+   * "último acceso" aproximado, no presencia en vivo, y escribir a
+   * Firestore en cada mousemove/click sería carísimo para ningún beneficio
+   * real. `AppShell.onSignOut()` hace el mismo llamado para el cierre de
+   * sesión manual, ya que ese camino no pasa por acá.
+   */
+  private async syncLastActive(): Promise<void> {
+    const uid = this.authService.user()?.uid;
+    if (!uid) {
+      return;
+    }
+    try {
+      await this.userProfileService.touchLastActive(uid);
+    } catch (error) {
+      console.error('[IdleTimeoutService] touchLastActive failed:', error);
+    }
   }
 
   private scheduleFrom(lastActivityAt: number): void {
@@ -139,6 +166,12 @@ export class IdleTimeoutService {
     this.clearTimers();
     this._showWarning.set(false);
     localStorage.removeItem(STORAGE_KEY);
+    // Antes de signOut(), mientras el uid todavía es válido para la regla
+    // de auto-actualización — después de cerrar sesión ya no se puede.
+    // Esperado (no fire-and-forget): si signOut() invalida el token antes
+    // de que este write llegue al servidor, se pierde el "último acceso"
+    // de logout.
+    await this.syncLastActive();
     try {
       await this.authService.signOut();
     } catch (error) {

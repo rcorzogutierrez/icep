@@ -94,6 +94,7 @@ export class UserProfileService {
       locale,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      lastActiveAt: serverTimestamp(),
     });
   }
 
@@ -108,6 +109,19 @@ export class UserProfileService {
     return updateDoc(doc(this.firestore, 'users', uid), {
       displayName: displayName.trim(),
       updatedAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * "Última vez visto" para el panel de admin (ver IdleTimeoutService, que
+   * es quien llama esto con throttle — no se invoca en cada actividad).
+   * Campo propio, sin tocar `updatedAt`, para no chocar con el
+   * `hasOnly(['locale', 'displayName', 'updatedAt', 'lastActiveAt'])` de la
+   * regla de auto-actualización en firestore.rules.
+   */
+  touchLastActive(uid: string): Promise<void> {
+    return updateDoc(doc(this.firestore, 'users', uid), {
+      lastActiveAt: serverTimestamp(),
     });
   }
 }

@@ -79,8 +79,12 @@ service cloud.firestore {
       // una empresa, o directamente no existir con email+contraseña).
       // Cuando se toca, tiene que ser un string no vacío y acotado; si no
       // se toca en este update (ej. solo cambia "locale"), no se exige nada.
+      // "lastActiveAt" acá es el "último acceso" que ve el admin (ver
+      // IdleTimeoutService/UserProfileService.touchLastActive) — el propio
+      // usuario se marca a sí mismo activo, nunca a otro; no es presencia
+      // en vivo, solo una marca de tiempo aproximada.
       allow update: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locale', 'displayName', 'updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locale', 'displayName', 'updatedAt', 'lastActiveAt'])
         && (resource.data.displayName == request.resource.data.displayName
             || (request.resource.data.displayName is string
                 && request.resource.data.displayName.size() > 0

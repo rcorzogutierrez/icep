@@ -20,4 +20,12 @@ export interface UserProfile {
   locale: Locale;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  /**
+   * Última vez que el propio usuario tuvo actividad real (mouse, teclado,
+   * click, scroll) en la app — no es presencia en vivo, se escribe con
+   * throttle de varios minutos (ver IdleTimeoutService), así que es una
+   * aproximación de "última vez visto", no un estado online/offline exacto.
+   * `null` en cuentas creadas antes de este campo, hasta su próximo login.
+   */
+  lastActiveAt: Timestamp | null;
 }

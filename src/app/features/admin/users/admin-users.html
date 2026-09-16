@@ -9,6 +9,7 @@
         <tr>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colUser') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colRegistered') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colLastSeen') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colRole') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colStatus') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminUsers', 'colActions') }}</th>
@@ -35,6 +36,13 @@
                 {{ user.createdAt.toDate() | date: 'short' }}
               } @else {
                 —
+              }
+            </td>
+            <td class="px-4 py-3 text-text-muted">
+              @if (user.lastActiveAt) {
+                {{ user.lastActiveAt.toDate() | date: 'short' }}
+              } @else {
+                {{ i18n.t('adminUsers', 'lastSeenNever') }}
               }
             </td>
             <td class="px-4 py-3">
@@ -94,7 +102,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="5" class="px-4 py-6 text-center text-text-muted">
+            <td colspan="6" class="px-4 py-6 text-center text-text-muted">
               @if (usersService.loading()) {
                 <app-loading />
               } @else {
