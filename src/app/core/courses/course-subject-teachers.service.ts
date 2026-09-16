@@ -183,4 +183,38 @@ export class CourseSubjectTeachersService {
       await this.subjectAssignmentsService.unassign(`${row.subjectId}_${row.teacherId}`);
     }
   }
+
+  /**
+   * Igual que `unassign()`, pero para cascadas que borran varias filas de
+   * una — ver `UsersService.remove`/`revokeTeachingAccess`,
+   * `CoursesService.remove`, `SubjectsService.remove`,
+   * `CourseDetail.applyChanges`. SIEMPRE en batch: si el profesor dicta la
+   * MISMA materia en dos cursos y ambas filas se borran juntas, llamar
+   * `unassign()` una vez por fila es incorrecto — cada llamada lee
+   * `_rows()` (el estado local, todavía sin el borrado del batch
+   * aplicado) y ve a la OTRA fila como "todavía la dicta en otro curso",
+   * así que ninguna de las dos revoca `subjectAssignments` y el profesor
+   * conserva el permiso de calificar esa materia después de "borrado".
+   * Con el conjunto completo de filas que se van, el chequeo excluye a
+   * todas ellas de una, sin importar el orden ni cuántas se borren juntas.
+   */
+  async unassignMany(rows: CourseSubjectTeacher[], batch: WriteBatch): Promise<void> {
+    const removedIds = new Set(rows.map((r) => r.id));
+    const pairsToRevoke = new Set<string>();
+
+    for (const row of rows) {
+      batch.delete(doc(this.firestore, 'courseSubjectTeachers', row.id));
+      const stillTeachesElsewhere = this._rows().some(
+        (r) =>
+          !removedIds.has(r.id) && r.subjectId === row.subjectId && r.teacherId === row.teacherId,
+      );
+      if (!stillTeachesElsewhere) {
+        pairsToRevoke.add(`${row.subjectId}_${row.teacherId}`);
+      }
+    }
+
+    for (const key of pairsToRevoke) {
+      await this.subjectAssignmentsService.unassign(key, batch);
+    }
+  }
 }

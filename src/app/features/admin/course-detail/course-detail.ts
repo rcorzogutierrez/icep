@@ -403,9 +403,7 @@ export class CourseDetail {
       // writeBatch: o se quita todo lo que corresponde, o no se quita nada
       // — nunca a medio camino (mismo motivo que CoursesService.remove).
       const removeBatch = writeBatch(this.firestore);
-      await Promise.all(
-        staleAssignments.map((row) => this.courseSubjectTeachersService.unassign(row, removeBatch)),
-      );
+      await this.courseSubjectTeachersService.unassignMany(staleAssignments, removeBatch);
       await Promise.all([
         ...subjectsToRemove.map((cs) => this.courseSubjectsService.unassign(cs.id, removeBatch)),
         ...studentsToRemove.map((cs) => this.courseStudentsService.unassign(cs.id, removeBatch)),

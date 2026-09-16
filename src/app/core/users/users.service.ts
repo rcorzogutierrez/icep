@@ -125,11 +125,7 @@ export class UsersService {
       this.courseSubjectTeachersService.fetchForTeacher(uid),
     ]);
 
-    await Promise.all(
-      courseSubjectTeacherRows.map((row) =>
-        this.courseSubjectTeachersService.unassign(row, batch),
-      ),
-    );
+    await this.courseSubjectTeachersService.unassignMany(courseSubjectTeacherRows, batch);
     await Promise.all(
       courseTeacherRows.map((row) => this.courseTeachersService.unassign(row.id, batch)),
     );
@@ -165,11 +161,7 @@ export class UsersService {
     ]);
 
     const batch = writeBatch(this.firestore);
-    await Promise.all(
-      courseSubjectTeacherRows.map((row) =>
-        this.courseSubjectTeachersService.unassign(row, batch),
-      ),
-    );
+    await this.courseSubjectTeachersService.unassignMany(courseSubjectTeacherRows, batch);
     await Promise.all([
       ...courseStudentRows.map((row) => this.courseStudentsService.unassign(row.id, batch)),
       ...courseTeacherRows.map((row) => this.courseTeachersService.unassign(row.id, batch)),

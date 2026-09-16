@@ -123,9 +123,7 @@ export class CoursesService {
     const batch = writeBatch(this.firestore);
     // Las asignaciones materia-profesor primero (pueden revocar
     // subjectAssignments), después el resto — mismo orden que antes.
-    await Promise.all(
-      courseSubjectTeachers.map((row) => this.courseSubjectTeachersService.unassign(row, batch)),
-    );
+    await this.courseSubjectTeachersService.unassignMany(courseSubjectTeachers, batch);
     await Promise.all([
       ...courseSubjects.map((cs) => this.courseSubjectsService.unassign(cs.id, batch)),
       ...courseStudents.map((cs) => this.courseStudentsService.unassign(cs.id, batch)),

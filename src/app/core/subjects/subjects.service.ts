@@ -154,9 +154,7 @@ export class SubjectsService {
     );
 
     const batch = writeBatch(this.firestore);
-    await Promise.all(
-      courseSubjectTeacherRows.map((row) => this.courseSubjectTeachersService.unassign(row, batch)),
-    );
+    await this.courseSubjectTeachersService.unassignMany(courseSubjectTeacherRows, batch);
 
     await Promise.all([
       ...assignments.map((assignment) =>
