@@ -124,10 +124,18 @@ export class Invitations {
     return `mailto:${invitation.email}?subject=${subject}&body=${body}`;
   }
 
-  /** Quién generó esta invitación — solo se muestra al admin (ve las de todos); un profesor ya sabe que son todas suyas. */
+  /**
+   * Quién generó esta invitación — solo se muestra al admin (ve las de
+   * todos); un profesor ya sabe que son todas suyas. Si no aparece en
+   * `usersService.users()` no es un dato corrupto: borrar una cuenta es
+   * una acción admin-only (ver firestore.rules), así que el fallback
+   * puede nombrar a un administrador en vez de mostrar el uid pelado.
+   */
   protected createdByLabel(invitation: Invitation): string {
     const creator = this.usersService.users().find((u) => u.uid === invitation.createdBy);
-    return creator?.displayName ?? creator?.email ?? invitation.createdBy;
+    return (
+      creator?.displayName ?? creator?.email ?? this.i18n.t('invitationsPage', 'createdByDeleted')
+    );
   }
 
   /** Ya existe una cuenta con ese email (comparación case-insensitive). */
