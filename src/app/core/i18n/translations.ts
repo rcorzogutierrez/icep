@@ -183,6 +183,10 @@ export const translations = {
       resendAction: 'Reenviar',
       deleteAction: 'Eliminar',
       moreActions: 'Más acciones',
+      sendEmailAction: 'Enviar por email',
+      emailSubject: 'Invitación a IET Gradebook',
+      emailBody:
+        'Te invitamos a registrarte en IET Gradebook. Usá este link para completar tu registro:',
       confirmDeleteMessage:
         '¿Seguro que querés borrar esta invitación? Si está pendiente, el código deja de funcionar de inmediato. Esta acción no se puede deshacer.',
       edit: 'Editar',
@@ -634,6 +638,10 @@ export const translations = {
       resendAction: 'Resend',
       deleteAction: 'Delete',
       moreActions: 'More actions',
+      sendEmailAction: 'Send by email',
+      emailSubject: 'Invitation to IET Gradebook',
+      emailBody:
+        "You've been invited to register on IET Gradebook. Use this link to complete your registration:",
       confirmDeleteMessage:
         "Are you sure you want to delete this invitation? If it's pending, the code stops working right away. This can't be undone.",
       edit: 'Edit',

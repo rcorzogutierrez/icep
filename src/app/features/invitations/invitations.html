@@ -128,50 +128,58 @@
                   </app-button>
                 </div>
               } @else {
-                <div class="flex items-center gap-1.5">
+                <app-action-menu [label]="i18n.t('invitationsPage', 'moreActions')">
+                  @if (invitation.status === 'pending') {
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      [fullWidth]="true"
+                      (pressed)="startEdit(invitation)"
+                    >
+                      {{ i18n.t('invitationsPage', 'edit') }}
+                    </app-button>
+                  }
+                  @if (invitation.status === 'pending' && !isExpired(invitation)) {
+                    <a
+                      [href]="mailtoLink(invitation)"
+                      class="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-xl bg-transparent px-3 text-sm font-medium text-text transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none active:bg-slate-200"
+                    >
+                      <svg lucideMail [size]="14" aria-hidden="true"></svg>
+                      {{ i18n.t('invitationsPage', 'sendEmailAction') }}
+                    </a>
+                  }
                   @if (invitation.status !== 'used') {
-                    <app-action-menu [label]="i18n.t('invitationsPage', 'moreActions')">
-                      @if (invitation.status === 'pending') {
-                        <app-button
-                          variant="ghost"
-                          size="sm"
-                          [fullWidth]="true"
-                          (pressed)="startEdit(invitation)"
-                        >
-                          {{ i18n.t('invitationsPage', 'edit') }}
-                        </app-button>
-                      }
-                      <app-button
-                        variant="ghost"
-                        size="sm"
-                        [fullWidth]="true"
-                        [loading]="resendingCode() === invitation.code"
-                        (pressed)="onResend(invitation)"
-                      >
-                        {{ i18n.t('invitationsPage', 'resendAction') }}
-                      </app-button>
-                      @if (invitation.status === 'pending') {
-                        <app-button
-                          variant="warning"
-                          size="sm"
-                          [fullWidth]="true"
-                          [loading]="revokingCode() === invitation.code"
-                          (pressed)="onRevoke(invitation)"
-                        >
-                          {{ i18n.t('invitationsPage', 'revokeAction') }}
-                        </app-button>
-                      }
-                    </app-action-menu>
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      [fullWidth]="true"
+                      [loading]="resendingCode() === invitation.code"
+                      (pressed)="onResend(invitation)"
+                    >
+                      {{ i18n.t('invitationsPage', 'resendAction') }}
+                    </app-button>
+                  }
+                  @if (invitation.status === 'pending') {
+                    <app-button
+                      variant="warning"
+                      size="sm"
+                      [fullWidth]="true"
+                      [loading]="revokingCode() === invitation.code"
+                      (pressed)="onRevoke(invitation)"
+                    >
+                      {{ i18n.t('invitationsPage', 'revokeAction') }}
+                    </app-button>
                   }
                   <app-button
                     variant="danger"
                     size="sm"
+                    [fullWidth]="true"
                     [loading]="removingCode() === invitation.code"
                     (pressed)="confirmingRemoveInvitation.set(invitation)"
                   >
                     {{ i18n.t('invitationsPage', 'deleteAction') }}
                   </app-button>
-                </div>
+                </app-action-menu>
               }
             </td>
           </tr>

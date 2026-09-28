@@ -17,7 +17,7 @@ import { Loading } from '../../shared/components/loading/loading';
 import { Select, type SelectOption } from '../../shared/components/select/select';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
-import { IconInfo } from '../../shared/icons/icons';
+import { IconInfo, IconMail } from '../../shared/icons/icons';
 import { ToastService } from '../../shared/toast/toast.service';
 
 const STATUS_CLASS: Record<InvitationStatus, string> = {
@@ -43,6 +43,7 @@ const EXPIRED_CLASS = STATUS_CLASS.revoked;
     Page,
     PageHeader,
     IconInfo,
+    IconMail,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invitations.html',
@@ -106,6 +107,21 @@ export class Invitations {
 
   protected inviteLink(code: string): string {
     return `${location.origin}/invite/${code}`;
+  }
+
+  /**
+   * `mailto:` con asunto/cuerpo precargados — sin backend, abre el cliente
+   * de correo del dispositivo con todo listo; quien invita revisa y aprieta
+   * enviar desde ahí, no lo manda la app sola. Solo tiene sentido para una
+   * invitación "pending" y vigente (ver `isExpired`) — no hay nada útil que
+   * mandar de una ya usada, revocada o vencida.
+   */
+  protected mailtoLink(invitation: Invitation): string {
+    const subject = encodeURIComponent(this.i18n.t('invitationsPage', 'emailSubject'));
+    const body = encodeURIComponent(
+      `${this.i18n.t('invitationsPage', 'emailBody')}\n\n${this.inviteLink(invitation.code)}`,
+    );
+    return `mailto:${invitation.email}?subject=${subject}&body=${body}`;
   }
 
   /** Quién generó esta invitación — solo se muestra al admin (ve las de todos); un profesor ya sabe que son todas suyas. */
