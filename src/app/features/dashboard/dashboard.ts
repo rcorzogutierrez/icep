@@ -33,7 +33,6 @@ import {
 } from '../../core/grades/grades.util';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { InvitationsService } from '../../core/invitations/invitations.service';
-import { SubjectAssignmentsService } from '../../core/subjects/subject-assignments.service';
 import type { SubjectResource } from '../../core/subjects/subject-resources.model';
 import { SubjectResourcesService } from '../../core/subjects/subject-resources.service';
 import type { Subject } from '../../core/subjects/subjects.model';
@@ -58,6 +57,19 @@ import {
 } from '../../shared/icons/icons';
 
 type StatIcon = 'users' | 'book' | 'mail' | 'graduation';
+
+/**
+ * Una materia dictada en un curso puntual, para el estudiante logueado — no
+ * "una materia" a secas: si el estudiante repite la misma materia en dos
+ * cursos (ej. una recursada), son dos ofertas distintas, cada una con su
+ * propia rúbrica/nota/comentarios (ver GradeCategory.courseId). La clave
+ * `${courseId}_${subjectId}` (ver `offeringKey`) identifica cada una.
+ */
+interface CourseOffering {
+  courseId: string;
+  courseName: string;
+  subjectId: string;
+}
 
 interface SubjectDetail {
   categories: GradeCategory[];
@@ -115,7 +127,6 @@ export class Dashboard {
   protected readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
   protected readonly subjectsService = inject(SubjectsService);
-  private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
   private readonly subjectResourcesService = inject(SubjectResourcesService);
   private readonly courseStudentsService = inject(CourseStudentsService);
   private readonly courseSubjectsService = inject(CourseSubjectsService);
@@ -129,28 +140,38 @@ export class Dashboard {
   private readonly invitationsService = inject(InvitationsService);
   private readonly router = inject(Router);
 
-  protected readonly mySubjects = signal<Subject[]>([]);
+  /** Cada oferta de curso (materia+curso) en la que está matriculado el estudiante — ver CourseOffering. */
+  protected readonly mySubjectOfferings = signal<CourseOffering[]>([]);
+  /** Catálogo de materias (code/name) de las ofertas de arriba, por `subjectId` — subjects.model.ts no cambia por curso. */
+  protected readonly mySubjectCatalog = signal<Map<string, Subject>>(new Map());
   protected readonly mySubjectTeachers = signal<Map<string, string[]>>(new Map());
   protected readonly mySubjectFinalGrades = signal<Map<string, number | null>>(new Map());
   protected readonly mySubjectComments = signal<Map<string, GradeComment[]>>(new Map());
   protected readonly mySubjectDetails = signal<Map<string, SubjectDetail>>(new Map());
+  /** Por `subjectId` (no por oferta) — los recursos de materia no se separan por curso, ver subjectResources en CLAUDE.md. */
   protected readonly mySubjectResources = signal<Map<string, SubjectResource[]>>(new Map());
   protected readonly loadingMySubjects = signal(false);
 
-  /** Acordeón: una sola materia con el desglose abierto a la vez. */
-  protected readonly expandedSubjectId = signal<string | null>(null);
+  /** Acordeón: una sola oferta con el desglose abierto a la vez. */
+  protected readonly expandedOfferingKey = signal<string | null>(null);
 
-  protected toggleSubjectDetail(subjectId: string): void {
-    this.expandedSubjectId.update((current) => (current === subjectId ? null : subjectId));
+  /** Clave estable de una oferta de curso, para todos los Maps de arriba (menos `mySubjectResources`, que es por `subjectId`). */
+  protected offeringKey(courseId: string, subjectId: string): string {
+    return `${courseId}_${subjectId}`;
+  }
+
+  protected toggleSubjectDetail(courseId: string, subjectId: string): void {
+    const key = this.offeringKey(courseId, subjectId);
+    this.expandedOfferingKey.update((current) => (current === key ? null : key));
   }
 
   protected gradeBand(grade: number | null): GradeBand {
     return computeGradeBand(grade);
   }
 
-  /** Desglose por categoría (y por tarea, si la categoría gestiona varias) de una materia, para el estudiante logueado. */
-  protected categoryRowsFor(subjectId: string): CategoryBreakdownRow[] {
-    const detail = this.mySubjectDetails().get(subjectId);
+  /** Desglose por categoría (y por tarea, si la categoría gestiona varias) de una oferta de curso, para el estudiante logueado. */
+  protected categoryRowsFor(courseId: string, subjectId: string): CategoryBreakdownRow[] {
+    const detail = this.mySubjectDetails().get(this.offeringKey(courseId, subjectId));
     if (!detail) {
       return [];
     }
@@ -179,61 +200,57 @@ export class Dashboard {
       });
   }
 
-  /** Nombres de los profesores de una materia, unidos con coma (o el fallback si no tiene ninguno). */
-  protected teacherNamesFor(subjectId: string): string {
-    const names = this.mySubjectTeachers().get(subjectId);
+  /** Nombre del profesor de esta oferta de curso (a lo sumo uno, ver CourseSubjectTeacher), o el fallback si no tiene. */
+  protected teacherNamesFor(courseId: string, subjectId: string): string {
+    const names = this.mySubjectTeachers().get(this.offeringKey(courseId, subjectId));
     return names && names.length > 0
       ? names.join(', ')
       : this.i18n.t('dashboard', 'noTeacherAssigned');
   }
 
-  /** Nota final de una materia (como estudiante), formateada, o el fallback si todavía no hay nada cargado. */
-  protected finalGradeLabelFor(subjectId: string): string {
-    const grade = this.mySubjectFinalGrades().get(subjectId);
+  /** Nota final de una oferta de curso (como estudiante), formateada, o el fallback si todavía no hay nada cargado. */
+  protected finalGradeLabelFor(courseId: string, subjectId: string): string {
+    const grade = this.mySubjectFinalGrades().get(this.offeringKey(courseId, subjectId));
     return grade != null
       ? `${Math.round(grade * 10) / 10}%`
       : this.i18n.t('dashboard', 'noGradeYet');
   }
 
-  /** Comentarios del profesor para esa materia, los más nuevos primero, vacío si no dejó ninguno. */
-  protected commentsFor(subjectId: string): GradeComment[] {
-    return this.mySubjectComments().get(subjectId) ?? [];
+  /** Comentarios del profesor para esa oferta de curso, los más nuevos primero, vacío si no dejó ninguno. */
+  protected commentsFor(courseId: string, subjectId: string): GradeComment[] {
+    return this.mySubjectComments().get(this.offeringKey(courseId, subjectId)) ?? [];
   }
 
   /**
    * Sin alerta de "curso por vencer" acá a propósito (mismo motivo que
-   * MyStudents): el dashboard del estudiante no está anclado a un curso
-   * puntual. Solo muestra Aprobado/Desaprobado una vez que la rúbrica está
-   * completa.
+   * MyStudents): el dashboard del estudiante lista varias ofertas a la vez.
+   * Solo muestra Aprobado/Desaprobado una vez que la rúbrica está completa.
    */
-  protected creditStatusFor(subjectId: string): GradeCreditStatus | null {
-    const detail = this.mySubjectDetails().get(subjectId);
+  protected creditStatusFor(courseId: string, subjectId: string): GradeCreditStatus | null {
+    const key = this.offeringKey(courseId, subjectId);
+    const detail = this.mySubjectDetails().get(key);
     if (!detail) {
       return null;
     }
     const fullyGraded = isFullyGraded(detail.categories, detail.assignments, detail.grade?.scores);
-    return gradeCreditStatus(
-      fullyGraded,
-      this.mySubjectFinalGrades().get(subjectId) ?? null,
-      false,
-    );
+    return gradeCreditStatus(fullyGraded, this.mySubjectFinalGrades().get(key) ?? null, false);
   }
 
-  protected creditLetterFor(subjectId: string): GradeLetter | null {
-    const status = this.creditStatusFor(subjectId);
-    const grade = this.mySubjectFinalGrades().get(subjectId);
+  protected creditLetterFor(courseId: string, subjectId: string): GradeLetter | null {
+    const status = this.creditStatusFor(courseId, subjectId);
+    const grade = this.mySubjectFinalGrades().get(this.offeringKey(courseId, subjectId));
     return status && (status === 'passed' || status === 'failed') && grade != null
       ? gradeLetter(grade)
       : null;
   }
 
-  /** Recursos (Drive/Dropbox/links) que el profesor dejó disponibles para esa materia. */
+  /** Recursos (Drive/Dropbox/links) que el profesor dejó disponibles para esa materia — por `subjectId`, no se separan por curso. */
   protected resourcesFor(subjectId: string): SubjectResource[] {
     return this.mySubjectResources().get(subjectId) ?? [];
   }
 
-  protected goToGradebook(subjectId: string): void {
-    void this.router.navigateByUrl(`/subjects/${subjectId}/gradebook`);
+  protected goToGradebook(courseId: string, subjectId: string): void {
+    void this.router.navigateByUrl(`/subjects/${subjectId}/gradebook/${courseId}`);
   }
 
   protected goToStat(stat: StatCard): void {
@@ -346,7 +363,7 @@ export class Dashboard {
     return [
       {
         label: this.i18n.t('dashboard', 'mySubjects'),
-        value: this.mySubjects().length,
+        value: this.mySubjectCatalog().size,
         icon: 'graduation',
       },
     ];
@@ -357,59 +374,85 @@ export class Dashboard {
       const profile = this.userProfileService.profile();
       const uid = this.auth.user()?.uid;
       if (profile?.role !== 'student' || !uid) {
-        this.mySubjects.set([]);
-        this.mySubjectTeachers.set(new Map());
-        this.mySubjectFinalGrades.set(new Map());
-        this.mySubjectComments.set(new Map());
-        this.mySubjectDetails.set(new Map());
-        this.mySubjectResources.set(new Map());
+        this.clearMySubjects();
         this.loadingMySubjects.set(false);
         return;
       }
 
       this.loadingMySubjects.set(true);
       this.loadMySubjects(uid)
-        .catch(() => {
-          this.mySubjects.set([]);
-          this.mySubjectTeachers.set(new Map());
-          this.mySubjectFinalGrades.set(new Map());
-          this.mySubjectComments.set(new Map());
-          this.mySubjectDetails.set(new Map());
-          this.mySubjectResources.set(new Map());
+        .catch((error) => {
+          console.error('[Dashboard] loadMySubjects failed:', error);
+          this.clearMySubjects();
         })
         .finally(() => this.loadingMySubjects.set(false));
     });
   }
 
-  /** Las materias de un estudiante salen de los cursos en los que está matriculado (ver courses.model.ts), no de una lista suelta. */
+  private clearMySubjects(): void {
+    this.mySubjectOfferings.set([]);
+    this.mySubjectCatalog.set(new Map());
+    this.mySubjectTeachers.set(new Map());
+    this.mySubjectFinalGrades.set(new Map());
+    this.mySubjectComments.set(new Map());
+    this.mySubjectDetails.set(new Map());
+    this.mySubjectResources.set(new Map());
+  }
+
+  /**
+   * Las ofertas de curso de un estudiante salen de los cursos en los que
+   * está matriculado (ver courses.model.ts), no de una lista suelta de
+   * materias — y una misma materia puede aparecer más de una vez (una
+   * oferta por curso, ver CourseOffering).
+   */
   private async loadMySubjects(uid: string): Promise<void> {
     const courseStudents = await this.courseStudentsService.fetchForStudent(uid);
-    const courseIds = courseStudents.map((cs) => cs.courseId);
+    const courseIds = [...new Set(courseStudents.map((cs) => cs.courseId))];
     const courseSubjects = await this.courseSubjectsService.fetchForCourseIds(courseIds);
     const subjectIds = [...new Set(courseSubjects.map((cs) => cs.subjectId))];
 
-    if (subjectIds.length === 0) {
-      this.mySubjects.set([]);
-      this.mySubjectTeachers.set(new Map());
-      this.mySubjectFinalGrades.set(new Map());
-      this.mySubjectComments.set(new Map());
-      this.mySubjectDetails.set(new Map());
-      this.mySubjectResources.set(new Map());
+    if (courseSubjects.length === 0) {
+      this.clearMySubjects();
       return;
     }
 
-    const [subjects, teacherAssignments, categories, assignments, grades, resources, comments] =
-      await Promise.all([
-        this.subjectsService.fetchByIds(subjectIds),
-        this.subjectAssignmentsService.fetchBySubjectIds(subjectIds),
-        this.gradeCategoriesService.fetchForSubjectIds(subjectIds),
-        this.assignmentsService.fetchForSubjectIds(subjectIds),
-        Promise.all(subjectIds.map((id) => this.gradesService.fetchOwn(id, uid))),
-        this.subjectResourcesService.fetchForSubjectIds(subjectIds),
-        this.gradeCommentsService.fetchOwn(uid),
-      ]);
+    const [
+      subjects,
+      courses,
+      courseSubjectTeacherRows,
+      categories,
+      assignments,
+      grades,
+      resources,
+      comments,
+    ] = await Promise.all([
+      this.subjectsService.fetchByIds(subjectIds),
+      this.coursesService.fetchByIds(courseIds),
+      this.courseSubjectTeachersService.fetchForCourseIds(courseIds),
+      // Fetch cruzando TODOS los cursos que ofrecen estas materias (no solo
+      // los del estudiante) — se filtra por oferta puntual más abajo; evita
+      // un segundo round-trip por curso.
+      this.gradeCategoriesService.fetchForSubjectIds(subjectIds),
+      this.assignmentsService.fetchForSubjectIds(subjectIds),
+      Promise.all(
+        courseSubjects.map((cs) => this.gradesService.fetchOwn(cs.courseId, cs.subjectId, uid)),
+      ),
+      this.subjectResourcesService.fetchForSubjectIds(subjectIds),
+      this.gradeCommentsService.fetchOwn(uid),
+    ]);
 
-    this.mySubjects.set(subjects);
+    const subjectById = new Map(subjects.map((s) => [s.id, s]));
+    const courseNameById = new Map(courses.map((c) => [c.id, c.name]));
+
+    const offerings: CourseOffering[] = courseSubjects
+      .filter((cs) => subjectById.has(cs.subjectId))
+      .map((cs) => ({
+        courseId: cs.courseId,
+        courseName: courseNameById.get(cs.courseId) ?? cs.courseId,
+        subjectId: cs.subjectId,
+      }));
+    this.mySubjectOfferings.set(offerings);
+    this.mySubjectCatalog.set(subjectById);
 
     const byResource = new Map<string, SubjectResource[]>();
     for (const resource of resources) {
@@ -418,17 +461,16 @@ export class Dashboard {
     this.mySubjectResources.set(byResource);
 
     const byTeacher = new Map<string, string[]>();
-    for (const assignment of teacherAssignments) {
-      byTeacher.set(assignment.subjectId, [
-        ...(byTeacher.get(assignment.subjectId) ?? []),
-        assignment.teacherName,
-      ]);
+    for (const row of courseSubjectTeacherRows) {
+      const key = this.offeringKey(row.courseId, row.subjectId);
+      byTeacher.set(key, [...(byTeacher.get(key) ?? []), row.teacherName]);
     }
     this.mySubjectTeachers.set(byTeacher);
 
     const byComment = new Map<string, GradeComment[]>();
     for (const comment of comments) {
-      byComment.set(comment.subjectId, [...(byComment.get(comment.subjectId) ?? []), comment]);
+      const key = this.offeringKey(comment.courseId, comment.subjectId);
+      byComment.set(key, [...(byComment.get(key) ?? []), comment]);
     }
     for (const list of byComment.values()) {
       list.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
@@ -437,17 +479,25 @@ export class Dashboard {
 
     const finalGrades = new Map<string, number | null>();
     const details = new Map<string, SubjectDetail>();
-    for (const subjectId of subjectIds) {
-      const grade = grades.find((g) => g?.subjectId === subjectId) ?? null;
-      const subjectCategories = categories.filter((c) => c.subjectId === subjectId);
-      const subjectAssignments = assignments.filter((a) => a.subjectId === subjectId);
-      finalGrades.set(
-        subjectId,
-        computeFinalGrade(subjectCategories, subjectAssignments, grade?.scores),
+    for (const offering of offerings) {
+      const key = this.offeringKey(offering.courseId, offering.subjectId);
+      const grade =
+        grades.find(
+          (g) => g?.courseId === offering.courseId && g?.subjectId === offering.subjectId,
+        ) ?? null;
+      const offeringCategories = categories.filter(
+        (c) => c.courseId === offering.courseId && c.subjectId === offering.subjectId,
       );
-      details.set(subjectId, {
-        categories: subjectCategories,
-        assignments: subjectAssignments,
+      const offeringAssignments = assignments.filter(
+        (a) => a.courseId === offering.courseId && a.subjectId === offering.subjectId,
+      );
+      finalGrades.set(
+        key,
+        computeFinalGrade(offeringCategories, offeringAssignments, grade?.scores),
+      );
+      details.set(key, {
+        categories: offeringCategories,
+        assignments: offeringAssignments,
         grade,
       });
     }

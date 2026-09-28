@@ -51,6 +51,8 @@ import {
 import { ToastService } from '../../shared/toast/toast.service';
 
 interface SubjectProgress {
+  /** Curso puntual de esta oferta — un estudiante en dos cursos que ofrecen la misma materia tiene DOS SubjectProgress, uno por curso. */
+  courseId: string;
   subjectId: string;
   subjectCode: string;
   subjectName: string;
@@ -230,48 +232,50 @@ export class MyStudents {
         continue;
       }
 
-      const courseIds = this.accessibleCourseIdsFor(subjectId);
-      const courseStudents = this.courseStudentsService.forCourseIds(courseIds);
-      const studentUids = new Set(courseStudents.map((cs) => cs.studentUid));
+      // Por curso, no por materia sola: la rúbrica/notas son de la oferta de
+      // curso (ver GradeCategory.courseId), así que un estudiante en DOS
+      // cursos que ofrecen la misma materia tiene DOS SubjectProgress, no
+      // una mezclada.
+      for (const courseId of this.accessibleCourseIdsFor(subjectId)) {
+        const courseStudents = this.courseStudentsService.forCourse(courseId);
+        const categories = this.gradeCategoriesService.forCourseSubject(courseId, subjectId);
+        const assignments = this.assignmentsService.forCourseSubject(courseId, subjectId);
+        const grades = this.gradesService.forCourseSubject(courseId, subjectId);
 
-      for (const cs of courseStudents) {
-        const ids = courseIdsByUid.get(cs.studentUid) ?? new Set<string>();
-        ids.add(cs.courseId);
-        courseIdsByUid.set(cs.studentUid, ids);
-      }
+        for (const cs of courseStudents) {
+          const ids = courseIdsByUid.get(cs.studentUid) ?? new Set<string>();
+          ids.add(cs.courseId);
+          courseIdsByUid.set(cs.studentUid, ids);
 
-      const categories = this.gradeCategoriesService.forSubject(subjectId);
-      const assignments = this.assignmentsService.forSubject(subjectId);
-      const grades = this.gradesService.forSubject(subjectId);
+          const user = this.usersService
+            .users()
+            .find((u) => u.uid === cs.studentUid && u.role === 'student');
+          if (!user) {
+            continue;
+          }
 
-      for (const studentUid of studentUids) {
-        const user = this.usersService
-          .users()
-          .find((u) => u.uid === studentUid && u.role === 'student');
-        if (!user) {
-          continue;
+          const grade = grades.find((g) => g.studentUid === cs.studentUid);
+          const finalGrade = computeFinalGrade(categories, assignments, grade?.scores);
+
+          const row = rowsByUid.get(cs.studentUid) ?? {
+            uid: cs.studentUid,
+            displayName: user.displayName ?? user.email ?? cs.studentUid,
+            email: user.email ?? '',
+            courseNames: [],
+            subjects: [],
+            isActive: true,
+          };
+          row.subjects.push({
+            courseId,
+            subjectId,
+            subjectCode: subject.code,
+            subjectName: subject.name,
+            finalGrade,
+            hasRubric: categories.length > 0,
+            fullyGraded: isFullyGraded(categories, assignments, grade?.scores),
+          });
+          rowsByUid.set(cs.studentUid, row);
         }
-
-        const grade = grades.find((g) => g.studentUid === studentUid);
-        const finalGrade = computeFinalGrade(categories, assignments, grade?.scores);
-
-        const row = rowsByUid.get(studentUid) ?? {
-          uid: studentUid,
-          displayName: user.displayName ?? user.email ?? studentUid,
-          email: user.email ?? '',
-          courseNames: [],
-          subjects: [],
-          isActive: true,
-        };
-        row.subjects.push({
-          subjectId,
-          subjectCode: subject.code,
-          subjectName: subject.name,
-          finalGrade,
-          hasRubric: categories.length > 0,
-          fullyGraded: isFullyGraded(categories, assignments, grade?.scores),
-        });
-        rowsByUid.set(studentUid, row);
       }
     }
 
@@ -352,38 +356,57 @@ export class MyStudents {
     this.historySubject.set(null);
   }
 
-  /** Materia cuyo historial de cambios se está mostrando (modal aparte, sobre el drawer). */
-  protected readonly historySubject = signal<{ subjectId: string; subjectName: string } | null>(
-    null,
-  );
+  /** Oferta de curso cuyo historial de cambios se está mostrando (modal aparte, sobre el drawer). */
+  protected readonly historySubject = signal<{
+    courseId: string;
+    subjectId: string;
+    subjectName: string;
+  } | null>(null);
 
   protected readonly historyEntries = computed(() => {
     const subject = this.historySubject();
     const student = this.openStudent();
     return subject && student
-      ? this.gradeHistoryService.forStudent(subject.subjectId, student.uid)
+      ? this.gradeHistoryService.forStudent(subject.courseId, subject.subjectId, student.uid)
       : [];
   });
 
-  protected openHistory(subjectId: string, subjectName: string): void {
-    this.historySubject.set({ subjectId, subjectName });
+  protected openHistory(courseId: string, subjectId: string, subjectName: string): void {
+    this.historySubject.set({ courseId, subjectId, subjectName });
   }
 
   protected closeHistory(): void {
     this.historySubject.set(null);
   }
 
-  /** Acordeón: abrir una materia cierra la que estaba abierta antes. */
-  protected toggleSubject(subjectId: string): void {
-    this.expandedSubjectId.update((current) => (current === subjectId ? null : subjectId));
+  /**
+   * Clave de las materias del drawer (borradores de comentario, acordeón) —
+   * `courseId+subjectId`, no solo `subjectId`: un estudiante puede tener la
+   * misma materia dos veces en el roster (dos cursos), y cada una necesita
+   * su propio borrador/estado de acordeón, no uno compartido.
+   */
+  protected subjectDraftKey(courseId: string, subjectId: string): string {
+    return `${courseId}_${subjectId}`;
   }
 
-  /** Rúbrica de una materia ya resuelta para el estudiante del drawer abierto. */
-  protected categoryRowsFor(subjectId: string, studentUid: string): CategoryRow[] {
-    const assignments = this.assignmentsService.forSubject(subjectId);
-    const grade = this.gradesService.forSubject(subjectId).find((g) => g.studentUid === studentUid);
+  /** Acordeón: abrir una materia cierra la que estaba abierta antes. */
+  protected toggleSubject(courseId: string, subjectId: string): void {
+    const key = this.subjectDraftKey(courseId, subjectId);
+    this.expandedSubjectId.update((current) => (current === key ? null : key));
+  }
 
-    return this.gradeCategoriesService.forSubject(subjectId).map((category) => {
+  /** Rúbrica de una oferta de curso ya resuelta para el estudiante del drawer abierto. */
+  protected categoryRowsFor(
+    courseId: string,
+    subjectId: string,
+    studentUid: string,
+  ): CategoryRow[] {
+    const assignments = this.assignmentsService.forCourseSubject(courseId, subjectId);
+    const grade = this.gradesService
+      .forCourseSubject(courseId, subjectId)
+      .find((g) => g.studentUid === studentUid);
+
+    return this.gradeCategoriesService.forCourseSubject(courseId, subjectId).map((category) => {
       const categoryAssignments = assignments.filter((a) => a.categoryId === category.id);
       const percent = computeCategoryPercent(categoryAssignments, grade?.scores);
       const singleAssignment =
@@ -397,12 +420,17 @@ export class MyStudents {
     });
   }
 
-  protected inputValueFor(subjectId: string, studentUid: string, assignmentId: string): string {
+  protected inputValueFor(
+    courseId: string,
+    subjectId: string,
+    studentUid: string,
+    assignmentId: string,
+  ): string {
     const draft = this.editingScores()[assignmentId];
     if (draft !== undefined) {
       return draft;
     }
-    const score = this.gradesService.scoreFor(subjectId, studentUid, assignmentId);
+    const score = this.gradesService.scoreFor(courseId, subjectId, studentUid, assignmentId);
     return score === null ? '' : String(score);
   }
 
@@ -410,16 +438,22 @@ export class MyStudents {
     this.editingScores.update((map) => ({ ...map, [assignmentId]: rawValue }));
   }
 
-  protected isDirty(subjectId: string, studentUid: string, assignmentId: string): boolean {
+  protected isDirty(
+    courseId: string,
+    subjectId: string,
+    studentUid: string,
+    assignmentId: string,
+  ): boolean {
     const draft = this.editingScores()[assignmentId];
     if (draft === undefined) {
       return false;
     }
-    const saved = this.gradesService.scoreFor(subjectId, studentUid, assignmentId);
+    const saved = this.gradesService.scoreFor(courseId, subjectId, studentUid, assignmentId);
     return draft.trim() !== (saved === null ? '' : String(saved));
   }
 
   protected async onSaveScore(
+    courseId: string,
     subjectId: string,
     studentUid: string,
     assignment: Assignment,
@@ -438,6 +472,7 @@ export class MyStudents {
     this.savingAssignmentId.set(assignment.id);
     try {
       await this.gradesService.setScore(
+        courseId,
         subjectId,
         studentUid,
         assignment.id,
@@ -458,58 +493,77 @@ export class MyStudents {
     }
   }
 
-  protected goToGradebook(subjectId: string): void {
-    this.router.navigate(['/subjects', subjectId, 'gradebook']);
+  protected goToGradebook(courseId: string, subjectId: string): void {
+    this.router.navigate(['/subjects', subjectId, 'gradebook', courseId]);
   }
 
-  protected commentsFor(subjectId: string, studentUid: string): GradeComment[] {
-    return this.gradeCommentsService.forStudent(subjectId, studentUid);
+  protected commentsFor(courseId: string, subjectId: string, studentUid: string): GradeComment[] {
+    return this.gradeCommentsService.forStudent(courseId, subjectId, studentUid);
   }
 
-  protected newCommentTextFor(subjectId: string): string {
-    return this.newCommentDrafts()[subjectId] ?? '';
+  protected newCommentTextFor(courseId: string, subjectId: string): string {
+    return this.newCommentDrafts()[this.subjectDraftKey(courseId, subjectId)] ?? '';
   }
 
-  protected onNewCommentInput(subjectId: string, value: string): void {
-    this.newCommentDrafts.update((map) => ({ ...map, [subjectId]: value }));
+  protected onNewCommentInput(courseId: string, subjectId: string, value: string): void {
+    const key = this.subjectDraftKey(courseId, subjectId);
+    this.newCommentDrafts.update((map) => ({ ...map, [key]: value }));
   }
 
-  protected newCommentCategoryFor(subjectId: string): string | undefined {
-    return this.newCommentCategoryDrafts()[subjectId];
+  protected newCommentCategoryFor(courseId: string, subjectId: string): string | undefined {
+    return this.newCommentCategoryDrafts()[this.subjectDraftKey(courseId, subjectId)];
   }
 
-  protected onNewCommentCategoryChange(subjectId: string, categoryId: string | undefined): void {
-    this.newCommentCategoryDrafts.update((map) => ({ ...map, [subjectId]: categoryId }));
+  protected onNewCommentCategoryChange(
+    courseId: string,
+    subjectId: string,
+    categoryId: string | undefined,
+  ): void {
+    const key = this.subjectDraftKey(courseId, subjectId);
+    this.newCommentCategoryDrafts.update((map) => ({ ...map, [key]: categoryId }));
   }
 
-  /** Todas las categorías de la materia (no solo "con varias tareas") — un comentario puede referirse a cualquiera. */
-  protected commentCategoryOptionsFor(subjectId: string): SelectOption<string>[] {
+  /** Todas las categorías de la oferta de curso (no solo "con varias tareas") — un comentario puede referirse a cualquiera. */
+  protected commentCategoryOptionsFor(courseId: string, subjectId: string): SelectOption<string>[] {
     return this.gradeCategoriesService
-      .forSubject(subjectId)
+      .forCourseSubject(courseId, subjectId)
       .map((category) => ({ value: category.id, label: category.name }));
   }
 
-  protected async onAddComment(subjectId: string, studentUid: string): Promise<void> {
-    const text = (this.newCommentDrafts()[subjectId] ?? '').trim();
+  protected async onAddComment(
+    courseId: string,
+    subjectId: string,
+    studentUid: string,
+  ): Promise<void> {
+    const key = this.subjectDraftKey(courseId, subjectId);
+    const text = (this.newCommentDrafts()[key] ?? '').trim();
     if (!text) {
       return;
     }
-    const categoryId = this.newCommentCategoryDrafts()[subjectId] ?? null;
+    const categoryId = this.newCommentCategoryDrafts()[key] ?? null;
     const categoryName = categoryId
-      ? (this.gradeCategoriesService.forSubject(subjectId).find((c) => c.id === categoryId)?.name ??
-        null)
+      ? (this.gradeCategoriesService
+          .forCourseSubject(courseId, subjectId)
+          .find((c) => c.id === categoryId)?.name ?? null)
       : null;
-    this.addingCommentSubjectId.set(subjectId);
+    this.addingCommentSubjectId.set(key);
     try {
-      await this.gradeCommentsService.add(subjectId, studentUid, text, categoryId, categoryName);
+      await this.gradeCommentsService.add(
+        courseId,
+        subjectId,
+        studentUid,
+        text,
+        categoryId,
+        categoryName,
+      );
       this.newCommentDrafts.update((map) => {
         const rest = { ...map };
-        delete rest[subjectId];
+        delete rest[key];
         return rest;
       });
       this.newCommentCategoryDrafts.update((map) => {
         const rest = { ...map };
-        delete rest[subjectId];
+        delete rest[key];
         return rest;
       });
       this.toast.success(this.i18n.t('myStudents', 'commentAdded'));

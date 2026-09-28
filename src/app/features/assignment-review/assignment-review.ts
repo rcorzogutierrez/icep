@@ -1,23 +1,12 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
 import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
 import { GradeCategoriesService } from '../../core/grades/grade-categories.service';
 import { GradesService } from '../../core/grades/grades.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
-import { CourseSubjectTeachersService } from '../../core/courses/course-subject-teachers.service';
-import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import { SubjectsService } from '../../core/subjects/subjects.service';
-import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
 import { Loading } from '../../shared/components/loading/loading';
 import { Page } from '../../shared/layout/page/page';
@@ -72,17 +61,14 @@ interface TaskOption {
 export class AssignmentReview {
   readonly subjectId = input.required<string>();
   readonly assignmentId = input.required<string>();
+  readonly courseId = input.required<string>();
 
   private readonly subjectsService = inject(SubjectsService);
   private readonly gradeCategoriesService = inject(GradeCategoriesService);
   private readonly assignmentsService = inject(AssignmentsService);
   private readonly gradesService = inject(GradesService);
-  private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly courseStudentsService = inject(CourseStudentsService);
-  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
   private readonly usersService = inject(UsersService);
-  private readonly authService = inject(AuthService);
-  private readonly userProfileService = inject(UserProfileService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -106,8 +92,6 @@ export class AssignmentReview {
       this.subjectsService.loading() ||
       this.usersService.loading() ||
       this.courseStudentsService.loading() ||
-      this.courseSubjectsService.loading() ||
-      this.courseSubjectTeachersService.loading() ||
       this.gradesService.loading(),
   );
 
@@ -119,44 +103,16 @@ export class AssignmentReview {
     return this.gradeCategoriesService.categories().find((c) => c.id === assignment.categoryId);
   });
 
-  /** Categorías "con varias tareas" de la materia — las únicas navegables acá. */
+  /** Categorías "con varias tareas" de esta oferta de curso — las únicas navegables acá. */
   private readonly multiTaskCategories = computed(() =>
     this.gradeCategoriesService
-      .forSubject(this.subjectId())
+      .forCourseSubject(this.courseId(), this.subjectId())
       .filter((c) => c.hasMultipleTasks !== false),
   );
 
-  /**
-   * Cursos de esta materia que puede ver el usuario logueado: el admin ve
-   * todos (misma materia puede estar en varios cursos); un profesor SOLO
-   * los cursos donde él mismo la dicta — mismo criterio que
-   * Gradebook.accessibleCourseIds. Sin este filtro, un profesor asignado a
-   * esta materia en un curso vería (y podría calificar) a estudiantes de
-   * OTRO curso donde la dicta un profesor distinto, con solo compartir la
-   * materia.
-   */
-  private readonly accessibleCourseIds = computed(() => {
-    const allCourseIds = this.courseSubjectsService
-      .forSubject(this.subjectId())
-      .map((cs) => cs.courseId);
-    if (this.userProfileService.isAdmin()) {
-      return allCourseIds;
-    }
-    const uid = this.authService.user()?.uid;
-    const myCourseIds = new Set(
-      this.courseSubjectTeachersService
-        .rows()
-        .filter((r) => r.subjectId === this.subjectId() && r.teacherId === uid)
-        .map((r) => r.courseId),
-    );
-    return allCourseIds.filter((id) => myCourseIds.has(id));
-  });
-
   protected readonly students = computed(() => {
     const studentUids = new Set(
-      this.courseStudentsService
-        .forCourseIds(this.accessibleCourseIds())
-        .map((cs) => cs.studentUid),
+      this.courseStudentsService.forCourse(this.courseId()).map((cs) => cs.studentUid),
     );
     return this.usersService
       .users()
@@ -166,7 +122,9 @@ export class AssignmentReview {
       );
   });
 
-  private readonly grades = computed(() => this.gradesService.forSubject(this.subjectId()));
+  private readonly grades = computed(() =>
+    this.gradesService.forCourseSubject(this.courseId(), this.subjectId()),
+  );
 
   /** Todas las tareas navegables de la materia, agrupadas por categoría y en orden — para ‹ anterior / siguiente › y el selector. */
   protected readonly taskOptions = computed<TaskOption[]>(() => {
@@ -249,7 +207,12 @@ export class AssignmentReview {
   }
 
   protected scoreFor(studentUid: string): number | null {
-    return this.gradesService.scoreFor(this.subjectId(), studentUid, this.assignmentId());
+    return this.gradesService.scoreFor(
+      this.courseId(),
+      this.subjectId(),
+      studentUid,
+      this.assignmentId(),
+    );
   }
 
   protected async onSetScore(studentUid: string, rawValue: string): Promise<void> {
@@ -265,6 +228,7 @@ export class AssignmentReview {
     }
     try {
       await this.gradesService.setScore(
+        this.courseId(),
         this.subjectId(),
         studentUid,
         assignment.id,
@@ -307,10 +271,17 @@ export class AssignmentReview {
 
   protected goToTask(assignmentId: string): void {
     this.taskPickerOpen.set(false);
-    this.router.navigate(['/subjects', this.subjectId(), 'assignments', assignmentId, 'review']);
+    this.router.navigate([
+      '/subjects',
+      this.subjectId(),
+      'assignments',
+      assignmentId,
+      'review',
+      this.courseId(),
+    ]);
   }
 
   protected goToGradebook(): void {
-    this.router.navigate(['/subjects', this.subjectId(), 'gradebook']);
+    this.router.navigate(['/subjects', this.subjectId(), 'gradebook', this.courseId()]);
   }
 }

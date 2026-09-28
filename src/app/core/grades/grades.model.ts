@@ -19,6 +19,15 @@ import type { Timestamp } from 'firebase/firestore';
  */
 export interface GradeCategory {
   id: string;
+  /**
+   * Oferta de curso a la que pertenece esta rúbrica — la misma materia
+   * dictada en dos cursos distintos (o por dos profesores distintos) tiene
+   * cada una la SUYA, nunca comparten categorías. `subjectId` se mantiene
+   * además para poder preguntar "¿existe alguna rúbrica de esta materia en
+   * cualquier curso?" (ver GradeCategoriesService.forSubject, usado solo
+   * para sugerir una rúbrica anterior como punto de partida).
+   */
+  courseId: string;
   subjectId: string;
   name: string;
   /** 0-100. */
@@ -30,14 +39,18 @@ export interface GradeCategory {
 }
 
 /**
- * Documento en Firestore: grades/{subjectId}_{studentUid}. El id es
- * determinístico (no random) — permite que el propio estudiante resuelva
+ * Documento en Firestore: grades/{courseId}_{subjectId}_{studentUid}. El id
+ * es determinístico (no random) — permite que el propio estudiante resuelva
  * su nota con un `getDoc` directo (sin necesitar permiso de `list`), y que
  * las reglas verifiquen la asignación del profesor con un `exists()` por
- * path conocido.
+ * path conocido. `studentUid` va último a propósito: la regla `allow get`
+ * matchea el final del id (`gradeId.matches('.*_' + uid)`), no cuenta
+ * segmentos, así que agregar `courseId` adelante no la rompe.
  */
 export interface Grade {
   id: string;
+  /** Oferta de curso — la misma materia en otro curso es un Grade distinto. */
+  courseId: string;
   subjectId: string;
   studentUid: string;
   /**

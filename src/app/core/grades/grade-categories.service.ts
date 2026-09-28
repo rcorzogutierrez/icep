@@ -10,12 +10,13 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
   type DocumentData,
   type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
+import { CourseSubjectTeachersService } from '../courses/course-subject-teachers.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
-import { SubjectAssignmentsService } from '../subjects/subject-assignments.service';
 import { UserProfileService } from '../users/user-profile.service';
 import type { Assignment } from './assignments.model';
 import { AssignmentsService } from './assignments.service';
@@ -33,11 +34,16 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * La rúbrica de cada materia (ver grades.model.ts). Solo el admin o el
- * profesor asignado a esa materia crea/edita/borra categorías (ver
- * firestore.rules); el listado en vivo se sincroniza completo para staff
- * (volumen trivial para un instituto chico) y se filtra por materia en el
- * cliente con `forSubject`.
+ * La rúbrica de cada OFERTA DE CURSO (materia dictada en un curso puntual,
+ * ver grades.model.ts::GradeCategory.courseId) — dos cursos que dicten la
+ * misma materia, o el mismo profesor repitiéndola en un curso nuevo, tienen
+ * cada uno la suya, nunca la comparten. Solo el admin o el profesor
+ * asignado a esa oferta (`courseSubjectTeachers`, ver firestore.rules)
+ * crea/edita/borra categorías; el listado en vivo se sincroniza completo
+ * para staff (volumen trivial para un instituto chico) y se filtra en el
+ * cliente con `forCourseSubject` (uso normal) o `forSubject` (cruza
+ * cursos — solo para sugerir una rúbrica anterior como punto de partida,
+ * ver Gradebook).
  */
 @Injectable({ providedIn: 'root' })
 export class GradeCategoriesService {
@@ -45,7 +51,7 @@ export class GradeCategoriesService {
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
   private readonly assignmentsService = inject(AssignmentsService);
-  private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
+  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
 
   private readonly _categories = signal<GradeCategory[]>([]);
   private readonly _loading = signal(true);
@@ -105,27 +111,27 @@ export class GradeCategoriesService {
       if (
         this._loading() ||
         this.assignmentsService.loading() ||
-        this.subjectAssignmentsService.loading()
+        this.courseSubjectTeachersService.loading()
       ) {
         return;
       }
 
       const isAdmin = this.userProfileService.isAdmin();
       const uid = this.authService.user()?.uid;
-      const mySubjectIds = isAdmin
+      const myCourseSubjectIds = isAdmin
         ? null
         : new Set(
-            this.subjectAssignmentsService
-              .assignments()
-              .filter((a) => a.teacherId === uid)
-              .map((a) => a.subjectId),
+            this.courseSubjectTeachersService
+              .rows()
+              .filter((r) => r.teacherId === uid)
+              .map((r) => `${r.courseId}_${r.subjectId}`),
           );
 
       for (const category of this._categories()) {
         if (category.hasMultipleTasks !== false) {
           continue;
         }
-        if (!isAdmin && !mySubjectIds!.has(category.subjectId)) {
+        if (!isAdmin && !myCourseSubjectIds!.has(`${category.courseId}_${category.subjectId}`)) {
           continue;
         }
         const [soleAssignment] = this.assignmentsService.forCategory(category.id);
@@ -140,7 +146,19 @@ export class GradeCategoriesService {
     });
   }
 
-  /** Categorías de una materia, ordenadas para mostrar. */
+  /** Categorías de una oferta de curso (materia+curso puntual), ordenadas para mostrar — el uso normal. */
+  forCourseSubject(courseId: string, subjectId: string): GradeCategory[] {
+    return this._categories()
+      .filter((category) => category.courseId === courseId && category.subjectId === subjectId)
+      .sort((a, b) => a.order - b.order);
+  }
+
+  /**
+   * Categorías de una materia CRUZANDO todos los cursos que la dicten —
+   * a propósito no filtra por curso. Solo para encontrar rúbricas
+   * anteriores de la misma materia y sugerirlas como punto de partida (ver
+   * Gradebook); el uso normal para calificar es `forCourseSubject`.
+   */
   forSubject(subjectId: string): GradeCategory[] {
     return this._categories()
       .filter((category) => category.subjectId === subjectId)
@@ -164,29 +182,56 @@ export class GradeCategoriesService {
     return results;
   }
 
+  /**
+   * `batch`: si se pasa, encola la categoría (y, si aplica, su tarea
+   * invisible) en vez de commitear cada una — usado por la sugerencia de
+   * rúbrica anterior (Gradebook) para copiar varias categorías+tareas en
+   * una sola escritura atómica. `order`: si se pasa, se usa tal cual en
+   * vez de calcularlo de `forCourseSubject(...).length` — necesario al
+   * copiar varias categorías en el mismo batch, donde ese cálculo daría
+   * siempre 0 (ninguna de las anteriores del mismo batch todavía "existe"
+   * en el signal local hasta que el batch se commitea).
+   */
   async create(
+    courseId: string,
     subjectId: string,
     name: string,
     weight: number,
     hasMultipleTasks: boolean,
+    batch?: WriteBatch,
+    order?: number,
   ): Promise<string> {
     const trimmedName = name.trim();
     const ref = doc(collection(this.firestore, 'gradeCategories'));
-    await setDoc(ref, {
+    const data = {
+      courseId,
       subjectId,
       name: trimmedName,
       weight,
       hasMultipleTasks,
-      order: this.forSubject(subjectId).length,
+      order: order ?? this.forCourseSubject(courseId, subjectId).length,
       createdAt: serverTimestamp(),
-    });
+    };
+    if (batch) {
+      batch.set(ref, data);
+    } else {
+      await setDoc(ref, data);
+    }
     if (!hasMultipleTasks) {
       // El puntaje de una categoría "de una sola nota" se carga sobre una
       // escala igual a su peso (no un 0-100 fijo): así "9" en una categoría
       // de peso 10 significa 9/10 (90%, notable), no 9/100 (9%, aplazo) —
       // evita que el profesor cargue pensando en una escala y el sistema
       // la interprete con otra.
-      await this.assignmentsService.create(subjectId, ref.id, trimmedName, weight, null);
+      await this.assignmentsService.create(
+        courseId,
+        subjectId,
+        ref.id,
+        trimmedName,
+        weight,
+        null,
+        batch,
+      );
     }
     return ref.id;
   }
@@ -229,5 +274,51 @@ export class GradeCategoriesService {
     }
     await Promise.all(assignments.map((a) => this.assignmentsService.remove(a.id)));
     await deleteDoc(ref);
+  }
+
+  /**
+   * Copia toda la rúbrica (categorías + tareas, sin fechas de vencimiento)
+   * de otra oferta de curso de la MISMA materia a `toCourseId` — el punto
+   * de partida que ofrece Gradebook cuando un profesor arranca una oferta
+   * nueva y ya existe una rúbrica anterior de esa materia (de él mismo en
+   * otro curso, o de otro profesor). Es una COPIA real, no una plantilla
+   * vinculada: queda 100% editable después, sin afectar la original. Todo
+   * en un solo `writeBatch` (varias escrituras por una sola acción del
+   * usuario, ver la regla de Performance en CLAUDE.md) — no hace nada si
+   * la oferta de origen no tiene categorías (ya se borró, o nunca la tuvo).
+   */
+  async copyFrom(fromCourseId: string, toCourseId: string, subjectId: string): Promise<void> {
+    const sourceCategories = this.forCourseSubject(fromCourseId, subjectId);
+    if (sourceCategories.length === 0) {
+      return;
+    }
+    const batch = writeBatch(this.firestore);
+    for (const [index, category] of sourceCategories.entries()) {
+      const newCategoryId = await this.create(
+        toCourseId,
+        subjectId,
+        category.name,
+        category.weight,
+        category.hasMultipleTasks,
+        batch,
+        index,
+      );
+      if (category.hasMultipleTasks !== false) {
+        const sourceAssignments = this.assignmentsService.forCategory(category.id);
+        for (const [taskIndex, assignment] of sourceAssignments.entries()) {
+          await this.assignmentsService.create(
+            toCourseId,
+            subjectId,
+            newCategoryId,
+            assignment.name,
+            assignment.pointsPossible,
+            null,
+            batch,
+            taskIndex,
+          );
+        }
+      }
+    }
+    await batch.commit();
   }
 }

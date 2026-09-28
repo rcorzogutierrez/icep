@@ -16,6 +16,8 @@ import type { Timestamp } from 'firebase/firestore';
  */
 export interface GradeComment {
   id: string;
+  /** Oferta de curso a la que se refiere el comentario — ver Grade.courseId. */
+  courseId: string;
   subjectId: string;
   studentUid: string;
   text: string;

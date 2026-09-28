@@ -95,145 +95,167 @@
             </div>
           }
         </div>
-      } @else if (mySubjects().length > 0) {
+      } @else if (mySubjectOfferings().length > 0) {
         <div class="grid gap-3 sm:grid-cols-2">
-          @for (subject of mySubjects(); track subject.id) {
-            <div
-              class="rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <p class="font-medium text-text">
-                <span class="font-mono text-text-muted">{{ subject.code }}</span>
-                · {{ subject.name }}
-              </p>
-              <p class="text-sm text-text-muted">
-                {{ i18n.t('dashboard', 'taughtBy') }}: {{ teacherNamesFor(subject.id) }}
-              </p>
-              <p class="flex items-center gap-1.5 text-sm font-medium text-text">
-                {{ i18n.t('dashboard', 'finalGrade') }}: {{ finalGradeLabelFor(subject.id) }}
-                <app-grade-status-badge
-                  [status]="creditStatusFor(subject.id)"
-                  [letter]="creditLetterFor(subject.id)"
-                />
-              </p>
+          @for (
+            offering of mySubjectOfferings();
+            track offeringKey(offering.courseId, offering.subjectId)
+          ) {
+            @if (mySubjectCatalog().get(offering.subjectId); as subject) {
+              <div
+                class="rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <p class="font-medium text-text">
+                  <span class="font-mono text-text-muted">{{ subject.code }}</span>
+                  · {{ subject.name }}
+                </p>
+                <p class="text-xs text-text-muted">{{ offering.courseName }}</p>
+                <p class="text-sm text-text-muted">
+                  {{ i18n.t('dashboard', 'taughtBy') }}:
+                  {{ teacherNamesFor(offering.courseId, offering.subjectId) }}
+                </p>
+                <p class="flex items-center gap-1.5 text-sm font-medium text-text">
+                  {{ i18n.t('dashboard', 'finalGrade') }}:
+                  {{ finalGradeLabelFor(offering.courseId, offering.subjectId) }}
+                  <app-grade-status-badge
+                    [status]="creditStatusFor(offering.courseId, offering.subjectId)"
+                    [letter]="creditLetterFor(offering.courseId, offering.subjectId)"
+                  />
+                </p>
 
-              @if (categoryRowsFor(subject.id).length > 0) {
-                <button
-                  type="button"
-                  class="mt-1.5 flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
-                  [attr.aria-expanded]="expandedSubjectId() === subject.id"
-                  (click)="toggleSubjectDetail(subject.id)"
-                >
-                  <svg
-                    lucideChevronDown
-                    [size]="12"
-                    class="transition-transform"
-                    [class.-rotate-90]="expandedSubjectId() !== subject.id"
-                    aria-hidden="true"
-                  ></svg>
-                  {{ i18n.t('dashboard', 'viewBreakdown') }}
-                </button>
+                @if (categoryRowsFor(offering.courseId, offering.subjectId).length > 0) {
+                  <button
+                    type="button"
+                    class="mt-1.5 flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                    [attr.aria-expanded]="
+                      expandedOfferingKey() === offeringKey(offering.courseId, offering.subjectId)
+                    "
+                    (click)="toggleSubjectDetail(offering.courseId, offering.subjectId)"
+                  >
+                    <svg
+                      lucideChevronDown
+                      [size]="12"
+                      class="transition-transform"
+                      [class.-rotate-90]="
+                        expandedOfferingKey() !== offeringKey(offering.courseId, offering.subjectId)
+                      "
+                      aria-hidden="true"
+                    ></svg>
+                    {{ i18n.t('dashboard', 'viewBreakdown') }}
+                  </button>
 
-                @if (expandedSubjectId() === subject.id) {
-                  <div class="mt-2 flex flex-col gap-2.5 border-t border-border pt-2.5">
-                    @for (row of categoryRowsFor(subject.id); track row.category.id) {
-                      <div>
-                        <div class="flex items-center justify-between text-xs">
-                          <span class="text-text"
-                            >{{ row.category.name }}
-                            <span class="text-text-muted">· {{ row.category.weight }}%</span></span
-                          >
-                          <span
-                            class="font-medium"
-                            [class.text-status-active]="gradeBand(row.percent) === 'active'"
-                            [class.text-status-paused]="gradeBand(row.percent) === 'paused'"
-                            [class.text-status-expired]="gradeBand(row.percent) === 'expired'"
-                            [class.text-text-muted]="gradeBand(row.percent) === 'muted'"
-                          >
-                            @if (row.percent !== null) {
-                              {{ row.percent | number: '1.0-0' }}%
-                            } @else {
-                              {{ i18n.t('dashboard', 'noGradeYet') }}
-                            }
-                          </span>
+                  @if (
+                    expandedOfferingKey() === offeringKey(offering.courseId, offering.subjectId)
+                  ) {
+                    <div class="mt-2 flex flex-col gap-2.5 border-t border-border pt-2.5">
+                      @for (
+                        row of categoryRowsFor(offering.courseId, offering.subjectId);
+                        track row.category.id
+                      ) {
+                        <div>
+                          <div class="flex items-center justify-between text-xs">
+                            <span class="text-text"
+                              >{{ row.category.name }}
+                              <span class="text-text-muted"
+                                >· {{ row.category.weight }}%</span
+                              ></span
+                            >
+                            <span
+                              class="font-medium"
+                              [class.text-status-active]="gradeBand(row.percent) === 'active'"
+                              [class.text-status-paused]="gradeBand(row.percent) === 'paused'"
+                              [class.text-status-expired]="gradeBand(row.percent) === 'expired'"
+                              [class.text-text-muted]="gradeBand(row.percent) === 'muted'"
+                            >
+                              @if (row.percent !== null) {
+                                {{ row.percent | number: '1.0-0' }}%
+                              } @else {
+                                {{ i18n.t('dashboard', 'noGradeYet') }}
+                              }
+                            </span>
+                          </div>
+                          <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              class="h-full rounded-full"
+                              [class.bg-status-active]="gradeBand(row.percent) === 'active'"
+                              [class.bg-status-paused]="gradeBand(row.percent) === 'paused'"
+                              [class.bg-status-expired]="gradeBand(row.percent) === 'expired'"
+                              [style.width.%]="row.percent ?? 0"
+                            ></div>
+                          </div>
+                          @if (row.assignments.length > 0) {
+                            <ul class="mt-1 flex flex-col gap-0.5 text-xs text-text-muted">
+                              @for (a of row.assignments; track a.assignment.id) {
+                                <li class="flex items-center justify-between">
+                                  <span>{{ a.assignment.name }}</span>
+                                  <span>
+                                    @if (a.score !== null) {
+                                      {{ a.score }}/{{ a.assignment.pointsPossible }}
+                                    } @else {
+                                      {{ i18n.t('dashboard', 'noGradeYet') }}
+                                    }
+                                  </span>
+                                </li>
+                              }
+                            </ul>
+                          } @else if (row.singleScore; as singleScore) {
+                            <p class="mt-1 text-xs text-text-muted">
+                              @if (singleScore.earned !== null) {
+                                {{ singleScore.earned }}/{{ singleScore.possible }}
+                              } @else {
+                                {{ i18n.t('dashboard', 'noGradeYet') }}
+                              }
+                            </p>
+                          }
                         </div>
-                        <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                          <div
-                            class="h-full rounded-full"
-                            [class.bg-status-active]="gradeBand(row.percent) === 'active'"
-                            [class.bg-status-paused]="gradeBand(row.percent) === 'paused'"
-                            [class.bg-status-expired]="gradeBand(row.percent) === 'expired'"
-                            [style.width.%]="row.percent ?? 0"
-                          ></div>
+                      }
+                    </div>
+                  }
+                }
+
+                @if (commentsFor(offering.courseId, offering.subjectId).length > 0) {
+                  <div class="mt-2 flex flex-col gap-1.5 border-t border-border pt-2.5">
+                    <span class="flex items-center gap-1.5 text-xs font-semibold text-text-muted">
+                      <svg lucideMessageSquare [size]="13" aria-hidden="true"></svg>
+                      {{ i18n.t('dashboard', 'teacherComments') }}
+                    </span>
+                    @for (
+                      comment of commentsFor(offering.courseId, offering.subjectId);
+                      track comment.id
+                    ) {
+                      <div class="rounded-xl bg-brand-50 px-2.5 py-2 text-xs text-brand-700">
+                        <div class="flex items-center justify-between gap-2">
+                          @if (comment.categoryName) {
+                            <span class="font-semibold"
+                              >{{ i18n.t('dashboard', 'commentCategoryPrefix') }}
+                              {{ comment.categoryName }}</span
+                            >
+                          } @else {
+                            <span></span>
+                          }
+                          @if (comment.createdAt) {
+                            <span class="shrink-0 text-brand-600/80">{{
+                              comment.createdAt.toDate() | date: 'mediumDate'
+                            }}</span>
+                          }
                         </div>
-                        @if (row.assignments.length > 0) {
-                          <ul class="mt-1 flex flex-col gap-0.5 text-xs text-text-muted">
-                            @for (a of row.assignments; track a.assignment.id) {
-                              <li class="flex items-center justify-between">
-                                <span>{{ a.assignment.name }}</span>
-                                <span>
-                                  @if (a.score !== null) {
-                                    {{ a.score }}/{{ a.assignment.pointsPossible }}
-                                  } @else {
-                                    {{ i18n.t('dashboard', 'noGradeYet') }}
-                                  }
-                                </span>
-                              </li>
-                            }
-                          </ul>
-                        } @else if (row.singleScore; as singleScore) {
-                          <p class="mt-1 text-xs text-text-muted">
-                            @if (singleScore.earned !== null) {
-                              {{ singleScore.earned }}/{{ singleScore.possible }}
-                            } @else {
-                              {{ i18n.t('dashboard', 'noGradeYet') }}
-                            }
-                          </p>
-                        }
+                        <p class="mt-0.5">{{ comment.text }}</p>
                       </div>
                     }
                   </div>
                 }
-              }
 
-              @if (commentsFor(subject.id).length > 0) {
-                <div class="mt-2 flex flex-col gap-1.5 border-t border-border pt-2.5">
-                  <span class="flex items-center gap-1.5 text-xs font-semibold text-text-muted">
-                    <svg lucideMessageSquare [size]="13" aria-hidden="true"></svg>
-                    {{ i18n.t('dashboard', 'teacherComments') }}
-                  </span>
-                  @for (comment of commentsFor(subject.id); track comment.id) {
-                    <div class="rounded-xl bg-brand-50 px-2.5 py-2 text-xs text-brand-700">
-                      <div class="flex items-center justify-between gap-2">
-                        @if (comment.categoryName) {
-                          <span class="font-semibold"
-                            >{{ i18n.t('dashboard', 'commentCategoryPrefix') }}
-                            {{ comment.categoryName }}</span
-                          >
-                        } @else {
-                          <span></span>
-                        }
-                        @if (comment.createdAt) {
-                          <span class="shrink-0 text-brand-600/80">{{
-                            comment.createdAt.toDate() | date: 'mediumDate'
-                          }}</span>
-                        }
-                      </div>
-                      <p class="mt-0.5">{{ comment.text }}</p>
-                    </div>
-                  }
-                </div>
-              }
-
-              @if (resourcesFor(subject.id).length > 0) {
-                <div
-                  class="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2.5 sm:grid-cols-3"
-                >
-                  @for (resource of resourcesFor(subject.id); track resource.id) {
-                    <app-resource-card [resource]="resource" />
-                  }
-                </div>
-              }
-            </div>
+                @if (resourcesFor(subject.id).length > 0) {
+                  <div
+                    class="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2.5 sm:grid-cols-3"
+                  >
+                    @for (resource of resourcesFor(subject.id); track resource.id) {
+                      <app-resource-card [resource]="resource" />
+                    }
+                  </div>
+                }
+              </div>
+            }
           }
         </div>
       } @else {
@@ -270,15 +292,23 @@
                   <span class="font-mono text-text-muted">{{ subject.code }}</span>
                   · {{ subject.name }}
                 </p>
-                <app-button variant="secondary" size="sm" (pressed)="goToGradebook(subject.id)">
-                  {{ i18n.t('dashboard', 'grade') }}
-                  <svg lucideArrowRight [size]="14" aria-hidden="true"></svg>
-                </app-button>
+                @if (coursesForSubject(subject.id).length === 1) {
+                  <app-button
+                    variant="secondary"
+                    size="sm"
+                    (pressed)="goToGradebook(coursesForSubject(subject.id)[0].courseId, subject.id)"
+                  >
+                    {{ i18n.t('dashboard', 'grade') }}
+                    <svg lucideArrowRight [size]="14" aria-hidden="true"></svg>
+                  </app-button>
+                }
               </div>
               <div class="flex flex-wrap items-center gap-1.5">
                 @for (course of coursesForSubject(subject.id); track course.courseId) {
-                  <span
-                    class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 py-1 pr-2.5 pl-2 text-xs font-medium text-brand-700"
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 py-1 pr-2.5 pl-2 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100"
+                    (click)="goToGradebook(course.courseId, subject.id)"
                   >
                     <svg lucideLayers [size]="12" aria-hidden="true"></svg>
                     {{ course.courseName }}
@@ -286,7 +316,7 @@
                       <svg lucideUsers [size]="11" aria-hidden="true"></svg>
                       {{ course.studentCount }}
                     </span>
-                  </span>
+                  </button>
                 } @empty {
                   <span class="text-xs text-text-muted">{{
                     i18n.t('dashboard', 'noCoursesForSubject')

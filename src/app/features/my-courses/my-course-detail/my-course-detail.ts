@@ -209,9 +209,9 @@ export class MyCourseDetail {
         continue;
       }
 
-      const categories = this.gradeCategoriesService.forSubject(subjectId);
-      const assignments = this.assignmentsService.forSubject(subjectId);
-      const grades = this.gradesService.forSubject(subjectId);
+      const categories = this.gradeCategoriesService.forCourseSubject(this.courseId(), subjectId);
+      const assignments = this.assignmentsService.forCourseSubject(this.courseId(), subjectId);
+      const grades = this.gradesService.forCourseSubject(this.courseId(), subjectId);
 
       for (const cs of roster) {
         const user = this.usersService
@@ -288,7 +288,7 @@ export class MyCourseDetail {
     const subject = this.historySubject();
     const student = this.openStudent();
     return subject && student
-      ? this.gradeHistoryService.forStudent(subject.subjectId, student.uid)
+      ? this.gradeHistoryService.forStudent(this.courseId(), subject.subjectId, student.uid)
       : [];
   });
 
@@ -302,21 +302,25 @@ export class MyCourseDetail {
 
   /** Rúbrica de una materia ya resuelta para el estudiante del drawer abierto. */
   protected categoryRowsFor(subjectId: string, studentUid: string): CategoryRow[] {
-    const assignments = this.assignmentsService.forSubject(subjectId);
-    const grade = this.gradesService.forSubject(subjectId).find((g) => g.studentUid === studentUid);
+    const assignments = this.assignmentsService.forCourseSubject(this.courseId(), subjectId);
+    const grade = this.gradesService
+      .forCourseSubject(this.courseId(), subjectId)
+      .find((g) => g.studentUid === studentUid);
 
-    return this.gradeCategoriesService.forSubject(subjectId).map((category) => {
-      const categoryAssignments = assignments.filter((a) => a.categoryId === category.id);
-      const percent = computeCategoryPercent(categoryAssignments, grade?.scores);
-      const singleAssignment =
-        category.hasMultipleTasks === false ? (categoryAssignments[0] ?? null) : null;
-      return {
-        category,
-        percent,
-        singleAssignment,
-        assignments: singleAssignment ? [] : categoryAssignments,
-      };
-    });
+    return this.gradeCategoriesService
+      .forCourseSubject(this.courseId(), subjectId)
+      .map((category) => {
+        const categoryAssignments = assignments.filter((a) => a.categoryId === category.id);
+        const percent = computeCategoryPercent(categoryAssignments, grade?.scores);
+        const singleAssignment =
+          category.hasMultipleTasks === false ? (categoryAssignments[0] ?? null) : null;
+        return {
+          category,
+          percent,
+          singleAssignment,
+          assignments: singleAssignment ? [] : categoryAssignments,
+        };
+      });
   }
 
   protected inputValueFor(subjectId: string, studentUid: string, assignmentId: string): string {
@@ -324,7 +328,7 @@ export class MyCourseDetail {
     if (draft !== undefined) {
       return draft;
     }
-    const score = this.gradesService.scoreFor(subjectId, studentUid, assignmentId);
+    const score = this.gradesService.scoreFor(this.courseId(), subjectId, studentUid, assignmentId);
     return score === null ? '' : String(score);
   }
 
@@ -337,7 +341,7 @@ export class MyCourseDetail {
     if (draft === undefined) {
       return false;
     }
-    const saved = this.gradesService.scoreFor(subjectId, studentUid, assignmentId);
+    const saved = this.gradesService.scoreFor(this.courseId(), subjectId, studentUid, assignmentId);
     return draft.trim() !== (saved === null ? '' : String(saved));
   }
 
@@ -360,6 +364,7 @@ export class MyCourseDetail {
     this.savingAssignmentId.set(assignment.id);
     try {
       await this.gradesService.setScore(
+        this.courseId(),
         subjectId,
         studentUid,
         assignment.id,
@@ -380,13 +385,11 @@ export class MyCourseDetail {
   }
 
   protected goToGradebook(subjectId: string): void {
-    this.router.navigate(['/subjects', subjectId, 'gradebook'], {
-      queryParams: { courseId: this.courseId() },
-    });
+    this.router.navigate(['/subjects', subjectId, 'gradebook', this.courseId()]);
   }
 
   protected commentsFor(subjectId: string, studentUid: string): GradeComment[] {
-    return this.gradeCommentsService.forStudent(subjectId, studentUid);
+    return this.gradeCommentsService.forStudent(this.courseId(), subjectId, studentUid);
   }
 
   protected newCommentTextFor(subjectId: string): string {
@@ -408,7 +411,7 @@ export class MyCourseDetail {
   /** Todas las categorías de la materia (no solo "con varias tareas") — un comentario puede referirse a cualquiera. */
   protected commentCategoryOptionsFor(subjectId: string): SelectOption<string>[] {
     return this.gradeCategoriesService
-      .forSubject(subjectId)
+      .forCourseSubject(this.courseId(), subjectId)
       .map((category) => ({ value: category.id, label: category.name }));
   }
 
@@ -419,12 +422,20 @@ export class MyCourseDetail {
     }
     const categoryId = this.newCommentCategoryDrafts()[subjectId] ?? null;
     const categoryName = categoryId
-      ? (this.gradeCategoriesService.forSubject(subjectId).find((c) => c.id === categoryId)?.name ??
-        null)
+      ? (this.gradeCategoriesService
+          .forCourseSubject(this.courseId(), subjectId)
+          .find((c) => c.id === categoryId)?.name ?? null)
       : null;
     this.addingCommentSubjectId.set(subjectId);
     try {
-      await this.gradeCommentsService.add(subjectId, studentUid, text, categoryId, categoryName);
+      await this.gradeCommentsService.add(
+        this.courseId(),
+        subjectId,
+        studentUid,
+        text,
+        categoryId,
+        categoryName,
+      );
       this.newCommentDrafts.update((map) => {
         const rest = { ...map };
         delete rest[subjectId];

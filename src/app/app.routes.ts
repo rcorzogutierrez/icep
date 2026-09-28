@@ -4,8 +4,8 @@ import {
   approvedGuard,
   authGuard,
   courseAccessGuard,
+  courseSubjectAccessGuard,
   staffGuard,
-  subjectAccessGuard,
   unsavedCourseChangesGuard,
 } from './core/auth/auth.guards';
 
@@ -86,13 +86,13 @@ export const routes: Routes = [
           import('./features/admin/course-detail/course-detail').then((m) => m.CourseDetail),
       },
       {
-        path: 'subjects/:subjectId/gradebook',
-        canActivate: [staffGuard, subjectAccessGuard],
+        path: 'subjects/:subjectId/gradebook/:courseId',
+        canActivate: [staffGuard, courseSubjectAccessGuard],
         loadComponent: () => import('./features/gradebook/gradebook').then((m) => m.Gradebook),
       },
       {
-        path: 'subjects/:subjectId/assignments/:assignmentId/review',
-        canActivate: [staffGuard, subjectAccessGuard],
+        path: 'subjects/:subjectId/assignments/:assignmentId/review/:courseId',
+        canActivate: [staffGuard, courseSubjectAccessGuard],
         loadComponent: () =>
           import('./features/assignment-review/assignment-review').then((m) => m.AssignmentReview),
       },

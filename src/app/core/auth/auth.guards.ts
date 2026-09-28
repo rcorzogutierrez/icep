@@ -62,12 +62,19 @@ export const adminGuard: CanActivateFn = async () => {
 };
 
 /**
- * Admin, o el profesor realmente asignado a `:subjectId` (para
- * /subjects/:subjectId/gradebook) — mismo chequeo que hacen las reglas de
- * Firestore para escribir notas, así la navegación no deja entrar a un
- * profesor a calificar una materia que no le corresponde.
+ * Admin, o el profesor realmente asignado a ESTA oferta de curso —
+ * `:subjectId` dictada en `:courseId` puntual (para
+ * /subjects/:subjectId/gradebook/:courseId y
+ * /subjects/:subjectId/assignments/:assignmentId/review/:courseId) —
+ * mismo chequeo que hacen las reglas de Firestore para escribir notas
+ * (`courseSubjectTeachers`, no el viejo `subjectAssignments` global a la
+ * materia), así la navegación no deja entrar a un profesor a calificar una
+ * oferta de curso que no le corresponde, aunque dicte la misma materia en
+ * otro curso. El id de `courseSubjectTeachers` no incluye el teacherId
+ * (`{courseId}_{subjectId}`, a lo sumo un profesor por oferta), así que
+ * hace falta leer el doc y comparar, no alcanza con `exists()`.
  */
-export const subjectAccessGuard: CanActivateFn = async (route) => {
+export const courseSubjectAccessGuard: CanActivateFn = async (route) => {
   const userProfileService = inject(UserProfileService);
   const authService = inject(AuthService);
   const firestore = inject(FIREBASE_FIRESTORE);
@@ -82,14 +89,19 @@ export const subjectAccessGuard: CanActivateFn = async (route) => {
     return router.parseUrl('/dashboard');
   }
 
+  const courseId = route.paramMap.get('courseId');
   const subjectId = route.paramMap.get('subjectId');
   const uid = authService.user()?.uid;
-  if (!subjectId || !uid) {
+  if (!courseId || !subjectId || !uid) {
     return router.parseUrl('/dashboard');
   }
 
-  const assignment = await getDoc(doc(firestore, 'subjectAssignments', `${subjectId}_${uid}`));
-  return assignment.exists() || router.parseUrl('/dashboard');
+  const snapshot = await getDoc(
+    doc(firestore, 'courseSubjectTeachers', `${courseId}_${subjectId}`),
+  );
+  return (
+    (snapshot.exists() && snapshot.data()['teacherId'] === uid) || router.parseUrl('/dashboard')
+  );
 };
 
 /**

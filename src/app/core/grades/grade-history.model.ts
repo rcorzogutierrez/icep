@@ -9,6 +9,8 @@ import type { Timestamp } from 'firebase/firestore';
  */
 export interface GradeHistoryEntry {
   id: string;
+  /** Oferta de curso del Grade que cambió — ver Grade.courseId. */
+  courseId: string;
   subjectId: string;
   studentUid: string;
   assignmentId: string;

@@ -3,12 +3,15 @@ import {
   Timestamp,
   collection,
   doc,
+  documentId,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
   type DocumentData,
 } from 'firebase/firestore';
@@ -21,6 +24,17 @@ import { CourseSubjectTeachersService } from './course-subject-teachers.service'
 import { CourseSubjectsService } from './course-subjects.service';
 import { CourseTeachersService } from './course-teachers.service';
 import type { Course } from './courses.model';
+
+/** Firestore permite hasta 30 valores por cláusula "in". */
+const IN_QUERY_CHUNK_SIZE = 30;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
 
 /** Catálogo de cursos. Solo el admin crea/edita/borra (ver firestore.rules); cualquier autenticado puede leer. */
 @Injectable({ providedIn: 'root' })
@@ -73,6 +87,28 @@ export class CoursesService {
 
       onCleanup(() => unsubscribe());
     });
+  }
+
+  /**
+   * Fetch puntual (no reactivo) de cursos por id — para el dashboard del
+   * estudiante, que no sincroniza `courses` en vivo (`_courses` solo se
+   * llena para staff, ver el `effect()` de arriba) pero igual necesita el
+   * nombre del curso de cada oferta en la que está matriculado.
+   */
+  async fetchByIds(ids: string[]): Promise<Course[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const results: Course[] = [];
+    for (const idsChunk of chunk(ids, IN_QUERY_CHUNK_SIZE)) {
+      const coursesQuery = query(
+        collection(this.firestore, 'courses'),
+        where(documentId(), 'in', idsChunk),
+      );
+      const snapshot = await getDocs(coursesQuery);
+      results.push(...snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Course));
+    }
+    return results;
   }
 
   async create(name: string, startDate: Date, endDate: Date): Promise<string> {

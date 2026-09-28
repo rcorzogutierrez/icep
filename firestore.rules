@@ -33,6 +33,20 @@ service cloud.firestore {
       return inv.status == 'active' && inv.courseId == courseId && !isInvitationExpired(inv);
     }
 
+    // ¿El usuario autenticado dicta justo esta oferta de curso (materia
+    // DENTRO de este curso puntual)? Reemplaza el viejo chequeo por
+    // subjectAssignments (global a la materia, sin curso) como autorización
+    // real de gradeCategories/assignments/grades/gradeHistory/gradeComments
+    // — dos cursos que ofrezcan la misma materia, con profesores distintos,
+    // ya no comparten permiso de escritura. El id de courseSubjectTeachers
+    // no incluye el teacherId (a lo sumo un profesor por oferta), así que
+    // hace falta `get()` y comparar el campo, no alcanza con `exists()`.
+    function teachesCourseSubject(courseId, subjectId) {
+      let id = courseId + '_' + subjectId;
+      return exists(/databases/$(database)/documents/courseSubjectTeachers/$(id)) &&
+        get(/databases/$(database)/documents/courseSubjectTeachers/$(id)).data.teacherId == request.auth.uid;
+    }
+
     // users/{uid}: perfil de acceso. El registro es SOLO por invitación: el
     // alta se crea recién al canjear una invitación (ver invitations/{code}
     // más abajo), nunca libremente. Un usuario nunca puede auto-asignarse
@@ -231,30 +245,32 @@ service cloud.firestore {
       allow delete: if isAdmin() || isTeacher();
     }
 
-    // gradeCategories/{id}: la rúbrica de una materia (categorías con
-    // peso, ej. "Asistencia" 10%). El admin, o el profesor realmente
-    // asignado a esa materia (ver subjectAssignments), puede definirla;
-    // cualquier autenticado puede leerla (el estudiante necesita ver los
+    // gradeCategories/{id}: la rúbrica de UNA OFERTA DE CURSO (materia
+    // dictada en un curso puntual, no la materia en abstracto — dos cursos
+    // que ofrezcan la misma materia tienen cada uno la suya). El admin, o
+    // el profesor realmente asignado a ESA oferta (courseSubjectTeachers,
+    // ver teachesCourseSubject arriba), puede definirla; cualquier
+    // autenticado puede leerla (el estudiante necesita ver los
     // nombres/pesos junto a sus notas). Que la suma de pesos dé 100 no se
     // puede validar acá (no hay agregación entre docs sin Cloud
     // Functions) — se valida en el cliente.
     match /gradeCategories/{categoryId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
+        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
       allow update, delete: if request.auth != null
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(resource.data.subjectId + '_' + request.auth.uid)));
+        && (isAdmin() || teachesCourseSubject(resource.data.courseId, resource.data.subjectId));
     }
 
     // assignments/{id}: una tarea individual dentro de una categoría (ej.
     // "Tarea 1" dentro de "Tareas"). Mismo criterio de permisos que
-    // gradeCategories.
+    // gradeCategories — misma oferta de curso, no la materia sola.
     match /assignments/{assignmentId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
+        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
       allow update, delete: if request.auth != null
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(resource.data.subjectId + '_' + request.auth.uid)));
+        && (isAdmin() || teachesCourseSubject(resource.data.courseId, resource.data.subjectId));
     }
 
     // subjectResources/{id}: un link a un recurso externo (Drive, Dropbox,
@@ -269,54 +285,56 @@ service cloud.firestore {
         && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(resource.data.subjectId + '_' + request.auth.uid)));
     }
 
-    // grades/{subjectId_studentUid}: la nota de un estudiante en una
-    // materia, id determinístico (mismo motivo que subjectAssignments).
-    // Lectura: el propio estudiante o cualquier staff. Escritura: estricta
-    // — solo admin o el profesor asignado a ESA materia, y solo si el
-    // estudiante está realmente inscripto en ella.
+    // grades/{courseId_subjectId_studentUid}: la nota de un estudiante en
+    // UNA OFERTA DE CURSO, id determinístico (mismo motivo que antes, ver
+    // teachesCourseSubject arriba). Lectura: el propio estudiante o
+    // cualquier staff. Escritura: estricta — solo admin o el profesor
+    // asignado a ESA oferta puntual, ya no a la materia en general.
     match /grades/{gradeId} {
-      // El id ES subjectId_studentUid: alcanza con verificar que el uid
-      // coincida con el final del id (no se puede leer `resource.data`
-      // para saber de quién es la nota si el documento todavía no existe
-      // — un estudiante sin notas cargadas necesita poder consultar "¿ya
-      // tengo nota?" y recibir "no existe" en vez de permission-denied).
+      // El id TERMINA en studentUid (courseId_subjectId_studentUid):
+      // alcanza con verificar que el uid coincida con el final del id (no
+      // se puede leer `resource.data` para saber de quién es la nota si el
+      // documento todavía no existe — un estudiante sin notas cargadas
+      // necesita poder consultar "¿ya tengo nota?" y recibir "no existe"
+      // en vez de permission-denied).
       allow get: if request.auth != null
         && (isAdmin() || isTeacher() || gradeId.matches('.*_' + request.auth.uid));
       allow list: if request.auth != null && (isAdmin() || isTeacher());
 
       allow create, update: if request.auth != null
-        && gradeId == request.resource.data.subjectId + '_' + request.resource.data.studentUid
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
+        && gradeId == request.resource.data.courseId + '_' + request.resource.data.subjectId + '_' + request.resource.data.studentUid
+        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
 
       allow delete: if isAdmin();
     }
 
     // gradeHistory/{id}: auditoría inmutable de cada cambio de nota (ver
-    // GradesService.setScore) — quién, cuándo, valor anterior y nuevo.
-    // Lectura solo staff (misma razón que grades.list: es una herramienta
-    // de revisión, no algo que el estudiante consulta directo). Nunca se
-    // edita ni se borra, ni siquiera el admin — es lo que hace confiable
-    // la respuesta a "¿por qué cambió mi nota?".
+    // GradesService.setScore) — quién, cuándo, valor anterior y nuevo, de
+    // qué oferta de curso. Lectura solo staff (misma razón que
+    // grades.list: es una herramienta de revisión, no algo que el
+    // estudiante consulta directo). Nunca se edita ni se borra, ni
+    // siquiera el admin — es lo que hace confiable la respuesta a "¿por
+    // qué cambió mi nota?".
     match /gradeHistory/{entryId} {
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow create: if request.auth != null
         && request.resource.data.changedBy == request.auth.uid
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
+        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
       allow update, delete: if false;
     }
 
     // gradeComments/{id}: comentarios del profesor a un estudiante en una
-    // materia (ver grade-comments.model.ts) — varios en el tiempo, no un
-    // único valor reemplazable. A diferencia de gradeHistory, el propio
-    // estudiante SÍ puede leer los suyos (son para él); sigue siendo
-    // inmutable (nunca update/delete) para que "lo que el profesor
+    // oferta de curso (ver grade-comments.model.ts) — varios en el tiempo,
+    // no un único valor reemplazable. A diferencia de gradeHistory, el
+    // propio estudiante SÍ puede leer los suyos (son para él); sigue
+    // siendo inmutable (nunca update/delete) para que "lo que el profesor
     // escribió" no cambie después en silencio.
     match /gradeComments/{id} {
       allow read: if request.auth != null
         && (isAdmin() || isTeacher() || resource.data.studentUid == request.auth.uid);
       allow create: if request.auth != null
         && request.resource.data.createdBy == request.auth.uid
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
+        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
       allow update, delete: if false;
     }
 

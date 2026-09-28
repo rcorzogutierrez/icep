@@ -10,28 +10,29 @@ import {
   where,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
+import { CourseSubjectTeachersService } from '../courses/course-subject-teachers.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
-import { SubjectAssignmentsService } from '../subjects/subject-assignments.service';
 import { UserProfileService } from '../users/user-profile.service';
 import type { GradeComment } from './grade-comments.model';
 import { GradesService } from './grades.service';
 
 /**
- * Comentarios del profesor a un estudiante en una materia (ver
+ * Comentarios del profesor a un estudiante en una oferta de curso (ver
  * grade-comments.model.ts) — varios en el tiempo, con fecha y categoría
  * opcional, a diferencia del viejo `Grade.comment` (un único valor). Solo
  * `create` (nunca `update`/`delete`, ver firestore.rules); el listado en
  * vivo se sincroniza completo para staff (volumen trivial) y se filtra por
- * materia+estudiante en el cliente con `forStudent`. El estudiante resuelve
- * los suyos con `fetchOwn` (query puntual filtrada solo por su propio uid,
- * sin necesitar un índice compuesto).
+ * curso+materia+estudiante en el cliente con `forStudent`. El estudiante
+ * resuelve los suyos con `fetchOwn` (query puntual filtrada solo por su
+ * propio uid, sin necesitar un índice compuesto — trae todas sus ofertas de
+ * curso de una, el llamador agrupa por `courseId`/`subjectId`).
  */
 @Injectable({ providedIn: 'root' })
 export class GradeCommentsService {
   private readonly firestore = inject(FIREBASE_FIRESTORE);
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
-  private readonly subjectAssignmentsService = inject(SubjectAssignmentsService);
+  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
   private readonly gradesService = inject(GradesService);
 
   private readonly _comments = signal<GradeComment[]>([]);
@@ -91,34 +92,35 @@ export class GradeCommentsService {
       if (
         this._loading() ||
         this.gradesService.loading() ||
-        this.subjectAssignmentsService.loading()
+        this.courseSubjectTeachersService.loading()
       ) {
         return;
       }
 
       const isAdmin = this.userProfileService.isAdmin();
       const uid = this.authService.user()?.uid;
-      const mySubjectIds = isAdmin
+      const myCourseSubjectIds = isAdmin
         ? null
         : new Set(
-            this.subjectAssignmentsService
-              .assignments()
-              .filter((a) => a.teacherId === uid)
-              .map((a) => a.subjectId),
+            this.courseSubjectTeachersService
+              .rows()
+              .filter((r) => r.teacherId === uid)
+              .map((r) => `${r.courseId}_${r.subjectId}`),
           );
 
       for (const grade of this.gradesService.grades()) {
         if (!grade.comment) {
           continue;
         }
-        if (!isAdmin && !mySubjectIds!.has(grade.subjectId)) {
+        if (!isAdmin && !myCourseSubjectIds!.has(`${grade.courseId}_${grade.subjectId}`)) {
           continue;
         }
-        if (this.forStudent(grade.subjectId, grade.studentUid).length > 0) {
+        if (this.forStudent(grade.courseId, grade.subjectId, grade.studentUid).length > 0) {
           continue;
         }
         const ref = doc(collection(this.firestore, 'gradeComments'));
         setDoc(ref, {
+          courseId: grade.courseId,
           subjectId: grade.subjectId,
           studentUid: grade.studentUid,
           text: grade.comment,
@@ -134,10 +136,12 @@ export class GradeCommentsService {
     });
   }
 
-  /** Comentarios de un estudiante en una materia, los más nuevos primero. */
-  forStudent(subjectId: string, studentUid: string): GradeComment[] {
+  /** Comentarios de un estudiante en una oferta de curso, los más nuevos primero. */
+  forStudent(courseId: string, subjectId: string, studentUid: string): GradeComment[] {
     return this._comments()
-      .filter((c) => c.subjectId === subjectId && c.studentUid === studentUid)
+      .filter(
+        (c) => c.courseId === courseId && c.subjectId === subjectId && c.studentUid === studentUid,
+      )
       .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
   }
 
@@ -152,6 +156,7 @@ export class GradeCommentsService {
   }
 
   async add(
+    courseId: string,
     subjectId: string,
     studentUid: string,
     text: string,
@@ -164,6 +169,7 @@ export class GradeCommentsService {
     }
     const ref = doc(collection(this.firestore, 'gradeComments'));
     await setDoc(ref, {
+      courseId,
       subjectId,
       studentUid,
       text: text.trim(),

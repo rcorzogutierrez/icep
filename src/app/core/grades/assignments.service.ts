@@ -30,11 +30,13 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * Las tareas individuales de cada categoría (ver assignments.model.ts).
- * Solo el admin o el profesor asignado a esa materia crea/edita/borra (ver
- * firestore.rules); el listado en vivo se sincroniza completo para staff
- * (volumen trivial para un instituto chico) y se filtra por materia/
- * categoría en el cliente.
+ * Las tareas individuales de cada categoría (ver assignments.model.ts) —
+ * igual que `GradeCategory`, atadas a una oferta de curso puntual
+ * (`courseId`+`subjectId`), no a la materia en abstracto. Solo el admin o
+ * el profesor asignado a esa oferta (`courseSubjectTeachers`, ver
+ * firestore.rules) crea/edita/borra; el listado en vivo se sincroniza
+ * completo para staff (volumen trivial para un instituto chico) y se
+ * filtra en el cliente.
  */
 @Injectable({ providedIn: 'root' })
 export class AssignmentsService {
@@ -83,7 +85,20 @@ export class AssignmentsService {
     });
   }
 
-  /** Tareas de una materia, ordenadas para mostrar. */
+  /** Tareas de una oferta de curso (materia+curso puntual), ordenadas — el uso normal. */
+  forCourseSubject(courseId: string, subjectId: string): Assignment[] {
+    return this._assignments()
+      .filter(
+        (assignment) => assignment.courseId === courseId && assignment.subjectId === subjectId,
+      )
+      .sort((a, b) => a.order - b.order);
+  }
+
+  /**
+   * Tareas de una materia CRUZANDO todos los cursos que la dicten — a
+   * propósito no filtra por curso. Solo para sugerir una rúbrica anterior
+   * como punto de partida (ver Gradebook); el uso normal es `forCourseSubject`.
+   */
   forSubject(subjectId: string): Assignment[] {
     return this._assignments()
       .filter((assignment) => assignment.subjectId === subjectId)
@@ -114,23 +129,38 @@ export class AssignmentsService {
     return results;
   }
 
+  /**
+   * `batch`/`order`: mismo motivo que en `GradeCategoriesService.create` —
+   * copiar varias tareas de una categoría en el mismo batch (sugerencia de
+   * rúbrica anterior) necesita un `order` explícito, ya que ninguna de las
+   * ya encoladas "existe" todavía en el signal local para calcularlo solo.
+   */
   async create(
+    courseId: string,
     subjectId: string,
     categoryId: string,
     name: string,
     pointsPossible: number,
     dueDate: Date | null,
+    batch?: WriteBatch,
+    order?: number,
   ): Promise<string> {
     const ref = doc(collection(this.firestore, 'assignments'));
-    await setDoc(ref, {
+    const data = {
+      courseId,
       subjectId,
       categoryId,
       name: name.trim(),
       pointsPossible,
       dueDate,
-      order: this.forCategory(categoryId).length,
+      order: order ?? this.forCategory(categoryId).length,
       createdAt: serverTimestamp(),
-    });
+    };
+    if (batch) {
+      batch.set(ref, data);
+    } else {
+      await setDoc(ref, data);
+    }
     return ref.id;
   }
 

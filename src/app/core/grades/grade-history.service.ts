@@ -59,10 +59,12 @@ export class GradeHistoryService {
     });
   }
 
-  /** Cambios de nota de un estudiante en una materia, los más nuevos primero. */
-  forStudent(subjectId: string, studentUid: string): GradeHistoryEntry[] {
+  /** Cambios de nota de un estudiante en una oferta de curso, los más nuevos primero. */
+  forStudent(courseId: string, subjectId: string, studentUid: string): GradeHistoryEntry[] {
     return this._entries()
-      .filter((e) => e.subjectId === subjectId && e.studentUid === studentUid)
+      .filter(
+        (e) => e.courseId === courseId && e.subjectId === subjectId && e.studentUid === studentUid,
+      )
       .sort((a, b) => (b.changedAt?.toMillis() ?? 0) - (a.changedAt?.toMillis() ?? 0));
   }
 

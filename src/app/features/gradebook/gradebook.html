@@ -139,6 +139,41 @@
         </table>
       </div>
 
+      @if (showRubricSuggestion()) {
+        <div class="flex flex-col gap-2 rounded-2xl border border-brand-200 bg-brand-50 p-4">
+          <p class="text-sm font-medium text-text">
+            {{ i18n.t('gradebook', 'rubricSuggestionTitle') }}
+          </p>
+          @if (selectedRubricCandidate(); as candidate) {
+            <p class="text-sm text-text-muted">
+              {{ i18n.t('gradebook', 'rubricSuggestionFrom') }}
+              <span class="font-medium text-text">{{ candidate.courseName }}</span>
+              @if (candidate.teacherName) {
+                · {{ i18n.t('gradebook', 'rubricSuggestionBy') }}
+                <span class="font-medium text-text">{{ candidate.teacherName }}</span>
+              }
+            </p>
+          }
+          <div class="flex flex-wrap items-center gap-3">
+            <app-button size="sm" (pressed)="openSuggestionPreview()">
+              {{ i18n.t('gradebook', 'rubricSuggestionUse') }}
+            </app-button>
+            <app-button variant="secondary" size="sm" (pressed)="dismissRubricSuggestion()">
+              {{ i18n.t('gradebook', 'rubricSuggestionStart') }}
+            </app-button>
+            @if (rubricCandidateOptions().length > 1) {
+              <div class="ml-auto w-56">
+                <app-select
+                  [options]="rubricCandidateOptions()"
+                  [value]="effectiveRubricCandidateId() ?? undefined"
+                  (valueChange)="selectRubricCandidate($event!)"
+                />
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       @if (showAddCategoryForm()) {
         <div class="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-4">
           <div class="grid gap-4 sm:grid-cols-2">
@@ -552,21 +587,7 @@
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="text-sm font-semibold text-text">{{ i18n.t('gradebook', 'gradesTitle') }}</h2>
       @if (course(); as c) {
-        <p class="text-xs text-text-muted">
-          {{ i18n.t('gradebook', 'filteredByCourse') }}
-          <span class="font-medium text-text">{{ c.name }}</span>
-          ·
-          <a
-            [routerLink]="['/subjects', subjectId(), 'gradebook']"
-            class="text-brand-700 hover:underline"
-          >
-            @if (userProfileService.isAdmin()) {
-              {{ i18n.t('gradebook', 'viewAllStudents') }}
-            } @else {
-              {{ i18n.t('gradebook', 'viewAllMyStudents') }}
-            }
-          </a>
-        </p>
+        <p class="text-xs text-text-muted">{{ c.name }}</p>
       }
     </div>
 
@@ -923,6 +944,66 @@
         </app-button>
         <app-button size="sm" (pressed)="confirmSaveRow()">
           {{ i18n.t('gradebook', 'confirmSaveAction') }}
+        </app-button>
+      </div>
+    </div>
+  </app-modal>
+}
+
+@if (showSuggestionPreview()) {
+  <app-modal
+    [open]="true"
+    [title]="i18n.t('gradebook', 'rubricSuggestionPreviewTitle')"
+    (closed)="closeSuggestionPreview()"
+  >
+    <div class="flex flex-col gap-3">
+      @if (selectedRubricCandidate(); as candidate) {
+        <p class="text-sm text-text-muted">
+          {{ i18n.t('gradebook', 'rubricSuggestionFrom') }}
+          <span class="font-medium text-text">{{ candidate.courseName }}</span>
+          @if (candidate.teacherName) {
+            · {{ i18n.t('gradebook', 'rubricSuggestionBy') }}
+            <span class="font-medium text-text">{{ candidate.teacherName }}</span>
+          }
+        </p>
+      }
+      <ul class="flex max-h-96 flex-col gap-2 overflow-y-auto">
+        @for (category of suggestionPreviewCategories(); track category.id) {
+          <li class="rounded-xl border border-border bg-slate-50 px-3 py-2 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <span class="font-medium text-text">{{ category.name }}</span>
+              <span class="shrink-0 text-text-muted">{{ category.weight }}%</span>
+            </div>
+            @if (category.hasMultipleTasks === false) {
+              <p class="mt-1 text-xs text-text-muted">
+                {{ i18n.t('gradebook', 'categoryModeSingleTitle') }}
+              </p>
+            } @else {
+              @let tasks = suggestionAssignmentsFor(category.id);
+              @if (tasks.length === 0) {
+                <p class="mt-1 text-xs text-text-muted">
+                  {{ i18n.t('gradebook', 'rubricSuggestionNoTasks') }}
+                </p>
+              } @else {
+                <ul class="mt-1 flex flex-col gap-0.5 text-xs text-text-muted">
+                  @for (task of tasks; track task.id) {
+                    <li class="flex items-center justify-between">
+                      <span>{{ task.name }}</span>
+                      <span>/{{ task.pointsPossible }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          </li>
+        }
+      </ul>
+      <div class="flex justify-end gap-2">
+        <app-button variant="secondary" size="sm" (pressed)="closeSuggestionPreview()">
+          {{ i18n.t('gradebook', 'cancel') }}
+        </app-button>
+        <app-button size="sm" [loading]="applyingSuggestion()" (pressed)="applyRubricSuggestion()">
+          {{ i18n.t('gradebook', 'rubricSuggestionConfirm') }}
         </app-button>
       </div>
     </div>

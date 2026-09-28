@@ -1,10 +1,9 @@
 import { DatePipe, DecimalPipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
 import { CourseSubjectTeachersService } from '../../core/courses/course-subject-teachers.service';
-import { CourseSubjectsService } from '../../core/courses/course-subjects.service';
 import { CoursesService } from '../../core/courses/courses.service';
 import type { Assignment } from '../../core/grades/assignments.model';
 import { AssignmentsService } from '../../core/grades/assignments.service';
@@ -61,7 +60,6 @@ import { ToastService } from '../../shared/toast/toast.service';
     Modal,
     ResourceCard,
     Select,
-    RouterLink,
     Page,
     PageHeader,
     IconArrowRight,
@@ -78,14 +76,14 @@ import { ToastService } from '../../shared/toast/toast.service';
 export class Gradebook {
   readonly subjectId = input.required<string>();
   /**
-   * Opcional, vía ?courseId=... (ver MyCourseDetail.goToGradebook): si
-   * viene, acota la grilla al roster de ESE curso en vez de mostrar toda
-   * la materia — evita que un profesor que entró desde "Mis cursos" se
-   * encuentre de golpe con estudiantes de otros cursos que también cursan
-   * la misma materia (las notas siguen siendo por materia, esto es solo
-   * un filtro de vista).
+   * Qué OFERTA de curso de esta materia estamos calificando — la rúbrica,
+   * las tareas y las notas son todas de `courseId`+`subjectId`, nunca de la
+   * materia sola (dos cursos que ofrezcan la misma materia tienen cada uno
+   * la suya, ver GradeCategory.courseId). `courseSubjectAccessGuard` ya
+   * validó que el profesor logueado dicta justo esta oferta antes de dejar
+   * entrar — acá no hace falta re-derivar "cursos accesibles".
    */
-  readonly courseId = input<string | undefined>(undefined);
+  readonly courseId = input.required<string>();
 
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly categoriesService = inject(GradeCategoriesService);
@@ -98,7 +96,6 @@ export class Gradebook {
   private readonly authService = inject(AuthService);
   protected readonly userProfileService = inject(UserProfileService);
   private readonly coursesService = inject(CoursesService);
-  private readonly courseSubjectsService = inject(CourseSubjectsService);
   private readonly courseStudentsService = inject(CourseStudentsService);
   private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
   protected readonly i18n = inject(I18nService);
@@ -111,7 +108,7 @@ export class Gradebook {
   );
 
   protected readonly categories = computed(() =>
-    this.categoriesService.forSubject(this.subjectId()),
+    this.categoriesService.forCourseSubject(this.courseId(), this.subjectId()),
   );
 
   protected readonly totalWeight = computed(() =>
@@ -119,7 +116,7 @@ export class Gradebook {
   );
 
   protected readonly assignments = computed(() =>
-    this.assignmentsService.forSubject(this.subjectId()),
+    this.assignmentsService.forCourseSubject(this.courseId(), this.subjectId()),
   );
 
   protected readonly resources = computed(() => this.resourcesService.forSubject(this.subjectId()));
@@ -133,19 +130,138 @@ export class Gradebook {
     this.multiTaskCategories().map((category) => ({ value: category.id, label: category.name })),
   );
 
-  /**
-   * Curso que acota la vista actual, si vinimos de uno Y es accesible (ver
-   * accessibleCourseIds) — si no, `students` ya cae al set completo
-   * accesible, así que el aviso de "mostrando el curso X" no debe quedar
-   * mostrando un curso que en realidad no está filtrando nada.
-   */
-  protected readonly course = computed(() => {
-    const id = this.courseId();
-    if (!id || !this.accessibleCourseIds().includes(id)) {
-      return undefined;
+  // --- Sugerencia de rúbrica anterior --------------------------------
+  // Cuando esta oferta de curso todavía no tiene rúbrica pero YA existe
+  // una para la misma materia en otro curso (de este profesor o de otro),
+  // se ofrece como punto de partida editable en vez de arrancar de cero
+  // cada vez — nunca se aplica sola, el profesor previsualiza y confirma.
+
+  /** Una rúbrica candidata por cada OTRO curso que ya dicte esta materia. */
+  private readonly rubricCandidates = computed(() => {
+    const otherCategories = this.categoriesService
+      .forSubject(this.subjectId())
+      .filter((c) => c.courseId !== this.courseId());
+    const earliestByCourseId = new Map<string, number>();
+    for (const category of otherCategories) {
+      const ts = category.createdAt?.toMillis() ?? 0;
+      const current = earliestByCourseId.get(category.courseId);
+      if (current === undefined || ts < current) {
+        earliestByCourseId.set(category.courseId, ts);
+      }
     }
-    return this.coursesService.courses().find((c) => c.id === id);
+    return [...earliestByCourseId.entries()].map(([courseId, createdAt]) => {
+      const teacherRow = this.courseSubjectTeachersService.forCourseSubject(
+        courseId,
+        this.subjectId(),
+      );
+      return {
+        courseId,
+        courseName: this.coursesService.courses().find((c) => c.id === courseId)?.name ?? courseId,
+        teacherId: teacherRow?.teacherId ?? null,
+        teacherName: teacherRow?.teacherName ?? null,
+        createdAt,
+      };
+    });
   });
+
+  /** La candidata que se sugiere por defecto: la última rúbrica propia si tiene una, si no la más reciente de cualquiera. */
+  private readonly defaultRubricCandidateId = computed(() => {
+    const candidates = this.rubricCandidates();
+    if (candidates.length === 0) {
+      return null;
+    }
+    const uid = this.authService.user()?.uid;
+    const own = candidates
+      .filter((c) => c.teacherId === uid)
+      .sort((a, b) => b.createdAt - a.createdAt);
+    const pool = own.length > 0 ? own : [...candidates].sort((a, b) => b.createdAt - a.createdAt);
+    return pool[0].courseId;
+  });
+
+  /** Candidata elegida a mano (link "ver otra"), o la sugerida por defecto si no se tocó nada. */
+  protected readonly selectedRubricCandidateId = signal<string | null>(null);
+
+  protected readonly effectiveRubricCandidateId = computed(
+    () => this.selectedRubricCandidateId() ?? this.defaultRubricCandidateId(),
+  );
+
+  protected readonly selectedRubricCandidate = computed(
+    () =>
+      this.rubricCandidates().find((c) => c.courseId === this.effectiveRubricCandidateId()) ?? null,
+  );
+
+  /** Para el select "ver otra rúbrica anterior" — solo tiene sentido mostrarlo cuando hay más de una candidata. */
+  protected readonly rubricCandidateOptions = computed<SelectOption<string>[]>(() =>
+    this.rubricCandidates().map((c) => ({
+      value: c.courseId,
+      label: c.teacherName ? `${c.courseName} · ${c.teacherName}` : c.courseName,
+    })),
+  );
+
+  protected readonly rubricSuggestionDismissed = signal(false);
+
+  /** Solo mientras esta oferta arranca vacía y hay algo para sugerir — desaparece sola en cuanto se crea la primera categoría. */
+  protected readonly showRubricSuggestion = computed(
+    () =>
+      !this.rubricSuggestionDismissed() &&
+      !this.categoriesService.loading() &&
+      this.categories().length === 0 &&
+      this.rubricCandidates().length > 0,
+  );
+
+  protected readonly showSuggestionPreview = signal(false);
+
+  protected readonly suggestionPreviewCategories = computed(() => {
+    const candidateId = this.effectiveRubricCandidateId();
+    return candidateId
+      ? this.categoriesService.forCourseSubject(candidateId, this.subjectId())
+      : [];
+  });
+
+  protected suggestionAssignmentsFor(categoryId: string): Assignment[] {
+    return this.assignmentsService.forCategory(categoryId);
+  }
+
+  protected selectRubricCandidate(courseId: string): void {
+    this.selectedRubricCandidateId.set(courseId);
+  }
+
+  protected dismissRubricSuggestion(): void {
+    this.rubricSuggestionDismissed.set(true);
+  }
+
+  protected openSuggestionPreview(): void {
+    this.showSuggestionPreview.set(true);
+  }
+
+  protected closeSuggestionPreview(): void {
+    this.showSuggestionPreview.set(false);
+  }
+
+  protected readonly applyingSuggestion = signal(false);
+
+  protected async applyRubricSuggestion(): Promise<void> {
+    const candidateId = this.effectiveRubricCandidateId();
+    if (!candidateId) {
+      return;
+    }
+    this.applyingSuggestion.set(true);
+    try {
+      await this.categoriesService.copyFrom(candidateId, this.courseId(), this.subjectId());
+      this.showSuggestionPreview.set(false);
+      this.toast.success(this.i18n.t('gradebook', 'rubricSuggestionApplied'));
+    } catch (error) {
+      console.error('[Gradebook]', error);
+      this.toast.error(this.i18n.t('gradebook', 'errorGeneric'));
+    } finally {
+      this.applyingSuggestion.set(false);
+    }
+  }
+  // --- fin sugerencia de rúbrica anterior -----------------------------
+
+  protected readonly course = computed(() =>
+    this.coursesService.courses().find((c) => c.id === this.courseId()),
+  );
 
   /** null si no hay curso en foco o el curso no tiene fecha fin cargada (cursos viejos, ver Course.endDate). */
   protected readonly daysUntilCourseEnd = computed(() => {
@@ -165,44 +281,10 @@ export class Gradebook {
     return this.students().filter((s) => this.creditStatusFor(s.uid) === 'unfinished').length;
   });
 
-  /**
-   * Cursos de esta materia que puede ver el usuario logueado: el admin ve
-   * todos (misma materia puede estar en varios cursos); un profesor SOLO
-   * los cursos donde él mismo la dicta — dos profesores pueden dictar la
-   * misma materia en cursos distintos (courseSubjectTeachers permite un
-   * profesor por curso+materia, no uno global), y sin este filtro uno
-   * terminaría viendo — y pudiendo calificar — a los estudiantes del otro.
-   */
-  private readonly accessibleCourseIds = computed(() => {
-    const allCourseIds = this.courseSubjectsService
-      .forSubject(this.subjectId())
-      .map((cs) => cs.courseId);
-    if (this.userProfileService.isAdmin()) {
-      return allCourseIds;
-    }
-    const uid = this.authService.user()?.uid;
-    const myCourseIds = new Set(
-      this.courseSubjectTeachersService
-        .rows()
-        .filter((r) => r.subjectId === this.subjectId() && r.teacherId === uid)
-        .map((r) => r.courseId),
-    );
-    return allCourseIds.filter((id) => myCourseIds.has(id));
-  });
-
-  /**
-   * El roster sale de los cursos accesibles (ver arriba), no de una lista
-   * suelta por estudiante. Con `courseId` puesto se acota a ese curso
-   * puntual — solo si es uno de los accesibles; si no (URL editada a mano
-   * con un curso ajeno), se ignora y se cae al set completo accesible en
-   * vez de filtrar a un curso que no le corresponde.
-   */
+  /** El roster de ESTA oferta de curso — `courseSubjectAccessGuard` ya validó el acceso antes de entrar acá. */
   protected readonly students = computed(() => {
-    const courseId = this.courseId();
-    const accessible = this.accessibleCourseIds();
-    const courseIds = courseId && accessible.includes(courseId) ? [courseId] : accessible;
     const studentUids = new Set(
-      this.courseStudentsService.forCourseIds(courseIds).map((cs) => cs.studentUid),
+      this.courseStudentsService.forCourse(this.courseId()).map((cs) => cs.studentUid),
     );
     return this.usersService
       .users()
@@ -217,8 +299,6 @@ export class Gradebook {
     () =>
       this.usersService.loading() ||
       this.courseStudentsService.loading() ||
-      this.courseSubjectsService.loading() ||
-      this.courseSubjectTeachersService.loading() ||
       this.gradesService.loading(),
   );
 
@@ -277,14 +357,14 @@ export class Gradebook {
 
   protected finalGradeFor(studentUid: string): number | null {
     const grade = this.gradesService
-      .forSubject(this.subjectId())
+      .forCourseSubject(this.courseId(), this.subjectId())
       .find((g) => g.studentUid === studentUid);
     return computeFinalGrade(this.categories(), this.assignments(), grade?.scores);
   }
 
   private fullyGradedFor(studentUid: string): boolean {
     const grade = this.gradesService
-      .forSubject(this.subjectId())
+      .forCourseSubject(this.courseId(), this.subjectId())
       .find((g) => g.studentUid === studentUid);
     return isFullyGraded(this.categories(), this.assignments(), grade?.scores);
   }
@@ -306,7 +386,7 @@ export class Gradebook {
   }
 
   protected scoreFor(studentUid: string, assignmentId: string): number | null {
-    return this.gradesService.scoreFor(this.subjectId(), studentUid, assignmentId);
+    return this.gradesService.scoreFor(this.courseId(), this.subjectId(), studentUid, assignmentId);
   }
 
   /**
@@ -452,6 +532,7 @@ export class Gradebook {
     this.savingRowUid.set(studentUid);
     try {
       await this.gradesService.setScores(
+        this.courseId(),
         this.subjectId(),
         studentUid,
         updates.map(({ assignment, score }) => ({
@@ -477,7 +558,9 @@ export class Gradebook {
   }
 
   protected hasComment(studentUid: string): boolean {
-    return this.gradeCommentsService.forStudent(this.subjectId(), studentUid).length > 0;
+    return (
+      this.gradeCommentsService.forStudent(this.courseId(), this.subjectId(), studentUid).length > 0
+    );
   }
 
   protected readonly commentEditorFor = signal<{ uid: string; name: string } | null>(null);
@@ -487,7 +570,9 @@ export class Gradebook {
 
   protected readonly commentEntries = computed(() => {
     const target = this.commentEditorFor();
-    return target ? this.gradeCommentsService.forStudent(this.subjectId(), target.uid) : [];
+    return target
+      ? this.gradeCommentsService.forStudent(this.courseId(), this.subjectId(), target.uid)
+      : [];
   });
 
   /** Todas las categorías (no solo "con varias tareas") — un comentario puede referirse a cualquiera. */
@@ -516,7 +601,9 @@ export class Gradebook {
 
   protected readonly historyEntries = computed(() => {
     const student = this.historyStudent();
-    return student ? this.gradeHistoryService.forStudent(this.subjectId(), student.uid) : [];
+    return student
+      ? this.gradeHistoryService.forStudent(this.courseId(), this.subjectId(), student.uid)
+      : [];
   });
 
   protected openHistory(student: {
@@ -551,6 +638,7 @@ export class Gradebook {
     this.addingComment.set(true);
     try {
       await this.gradeCommentsService.add(
+        this.courseId(),
         this.subjectId(),
         target.uid,
         text,
@@ -581,6 +669,7 @@ export class Gradebook {
     this.creatingCategory.set(true);
     try {
       await this.categoriesService.create(
+        this.courseId(),
         this.subjectId(),
         this.categoryName(),
         weight,
@@ -672,6 +761,7 @@ export class Gradebook {
     this.creatingAssignment.set(true);
     try {
       await this.assignmentsService.create(
+        this.courseId(),
         this.subjectId(),
         categoryId,
         this.assignmentName(),
@@ -816,6 +906,13 @@ export class Gradebook {
   }
 
   protected goToReview(assignmentId: string): void {
-    this.router.navigate(['/subjects', this.subjectId(), 'assignments', assignmentId, 'review']);
+    this.router.navigate([
+      '/subjects',
+      this.subjectId(),
+      'assignments',
+      assignmentId,
+      'review',
+      this.courseId(),
+    ]);
   }
 }

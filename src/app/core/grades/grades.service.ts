@@ -16,12 +16,15 @@ import { GradeHistoryService } from './grade-history.service';
 import type { Grade } from './grades.model';
 
 /**
- * Las notas de cada estudiante por materia (ver grades.model.ts). Solo el
- * admin o el profesor asignado a esa materia puede cargar/editar (ver
- * firestore.rules); el listado en vivo se sincroniza completo para staff
- * (volumen trivial) y se filtra por materia en el cliente con `forSubject`.
- * Un estudiante resuelve la suya con `fetchOwn` (getDoc puntual por el id
- * determinístico, sin necesitar permiso de "list").
+ * Las notas de cada estudiante por OFERTA DE CURSO (materia dictada en un
+ * curso puntual — ver grades.model.ts::Grade.courseId; la misma materia en
+ * otro curso es un `Grade` totalmente distinto, aunque sea el mismo
+ * estudiante). Solo el admin o el profesor asignado a esa oferta
+ * (`courseSubjectTeachers`, ver firestore.rules) puede cargar/editar; el
+ * listado en vivo se sincroniza completo para staff (volumen trivial) y se
+ * filtra en el cliente con `forCourseSubject`. Un estudiante resuelve la
+ * suya con `fetchOwn` (getDoc puntual por el id determinístico, sin
+ * necesitar permiso de "list").
  */
 @Injectable({ providedIn: 'root' })
 export class GradesService {
@@ -69,7 +72,20 @@ export class GradesService {
     });
   }
 
-  /** Notas de todos los estudiantes de una materia, para la grilla del profesor/admin. */
+  /** Notas de todos los estudiantes de una oferta de curso, para la grilla del profesor/admin. */
+  forCourseSubject(courseId: string, subjectId: string): Grade[] {
+    return this._grades().filter(
+      (grade) => grade.courseId === courseId && grade.subjectId === subjectId,
+    );
+  }
+
+  /**
+   * Notas de una materia CRUZANDO todos los cursos que la dicten — a
+   * propósito no filtra por curso. Solo para cascadas de borrado de una
+   * materia entera (ver SubjectsService.remove, que tiene que arrastrar
+   * las notas de TODAS sus ofertas de curso, no solo una); el uso normal
+   * para calificar es `forCourseSubject`.
+   */
   forSubject(subjectId: string): Grade[] {
     return this._grades().filter((grade) => grade.subjectId === subjectId);
   }
@@ -80,14 +96,23 @@ export class GradesService {
    * `Grade` lo declare obligatorio — de ahí el `?.` extra, no solo en
    * `grade`.
    */
-  scoreFor(subjectId: string, studentUid: string, categoryId: string): number | null {
-    const grade = this.forSubject(subjectId).find((g) => g.studentUid === studentUid);
-    return grade?.scores?.[categoryId] ?? null;
+  scoreFor(
+    courseId: string,
+    subjectId: string,
+    studentUid: string,
+    assignmentId: string,
+  ): number | null {
+    const grade = this.forCourseSubject(courseId, subjectId).find(
+      (g) => g.studentUid === studentUid,
+    );
+    return grade?.scores?.[assignmentId] ?? null;
   }
 
   /** Fetch puntual (no reactivo) de la propia nota, para el dashboard del estudiante. */
-  async fetchOwn(subjectId: string, studentUid: string): Promise<Grade | null> {
-    const snapshot = await getDoc(doc(this.firestore, 'grades', `${subjectId}_${studentUid}`));
+  async fetchOwn(courseId: string, subjectId: string, studentUid: string): Promise<Grade | null> {
+    const snapshot = await getDoc(
+      doc(this.firestore, 'grades', `${courseId}_${subjectId}_${studentUid}`),
+    );
     return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as Grade) : null;
   }
 
@@ -98,17 +123,24 @@ export class GradesService {
    * mismo valor), no se agrega una entrada de historial.
    */
   async setScore(
+    courseId: string,
     subjectId: string,
     studentUid: string,
     assignmentId: string,
     assignmentName: string,
     score: number | null,
   ): Promise<void> {
-    const previousScore = this.scoreFor(subjectId, studentUid, assignmentId);
-    const ref = doc(this.firestore, 'grades', `${subjectId}_${studentUid}`);
+    const previousScore = this.scoreFor(courseId, subjectId, studentUid, assignmentId);
+    const ref = doc(this.firestore, 'grades', `${courseId}_${subjectId}_${studentUid}`);
     await setDoc(
       ref,
-      { subjectId, studentUid, scores: { [assignmentId]: score }, updatedAt: serverTimestamp() },
+      {
+        courseId,
+        subjectId,
+        studentUid,
+        scores: { [assignmentId]: score },
+        updatedAt: serverTimestamp(),
+      },
       { merge: true },
     );
 
@@ -120,6 +152,7 @@ export class GradesService {
       return;
     }
     await this.gradeHistoryService.record({
+      courseId,
       subjectId,
       studentUid,
       assignmentId,
@@ -144,6 +177,7 @@ export class GradesService {
    * se mantiene separado a propósito — cada entrada es un cambio puntual).
    */
   async setScores(
+    courseId: string,
     subjectId: string,
     studentUid: string,
     changes: { assignmentId: string; assignmentName: string; score: number | null }[],
@@ -161,16 +195,16 @@ export class GradesService {
     }[] = [];
     for (const { assignmentId, assignmentName, score } of changes) {
       scores[assignmentId] = score;
-      const previousScore = this.scoreFor(subjectId, studentUid, assignmentId);
+      const previousScore = this.scoreFor(courseId, subjectId, studentUid, assignmentId);
       if (previousScore !== score) {
         changed.push({ assignmentId, assignmentName, previousScore, newScore: score });
       }
     }
 
-    const ref = doc(this.firestore, 'grades', `${subjectId}_${studentUid}`);
+    const ref = doc(this.firestore, 'grades', `${courseId}_${subjectId}_${studentUid}`);
     await setDoc(
       ref,
-      { subjectId, studentUid, scores, updatedAt: serverTimestamp() },
+      { courseId, subjectId, studentUid, scores, updatedAt: serverTimestamp() },
       { merge: true },
     );
 
@@ -186,6 +220,7 @@ export class GradesService {
     await Promise.all(
       changed.map((c) =>
         this.gradeHistoryService.record({
+          courseId,
           subjectId,
           studentUid,
           assignmentId: c.assignmentId,

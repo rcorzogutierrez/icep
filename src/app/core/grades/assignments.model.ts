@@ -10,6 +10,8 @@ import type { Timestamp } from 'firebase/firestore';
  */
 export interface Assignment {
   id: string;
+  /** Oferta de curso de la categoría dueña — ver GradeCategory.courseId. */
+  courseId: string;
   subjectId: string;
   categoryId: string;
   name: string;

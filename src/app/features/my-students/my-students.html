@@ -157,14 +157,18 @@
             <button
               type="button"
               class="flex items-center gap-2"
-              [attr.aria-expanded]="expandedSubjectId() === s.subjectId"
-              (click)="toggleSubject(s.subjectId)"
+              [attr.aria-expanded]="
+                expandedSubjectId() === subjectDraftKey(s.courseId, s.subjectId)
+              "
+              (click)="toggleSubject(s.courseId, s.subjectId)"
             >
               <svg
                 lucideChevronDown
                 [size]="14"
                 class="text-text-muted transition-transform"
-                [class.-rotate-90]="expandedSubjectId() !== s.subjectId"
+                [class.-rotate-90]="
+                  expandedSubjectId() !== subjectDraftKey(s.courseId, s.subjectId)
+                "
                 aria-hidden="true"
               ></svg>
               <span class="font-mono text-xs text-text-muted">{{ s.subjectCode }}</span>
@@ -191,15 +195,18 @@
                 type="button"
                 class="text-text-muted hover:text-brand-600"
                 [attr.aria-label]="i18n.t('myStudents', 'historyButtonLabel')"
-                (click)="openHistory(s.subjectId, s.subjectName)"
+                (click)="openHistory(s.courseId, s.subjectId, s.subjectName)"
               >
                 <svg lucideHistory [size]="15" aria-hidden="true"></svg>
               </button>
             </div>
           </div>
 
-          @if (expandedSubjectId() === s.subjectId) {
-            @for (catRow of categoryRowsFor(s.subjectId, student.uid); track catRow.category.id) {
+          @if (expandedSubjectId() === subjectDraftKey(s.courseId, s.subjectId)) {
+            @for (
+              catRow of categoryRowsFor(s.courseId, s.subjectId, student.uid);
+              track catRow.category.id
+            ) {
               <div>
                 <div class="mb-1.5 flex items-center justify-between text-sm">
                   <span class="text-text"
@@ -209,7 +216,7 @@
                   @if (
                     catRow.singleAssignment &&
                     savingAssignmentId() !== catRow.singleAssignment.id &&
-                    !isDirty(s.subjectId, student.uid, catRow.singleAssignment.id) &&
+                    !isDirty(s.courseId, s.subjectId, student.uid, catRow.singleAssignment.id) &&
                     catRow.percent !== null
                   ) {
                     <span class="inline-flex items-center gap-1 text-xs text-status-active">
@@ -249,16 +256,16 @@
                         min="0"
                         [max]="assignment.pointsPossible"
                         class="h-7 w-14 rounded-xl border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                        [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
+                        [value]="inputValueFor(s.courseId, s.subjectId, student.uid, assignment.id)"
                         (input)="onScoreInput(assignment.id, $any($event.target).value)"
                       />
                       <span>/{{ assignment.pointsPossible }}</span>
                     </div>
-                    @if (isDirty(s.subjectId, student.uid, assignment.id)) {
+                    @if (isDirty(s.courseId, s.subjectId, student.uid, assignment.id)) {
                       <app-button
                         size="sm"
                         [loading]="savingAssignmentId() === assignment.id"
-                        (pressed)="onSaveScore(s.subjectId, student.uid, assignment)"
+                        (pressed)="onSaveScore(s.courseId, s.subjectId, student.uid, assignment)"
                       >
                         {{ i18n.t('myStudents', 'save') }}
                       </app-button>
@@ -278,17 +285,21 @@
                           min="0"
                           [max]="assignment.pointsPossible"
                           class="h-7 w-14 rounded-xl border border-border px-1 text-center text-xs text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                          [value]="inputValueFor(s.subjectId, student.uid, assignment.id)"
+                          [value]="
+                            inputValueFor(s.courseId, s.subjectId, student.uid, assignment.id)
+                          "
                           (input)="onScoreInput(assignment.id, $any($event.target).value)"
                         />
                         <span class="w-9 shrink-0 text-xs text-text-muted"
                           >/{{ assignment.pointsPossible }}</span
                         >
-                        @if (isDirty(s.subjectId, student.uid, assignment.id)) {
+                        @if (isDirty(s.courseId, s.subjectId, student.uid, assignment.id)) {
                           <app-button
                             size="sm"
                             [loading]="savingAssignmentId() === assignment.id"
-                            (pressed)="onSaveScore(s.subjectId, student.uid, assignment)"
+                            (pressed)="
+                              onSaveScore(s.courseId, s.subjectId, student.uid, assignment)
+                            "
                           >
                             {{ i18n.t('myStudents', 'save') }}
                           </app-button>
@@ -305,11 +316,14 @@
                 i18n.t('myStudents', 'commentsTitle')
               }}</span>
 
-              @if (commentsFor(s.subjectId, student.uid).length === 0) {
+              @if (commentsFor(s.courseId, s.subjectId, student.uid).length === 0) {
                 <p class="text-xs text-text-muted">{{ i18n.t('myStudents', 'noComments') }}</p>
               } @else {
                 <ul class="flex flex-col gap-1.5">
-                  @for (entry of commentsFor(s.subjectId, student.uid); track entry.id) {
+                  @for (
+                    entry of commentsFor(s.courseId, s.subjectId, student.uid);
+                    track entry.id
+                  ) {
                     <li class="rounded-xl border border-border bg-slate-50 px-2.5 py-2 text-xs">
                       <div class="flex items-center justify-between gap-2">
                         @if (entry.categoryName) {
@@ -338,25 +352,27 @@
               }
 
               <textarea
-                [id]="'comment-' + s.subjectId"
+                [id]="'comment-' + subjectDraftKey(s.courseId, s.subjectId)"
                 rows="2"
                 class="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                 [placeholder]="i18n.t('myStudents', 'commentPlaceholder')"
-                [value]="newCommentTextFor(s.subjectId)"
-                (input)="onNewCommentInput(s.subjectId, $any($event.target).value)"
+                [value]="newCommentTextFor(s.courseId, s.subjectId)"
+                (input)="onNewCommentInput(s.courseId, s.subjectId, $any($event.target).value)"
               ></textarea>
               <app-select
                 [placeholder]="i18n.t('myStudents', 'commentCategoryGeneral')"
-                [options]="commentCategoryOptionsFor(s.subjectId)"
-                [value]="newCommentCategoryFor(s.subjectId)"
-                (valueChange)="onNewCommentCategoryChange(s.subjectId, $event)"
+                [options]="commentCategoryOptionsFor(s.courseId, s.subjectId)"
+                [value]="newCommentCategoryFor(s.courseId, s.subjectId)"
+                (valueChange)="onNewCommentCategoryChange(s.courseId, s.subjectId, $event)"
               />
-              @if (newCommentTextFor(s.subjectId).trim()) {
+              @if (newCommentTextFor(s.courseId, s.subjectId).trim()) {
                 <div class="flex justify-end">
                   <app-button
                     size="sm"
-                    [loading]="addingCommentSubjectId() === s.subjectId"
-                    (pressed)="onAddComment(s.subjectId, student.uid)"
+                    [loading]="
+                      addingCommentSubjectId() === subjectDraftKey(s.courseId, s.subjectId)
+                    "
+                    (pressed)="onAddComment(s.courseId, s.subjectId, student.uid)"
                   >
                     {{ i18n.t('myStudents', 'addComment') }}
                   </app-button>
@@ -367,7 +383,7 @@
             <button
               type="button"
               class="inline-flex w-fit items-center gap-1.5 text-xs text-brand-700 hover:underline"
-              (click)="goToGradebook(s.subjectId)"
+              (click)="goToGradebook(s.courseId, s.subjectId)"
             >
               {{ i18n.t('myStudents', 'goToGradebook') }}
               <svg lucideArrowUpRight [size]="13" aria-hidden="true"></svg>
