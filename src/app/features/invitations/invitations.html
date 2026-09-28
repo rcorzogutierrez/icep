@@ -106,7 +106,7 @@
               }
             </td>
             <td class="px-4 py-3 text-text-muted">
-              @if (invitation.expiresAt) {
+              @if (invitation.status === 'pending' && invitation.expiresAt) {
                 {{ invitation.expiresAt.toDate() | date: 'short' }}
               } @else {
                 —
