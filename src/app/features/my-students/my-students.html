@@ -53,6 +53,14 @@
       (valueChange)="subjectFilter.set($event)"
     />
 
+    <app-select
+      class="block w-56"
+      [placeholder]="i18n.t('myStudents', 'allCourses')"
+      [options]="myCourseOptions()"
+      [value]="courseFilter()"
+      (valueChange)="courseFilter.set($event)"
+    />
+
     <label class="ml-auto flex items-center gap-2 text-sm text-text-muted">
       <input
         type="checkbox"

@@ -137,6 +137,7 @@ export class MyStudents {
 
   protected readonly search = signal('');
   protected readonly subjectFilter = signal<string | undefined>(undefined);
+  protected readonly courseFilter = signal<string | undefined>(undefined);
   protected readonly onlyPending = signal(false);
   /** "Cursando" primero por defecto — es lo que un profesor quiere ver al entrar, no el historial. */
   protected readonly courseTab = signal<'active' | 'finished'>('active');
@@ -188,6 +189,21 @@ export class MyStudents {
       .map((subject) => ({ value: subject.id, label: `${subject.code} · ${subject.name}` }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
+
+  /** Cursos donde el profesor logueado dicta alguna de sus materias — mismo alcance que `accessibleCourseIdsFor`, para el filtro "Curso" junto al de "Materia". */
+  protected readonly myCourseOptions = computed<SelectOption<string>[]>(() => {
+    const courseIds = new Set<string>();
+    for (const subjectId of this.mySubjectIds()) {
+      for (const courseId of this.accessibleCourseIdsFor(subjectId)) {
+        courseIds.add(courseId);
+      }
+    }
+    return [...courseIds]
+      .map((id) => this.coursesService.courses().find((c) => c.id === id))
+      .filter((course) => course !== undefined)
+      .map((course) => ({ value: course.id, label: course.name }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  });
 
   /**
    * Cursos de una materia que puede ver el profesor logueado: el admin ve
@@ -301,6 +317,7 @@ export class MyStudents {
   protected readonly filteredRows = computed(() => {
     const term = this.search().trim().toLowerCase();
     const subjectId = this.subjectFilter();
+    const courseId = this.courseFilter();
     const onlyPending = this.onlyPending();
     const tab = this.courseTab();
 
@@ -308,7 +325,10 @@ export class MyStudents {
       .filter((row) => (tab === 'active' ? row.isActive : !row.isActive))
       .map((row) => ({
         ...row,
-        subjects: subjectId ? row.subjects.filter((s) => s.subjectId === subjectId) : row.subjects,
+        subjects: row.subjects.filter(
+          (s) =>
+            (!subjectId || s.subjectId === subjectId) && (!courseId || s.courseId === courseId),
+        ),
       }))
       .filter((row) => row.subjects.length > 0)
       .filter(
