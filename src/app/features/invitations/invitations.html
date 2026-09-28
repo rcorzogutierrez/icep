@@ -128,31 +128,40 @@
                   </app-button>
                 </div>
               } @else {
-                <div class="flex flex-wrap gap-2">
-                  @if (invitation.status === 'pending') {
-                    <app-button variant="secondary" size="sm" (pressed)="startEdit(invitation)">
-                      {{ i18n.t('invitationsPage', 'edit') }}
-                    </app-button>
-                  }
+                <div class="flex items-center gap-1.5">
                   @if (invitation.status !== 'used') {
-                    <app-button
-                      variant="secondary"
-                      size="sm"
-                      [loading]="resendingCode() === invitation.code"
-                      (pressed)="onResend(invitation)"
-                    >
-                      {{ i18n.t('invitationsPage', 'resendAction') }}
-                    </app-button>
-                  }
-                  @if (invitation.status === 'pending') {
-                    <app-button
-                      variant="danger"
-                      size="sm"
-                      [loading]="revokingCode() === invitation.code"
-                      (pressed)="onRevoke(invitation)"
-                    >
-                      {{ i18n.t('invitationsPage', 'revokeAction') }}
-                    </app-button>
+                    <app-action-menu [label]="i18n.t('invitationsPage', 'moreActions')">
+                      @if (invitation.status === 'pending') {
+                        <app-button
+                          variant="ghost"
+                          size="sm"
+                          [fullWidth]="true"
+                          (pressed)="startEdit(invitation)"
+                        >
+                          {{ i18n.t('invitationsPage', 'edit') }}
+                        </app-button>
+                      }
+                      <app-button
+                        variant="ghost"
+                        size="sm"
+                        [fullWidth]="true"
+                        [loading]="resendingCode() === invitation.code"
+                        (pressed)="onResend(invitation)"
+                      >
+                        {{ i18n.t('invitationsPage', 'resendAction') }}
+                      </app-button>
+                      @if (invitation.status === 'pending') {
+                        <app-button
+                          variant="warning"
+                          size="sm"
+                          [fullWidth]="true"
+                          [loading]="revokingCode() === invitation.code"
+                          (pressed)="onRevoke(invitation)"
+                        >
+                          {{ i18n.t('invitationsPage', 'revokeAction') }}
+                        </app-button>
+                      }
+                    </app-action-menu>
                   }
                   <app-button
                     variant="danger"

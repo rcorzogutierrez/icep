@@ -10,6 +10,7 @@ import type {
 import { InvitationsService } from '../../core/invitations/invitations.service';
 import { UserProfileService } from '../../core/users/user-profile.service';
 import { UsersService } from '../../core/users/users.service';
+import { ActionMenu } from '../../shared/components/action-menu/action-menu';
 import { Button } from '../../shared/components/button/button';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { Loading } from '../../shared/components/loading/loading';
@@ -32,6 +33,7 @@ const EXPIRED_CLASS = STATUS_CLASS.revoked;
   selector: 'app-invitations',
   standalone: true,
   imports: [
+    ActionMenu,
     Button,
     ConfirmDialog,
     Loading,

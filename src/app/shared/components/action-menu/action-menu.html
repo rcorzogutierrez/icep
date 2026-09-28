@@ -1,0 +1,29 @@
+<button
+  #trigger
+  type="button"
+  [id]="triggerId"
+  [attr.aria-label]="label()"
+  aria-haspopup="menu"
+  [attr.aria-expanded]="open()"
+  class="flex size-8 shrink-0 items-center justify-center rounded-xl text-text-muted transition-colors hover:bg-slate-100 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+  (click)="toggle()"
+>
+  <svg lucideEllipsisVertical [size]="16" aria-hidden="true"></svg>
+</button>
+
+<ng-template #panel>
+  <!--
+    El click adentro del panel es solo una conveniencia para cerrar el menú
+    después de elegir una acción: cada botón proyectado ya es interactivo y
+    focuseable por sí mismo (Tab/Enter/Espacio funcionan), y Escape ya cierra
+    el panel (ver openPanel) — este div no necesita ser interactivo él mismo.
+  -->
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+  <div
+    role="menu"
+    class="flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1.5 shadow-lg"
+    (click)="onPanelClick()"
+  >
+    <ng-content />
+  </div>
+</ng-template>

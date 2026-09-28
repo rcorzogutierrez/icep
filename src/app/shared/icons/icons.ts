@@ -22,6 +22,7 @@ export {
   LucideChevronRight as IconChevronRight,
   LucideCircleAlert as IconCircleAlert,
   LucideCircleCheck as IconCircleCheck,
+  LucideEllipsisVertical as IconEllipsisVertical,
   LucideGraduationCap as IconGraduationCap,
   LucideHardDrive as IconHardDrive,
   LucideHistory as IconHistory,

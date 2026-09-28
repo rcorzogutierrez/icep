@@ -182,6 +182,7 @@ export const translations = {
       revokeAction: 'Revocar',
       resendAction: 'Reenviar',
       deleteAction: 'Eliminar',
+      moreActions: 'Más acciones',
       confirmDeleteMessage:
         '¿Seguro que querés borrar esta invitación? Si está pendiente, el código deja de funcionar de inmediato. Esta acción no se puede deshacer.',
       edit: 'Editar',
@@ -632,6 +633,7 @@ export const translations = {
       revokeAction: 'Revoke',
       resendAction: 'Resend',
       deleteAction: 'Delete',
+      moreActions: 'More actions',
       confirmDeleteMessage:
         "Are you sure you want to delete this invitation? If it's pending, the code stops working right away. This can't be undone.",
       edit: 'Edit',
