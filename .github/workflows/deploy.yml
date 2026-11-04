@@ -1,0 +1,35 @@
+name: Deploy to Firebase Hosting
+
+# Runs only after CI succeeds on a push to master -- never deploys code
+# that didn't pass typecheck/lint/test/build. Only pushes Hosting (same
+# scope as `npm run deploy`, see CLAUDE.md); firestore.rules/storage.rules/
+# firestore.indexes.json still need their own explicit deploy.
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [master]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm install -g npm@11.12.0
+      - run: npm ci
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ICEP }}
+
+      - run: npm run deploy
