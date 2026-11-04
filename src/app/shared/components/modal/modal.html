@@ -10,14 +10,21 @@
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
     (click)="onBackdropClick($event)"
   >
-    <div class="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl bg-surface shadow-xl">
+    <div
+      class="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl bg-surface shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="title() ? titleId : null"
+      cdkTrapFocus
+      cdkTrapFocusAutoCapture
+    >
       <div class="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
         @if (title(); as titleText) {
-          <h2 class="text-sm font-semibold text-text">{{ titleText }}</h2>
+          <h2 [id]="titleId" class="text-sm font-semibold text-text">{{ titleText }}</h2>
         }
         <button
           type="button"
-          class="ml-auto text-text-muted hover:text-text"
+          class="-m-2.5 ml-auto flex size-11 shrink-0 items-center justify-center rounded-xl text-text-muted hover:text-text"
           [attr.aria-label]="i18n.t('common', 'close')"
           (click)="close()"
         >

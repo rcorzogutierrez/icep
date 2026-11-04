@@ -7,7 +7,14 @@
   -->
   <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
   <div class="fixed inset-0 z-50 flex justify-end bg-black/40" (click)="onBackdropClick($event)">
-    <div class="flex h-full w-full max-w-md flex-col rounded-l-2xl bg-surface shadow-xl">
+    <div
+      class="flex h-full w-full max-w-md flex-col rounded-l-2xl bg-surface shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="title() ? titleId : null"
+      cdkTrapFocus
+      cdkTrapFocusAutoCapture
+    >
       <div class="flex items-center gap-4 border-b border-border px-6 py-5">
         @if (avatarInitial(); as initial) {
           <span
@@ -18,7 +25,9 @@
         }
         <div class="min-w-0 flex-1">
           @if (title(); as titleText) {
-            <h2 class="truncate text-base font-semibold text-text">{{ titleText }}</h2>
+            <h2 [id]="titleId" class="truncate text-base font-semibold text-text">
+              {{ titleText }}
+            </h2>
           }
           @if (subtitle(); as subtitleText) {
             <p class="truncate text-sm text-text-muted">{{ subtitleText }}</p>
@@ -26,7 +35,7 @@
         </div>
         <button
           type="button"
-          class="shrink-0 text-text-muted hover:text-text"
+          class="-m-2.5 flex size-11 shrink-0 items-center justify-center rounded-xl text-text-muted hover:text-text"
           [attr.aria-label]="i18n.t('common', 'close')"
           (click)="close()"
         >
