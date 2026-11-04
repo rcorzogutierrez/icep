@@ -95,9 +95,6 @@
                 </div>
               } @else {
                 <div class="flex flex-wrap gap-2">
-                  <app-button variant="secondary" size="sm" (pressed)="goToGradebook(subject)">
-                    {{ i18n.t('adminSubjects', 'grade') }}
-                  </app-button>
                   <app-button variant="secondary" size="sm" (pressed)="startEdit(subject)">
                     {{ i18n.t('adminSubjects', 'edit') }}
                   </app-button>
