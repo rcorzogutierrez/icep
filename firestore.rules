@@ -59,6 +59,8 @@ service cloud.firestore {
         && request.resource.data.status == 'approved'
         && request.resource.data.role in ['student', 'teacher']
         && request.resource.data.invitationCode is string
+        && (request.resource.data.displayName == null
+            || (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 60))
         && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationCode)).data.usedByUid == request.auth.uid
         && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationCode)).data.role == request.resource.data.role
         && request.resource.data.enrolledSubjectIds == get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationCode)).data.subjectIds;
@@ -72,6 +74,8 @@ service cloud.firestore {
         && request.resource.data.status == 'approved'
         && request.resource.data.role == 'student'
         && request.resource.data.invitationCode is string
+        && (request.resource.data.displayName == null
+            || (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 60))
         && request.resource.data.enrolledSubjectIds == []
         && get(/databases/$(database)/documents/courseInvitations/$(request.resource.data.invitationCode)).data.status == 'active'
         && !isInvitationExpired(get(/databases/$(database)/documents/courseInvitations/$(request.resource.data.invitationCode)).data);
@@ -128,6 +132,8 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.status == 'pending'
         && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 0 && request.resource.data.email.size() <= 320
         && request.resource.data.subjectIds is list
         && request.resource.data.expiresAt is timestamp
         && request.resource.data.expiresAt > request.time
@@ -159,7 +165,9 @@ service cloud.firestore {
       // Corregir el email (ej. typo) antes de que se canjee: quien la creó, o un admin.
       allow update: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid)
         && resource.data.status == 'pending'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email'])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 0 && request.resource.data.email.size() <= 320;
 
       // Borrar del historial: quien la creó, o un admin (cualquier estado).
       allow delete: if request.auth != null && (isAdmin() || resource.data.createdBy == request.auth.uid);
@@ -181,6 +189,8 @@ service cloud.firestore {
         && request.resource.data.status == 'active'
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.courseId is string
+        && request.resource.data.courseName is string
+        && request.resource.data.courseName.size() > 0 && request.resource.data.courseName.size() <= 100
         && request.resource.data.redemptionCount == 0
         && request.resource.data.expiresAt is timestamp
         && request.resource.data.expiresAt > request.time
@@ -222,7 +232,12 @@ service cloud.firestore {
     // no como varios "get" sueltos.
     match /subjects/{subjectId} {
       allow read: if request.auth != null;
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+        && request.resource.data.code is string
+        && request.resource.data.code.size() > 0 && request.resource.data.code.size() <= 20;
+      allow delete: if isAdmin();
     }
 
     // subjectAssignments/{id}: une una materia con uno de sus profesores
@@ -257,8 +272,26 @@ service cloud.firestore {
     match /gradeCategories/{categoryId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
-      allow update, delete: if request.auth != null
+        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId))
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+        && request.resource.data.weight is number
+        && request.resource.data.weight > 0 && request.resource.data.weight <= 100
+        && request.resource.data.hasMultipleTasks is bool;
+      // courseId/subjectId no pueden cambiar en un update — son la identidad
+      // de la oferta de curso que teachesCourseSubject() verificó arriba; sin
+      // esto un profesor podría "mudar" la categoría a otra oferta vía
+      // update en vez de create (el update solo vuelve a chequear el
+      // courseId/subjectId VIEJO, no el nuevo que estaría escribiendo).
+      allow update: if request.auth != null
+        && (isAdmin() || teachesCourseSubject(resource.data.courseId, resource.data.subjectId))
+        && request.resource.data.courseId == resource.data.courseId
+        && request.resource.data.subjectId == resource.data.subjectId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+        && request.resource.data.weight is number
+        && request.resource.data.weight > 0 && request.resource.data.weight <= 100;
+      allow delete: if request.auth != null
         && (isAdmin() || teachesCourseSubject(resource.data.courseId, resource.data.subjectId));
     }
 
@@ -268,8 +301,22 @@ service cloud.firestore {
     match /assignments/{assignmentId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
-      allow update, delete: if request.auth != null
+        && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId))
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
+        && request.resource.data.pointsPossible is number
+        && request.resource.data.pointsPossible > 0;
+      // Mismo motivo que gradeCategories arriba: courseId/subjectId son la
+      // identidad de la oferta de curso, no pueden cambiar en un update.
+      allow update: if request.auth != null
+        && (isAdmin() || teachesCourseSubject(resource.data.courseId, resource.data.subjectId))
+        && request.resource.data.courseId == resource.data.courseId
+        && request.resource.data.subjectId == resource.data.subjectId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
+        && request.resource.data.pointsPossible is number
+        && request.resource.data.pointsPossible > 0;
+      allow delete: if request.auth != null
         && (isAdmin() || teachesCourseSubject(resource.data.courseId, resource.data.subjectId));
     }
 
@@ -280,7 +327,12 @@ service cloud.firestore {
     match /subjectResources/{resourceId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)));
+        && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(request.resource.data.subjectId + '_' + request.auth.uid)))
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 200
+        && request.resource.data.url is string
+        && request.resource.data.url.size() > 0 && request.resource.data.url.size() <= 2048
+        && request.resource.data.provider in ['drive', 'dropbox', 'link'];
       allow delete: if request.auth != null
         && (isAdmin() || exists(/databases/$(database)/documents/subjectAssignments/$(resource.data.subjectId + '_' + request.auth.uid)));
     }
@@ -303,6 +355,7 @@ service cloud.firestore {
 
       allow create, update: if request.auth != null
         && gradeId == request.resource.data.courseId + '_' + request.resource.data.subjectId + '_' + request.resource.data.studentUid
+        && request.resource.data.scores is map
         && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
 
       allow delete: if isAdmin();
@@ -319,6 +372,10 @@ service cloud.firestore {
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow create: if request.auth != null
         && request.resource.data.changedBy == request.auth.uid
+        && request.resource.data.assignmentName is string
+        && request.resource.data.assignmentName.size() <= 200
+        && request.resource.data.changedByName is string
+        && request.resource.data.changedByName.size() <= 150
         && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
       allow update, delete: if false;
     }
@@ -334,6 +391,10 @@ service cloud.firestore {
         && (isAdmin() || isTeacher() || resource.data.studentUid == request.auth.uid);
       allow create: if request.auth != null
         && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000
+        && (request.resource.data.categoryName == null
+            || (request.resource.data.categoryName is string && request.resource.data.categoryName.size() <= 100))
         && (isAdmin() || teachesCourseSubject(request.resource.data.courseId, request.resource.data.subjectId));
       allow update, delete: if false;
     }
@@ -344,7 +405,12 @@ service cloud.firestore {
     // autenticado puede leer.
     match /courses/{courseId} {
       allow read: if request.auth != null;
-      allow create, update, delete: if isAdmin() || isTeacher();
+      allow create, update: if (isAdmin() || isTeacher())
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+        && (request.resource.data.startDate == null || request.resource.data.startDate is timestamp)
+        && (request.resource.data.endDate == null || request.resource.data.endDate is timestamp);
+      allow delete: if isAdmin() || isTeacher();
     }
 
     // courseSubjects/{courseId_subjectId}: qué materias tiene un curso
@@ -353,7 +419,11 @@ service cloud.firestore {
     match /courseSubjects/{id} {
       allow read: if request.auth != null;
       allow create: if (isAdmin() || isTeacher())
-        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId;
+        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId
+        && request.resource.data.subjectName is string
+        && request.resource.data.subjectName.size() > 0 && request.resource.data.subjectName.size() <= 100
+        && request.resource.data.subjectCode is string
+        && request.resource.data.subjectCode.size() > 0 && request.resource.data.subjectCode.size() <= 20;
       allow delete: if isAdmin() || isTeacher();
     }
 
@@ -362,7 +432,9 @@ service cloud.firestore {
     match /courseStudents/{id} {
       allow read: if request.auth != null;
       allow create: if (isAdmin() || isTeacher())
-        && id == request.resource.data.courseId + '_' + request.resource.data.studentUid;
+        && id == request.resource.data.courseId + '_' + request.resource.data.studentUid
+        && request.resource.data.studentName is string
+        && request.resource.data.studentName.size() > 0 && request.resource.data.studentName.size() <= 150;
 
       // Alta propia vía código de curso: el estudiante recién creado (ver
       // users/{userId} arriba) se matricula a sí mismo, siempre que su
@@ -370,6 +442,8 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.studentUid
         && id == request.resource.data.courseId + '_' + request.resource.data.studentUid
+        && request.resource.data.studentName is string
+        && request.resource.data.studentName.size() > 0 && request.resource.data.studentName.size() <= 150
         && isActiveCourseInvitationFor(request.resource.data.courseId, request.auth.uid);
 
       allow delete: if isAdmin() || isTeacher();
@@ -380,7 +454,9 @@ service cloud.firestore {
     match /courseTeachers/{id} {
       allow read: if request.auth != null;
       allow create: if (isAdmin() || isTeacher())
-        && id == request.resource.data.courseId + '_' + request.resource.data.teacherId;
+        && id == request.resource.data.courseId + '_' + request.resource.data.teacherId
+        && request.resource.data.teacherName is string
+        && request.resource.data.teacherName.size() > 0 && request.resource.data.teacherName.size() <= 150;
       allow delete: if isAdmin() || isTeacher();
     }
 
@@ -393,9 +469,13 @@ service cloud.firestore {
     match /courseSubjectTeachers/{id} {
       allow read: if request.auth != null;
       allow create: if (isAdmin() || isTeacher())
-        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId;
+        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId
+        && request.resource.data.teacherName is string
+        && request.resource.data.teacherName.size() > 0 && request.resource.data.teacherName.size() <= 150;
       allow update: if (isAdmin() || isTeacher())
-        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId;
+        && id == request.resource.data.courseId + '_' + request.resource.data.subjectId
+        && request.resource.data.teacherName is string
+        && request.resource.data.teacherName.size() > 0 && request.resource.data.teacherName.size() <= 150;
       allow delete: if isAdmin() || isTeacher();
     }
 
