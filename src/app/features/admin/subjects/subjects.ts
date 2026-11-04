@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import type { Subject } from '../../../core/subjects/subjects.model';
@@ -22,7 +21,6 @@ export class AdminSubjects {
   protected readonly subjectsService = inject(SubjectsService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
-  private readonly router = inject(Router);
 
   protected readonly name = signal('');
   protected readonly code = signal('');
@@ -99,10 +97,6 @@ export class AdminSubjects {
     } finally {
       this.savingEdit.set(false);
     }
-  }
-
-  protected goToGradebook(subject: Subject): void {
-    void this.router.navigateByUrl(`/subjects/${subject.id}/gradebook`);
   }
 
   protected async onRemove(subject: Subject): Promise<void> {
