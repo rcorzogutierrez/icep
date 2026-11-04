@@ -28,9 +28,19 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
     'bg-transparent text-text hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-brand-500',
 };
 
+/**
+ * `sm`/`md` son más bajos que el mínimo de 44px recomendado para un target
+ * táctil — a propósito, son el tamaño que usan las filas de acciones
+ * densas (tablas admin) y agrandar el botón visible ahí rompería esa
+ * densidad y, peor, haría que los hitboxes de botones vecinos en un mismo
+ * `flex gap-2` se solapen (el gap es menor que el crecimiento necesario).
+ * El `before:` de cada tamaño extiende el área táctil real solo vertical
+ * (no horizontal, donde sí colisionaría con el botón de al lado) hasta
+ * cubrir los 44px sin tocar el tamaño visible.
+ */
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-sm gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
+  sm: "h-8 px-3 text-sm gap-1.5 before:absolute before:inset-x-0 before:-top-1.5 before:-bottom-1.5 before:content-['']",
+  md: "h-10 px-4 text-sm gap-2 before:absolute before:inset-x-0 before:-top-0.5 before:-bottom-0.5 before:content-['']",
   lg: 'h-12 px-6 text-base gap-2.5',
 };
 
@@ -41,7 +51,7 @@ const ICON_SIZE: Record<ButtonSize, number> = {
 };
 
 const BASE_CLASSES =
-  'inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+  'relative inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
 
 /**
  * Botón base de la app. Estilo 100% Tailwind sobre los tokens de marca; no
