@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CourseSubjectTeachersService } from '../../../core/courses/course-subject-teachers.service';
@@ -25,7 +26,7 @@ interface SubjectOffering {
 @Component({
   selector: 'app-admin-subjects',
   standalone: true,
-  imports: [Button, ConfirmDialog, Loading, Modal, Page, PageHeader, Select],
+  imports: [Button, ConfirmDialog, Loading, Modal, NgTemplateOutlet, Page, PageHeader, Select],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './subjects.html',
 })
@@ -153,7 +154,16 @@ export class AdminSubjects {
 
   protected openManage(subject: Subject): void {
     this.managingSubject.set(subject);
-    this.addingCourseId.set(undefined);
+    // Si es una materia nueva (sin ninguna oferta todavía) y hay un solo
+    // curso disponible para agregarla, preseleccionarlo ahorra un click en
+    // el caso más común (recién creaste la materia, tenés un curso en
+    // mente) en vez de obligar a elegirlo de una lista de uno solo.
+    const options = this.coursesWithoutSubjectOptions();
+    this.addingCourseId.set(
+      this.offeringsForManaging().length === 0 && options.length === 1
+        ? options[0].value
+        : undefined,
+    );
   }
 
   protected closeManage(): void {
