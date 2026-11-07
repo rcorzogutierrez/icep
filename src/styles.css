@@ -65,6 +65,20 @@
   body {
     @apply bg-surface text-text;
   }
+
+  /*
+   * Mismo anillo de foco que ya usa `app-button` (ver button.ts BASE_CLASSES),
+   * aplicado acá a CUALQUIER <button> crudo — acordeones, navegación
+   * prev/next, botones ✕ de Modal/Drawer, etc. Esos nunca llevaban foco
+   * visible (auditoría "impeccable": 43 de 44 botones de la app no lo
+   * tenían, solo app-button y ActionMenu lo declaraban a mano). Las clases
+   * `focus-visible:` explícitas de app-button siguen ganando por
+   * especificidad, así que esto no le cambia nada — solo rellena el hueco
+   * para todo lo demás.
+   */
+  button:focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-brand-500;
+  }
 }
 
 /* Barrido y pulso del panel de login ("Faro Nocturno"). */

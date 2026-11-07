@@ -45,14 +45,12 @@
         <div class="flex flex-col items-end gap-2.5">
           <div class="flex items-center gap-2">
             @if (previousTask(); as prev) {
-              <button
-                type="button"
-                class="flex h-9 items-center gap-1.5 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm whitespace-nowrap text-text hover:bg-slate-50"
-                (click)="goToTask(prev.id)"
-              >
-                <svg lucideChevronLeft [size]="14" aria-hidden="true"></svg>
-                {{ prev.name }}
-              </button>
+              <span class="whitespace-nowrap">
+                <app-button variant="secondary" size="sm" (pressed)="goToTask(prev.id)">
+                  <svg lucideChevronLeft [size]="14" aria-hidden="true"></svg>
+                  {{ prev.name }}
+                </app-button>
+              </span>
             }
 
             <div class="relative">
@@ -131,14 +129,12 @@
             </div>
 
             @if (nextTask(); as next) {
-              <button
-                type="button"
-                class="flex h-9 items-center gap-1.5 rounded-xl border border-border bg-surface shadow-sm px-3 text-sm whitespace-nowrap text-text hover:bg-slate-50"
-                (click)="goToTask(next.id)"
-              >
-                {{ next.name }}
-                <svg lucideChevronRight [size]="14" aria-hidden="true"></svg>
-              </button>
+              <span class="whitespace-nowrap">
+                <app-button variant="secondary" size="sm" (pressed)="goToTask(next.id)">
+                  {{ next.name }}
+                  <svg lucideChevronRight [size]="14" aria-hidden="true"></svg>
+                </app-button>
+              </span>
             }
           </div>
 

@@ -8,6 +8,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { CourseStudentsService } from '../../core/courses/course-students.service';
 import { SubjectsService } from '../../core/subjects/subjects.service';
 import { UsersService } from '../../core/users/users.service';
+import { Button } from '../../shared/components/button/button';
 import { Loading } from '../../shared/components/loading/loading';
 import { Page } from '../../shared/layout/page/page';
 import { PageHeader } from '../../shared/layout/page-header/page-header';
@@ -44,6 +45,7 @@ interface TaskOption {
   selector: 'app-assignment-review',
   standalone: true,
   imports: [
+    Button,
     Loading,
     Page,
     PageHeader,
