@@ -94,22 +94,33 @@
                   </app-button>
                 </div>
               } @else {
-                <div class="flex flex-wrap gap-2">
-                  <app-button variant="secondary" size="sm" (pressed)="openManage(subject)">
+                <app-action-menu [label]="i18n.t('adminSubjects', 'moreActions')">
+                  <app-button
+                    variant="ghost"
+                    size="sm"
+                    [fullWidth]="true"
+                    (pressed)="openManage(subject)"
+                  >
                     {{ i18n.t('adminSubjects', 'manage') }}
                   </app-button>
-                  <app-button variant="secondary" size="sm" (pressed)="startEdit(subject)">
+                  <app-button
+                    variant="ghost"
+                    size="sm"
+                    [fullWidth]="true"
+                    (pressed)="startEdit(subject)"
+                  >
                     {{ i18n.t('adminSubjects', 'edit') }}
                   </app-button>
                   <app-button
                     variant="danger"
                     size="sm"
+                    [fullWidth]="true"
                     [loading]="removingId() === subject.id"
                     (pressed)="confirmingRemoveSubject.set(subject)"
                   >
                     {{ i18n.t('adminSubjects', 'delete') }}
                   </app-button>
-                </div>
+                </app-action-menu>
               }
             </td>
           </tr>
