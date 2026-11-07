@@ -598,166 +598,183 @@
       unfinishedLabelKey="unfinishedStudentsCount"
     />
 
-    <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
-      <table class="w-full text-left text-sm">
-        <thead class="border-b border-border bg-slate-50 text-text-muted">
-          <tr>
-            <th class="sticky left-0 bg-slate-50 px-4 py-2 font-medium" rowspan="2">
-              {{ i18n.t('gradebook', 'colStudent') }}
-            </th>
-            @for (category of categories(); track category.id) {
-              @if (assignmentsFor(category.id).length > 0) {
-                @if (category.hasMultipleTasks === false) {
-                  <th class="border-l border-border px-2 py-2 text-center font-medium" rowspan="2">
-                    {{ category.name }}
-                    <span class="block font-normal text-text-muted"
-                      >{{ category.weight }}% · /{{ category.weight }}</span
-                    >
-                  </th>
-                } @else {
-                  <th
-                    class="border-l border-border px-2 py-2 text-center font-medium"
-                    [attr.colspan]="assignmentsFor(category.id).length"
-                  >
-                    {{ category.name }}
-                    <span class="block font-normal text-text-muted">{{ category.weight }}%</span>
-                  </th>
-                }
-              }
-            }
-            <th class="px-3 py-2 font-medium" rowspan="2">
-              {{ i18n.t('gradebook', 'colFinalGrade') }}
-            </th>
-            @if (hasAnyDirtyRow()) {
-              <th class="px-3 py-2 font-medium" rowspan="2">
-                {{ i18n.t('gradebook', 'colActions') }}
+    <div class="relative">
+      <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
+        <table class="w-full text-left text-sm">
+          <thead class="sticky top-0 z-20 border-b border-border bg-slate-50 text-text-muted">
+            <tr>
+              <th class="sticky left-0 bg-slate-50 px-4 py-2 font-medium" rowspan="2">
+                {{ i18n.t('gradebook', 'colStudent') }}
               </th>
-            }
-          </tr>
-          <tr>
-            @for (category of categories(); track category.id) {
-              @if (category.hasMultipleTasks !== false) {
-                @for (assignment of assignmentsFor(category.id); track assignment.id) {
-                  <th class="border-l border-border px-2 py-2 font-medium whitespace-nowrap">
-                    {{ assignment.name }}
-                    <span class="block font-normal text-text-muted"
-                      >/{{ assignment.pointsPossible }}</span
+              @for (category of categories(); track category.id) {
+                @if (assignmentsFor(category.id).length > 0) {
+                  @if (category.hasMultipleTasks === false) {
+                    <th
+                      class="border-l border-border px-2 py-2 text-center font-medium"
+                      rowspan="2"
                     >
-                  </th>
+                      {{ category.name }}
+                      <span class="block font-normal text-text-muted"
+                        >{{ category.weight }}% · /{{ category.weight }}</span
+                      >
+                    </th>
+                  } @else {
+                    <th
+                      class="border-l border-border px-2 py-2 text-center font-medium"
+                      [attr.colspan]="assignmentsFor(category.id).length"
+                    >
+                      {{ category.name }}
+                      <span class="block font-normal text-text-muted">{{ category.weight }}%</span>
+                    </th>
+                  }
                 }
               }
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (student of students(); track student.uid) {
-            <tr
-              class="border-b border-border transition-colors last:border-0"
-              [class.bg-status-paused-soft]="isRowDirty(student.uid)"
-              [class.hover:bg-slate-50/60]="!isRowDirty(student.uid)"
-            >
-              <td
-                class="sticky left-0 px-4 py-3 font-medium text-text"
-                [class.bg-surface]="!isRowDirty(student.uid)"
-                [class.bg-status-paused-soft]="isRowDirty(student.uid)"
-              >
-                <div class="flex items-center gap-1.5">
-                  <span>{{ student.displayName ?? student.email }}</span>
-                  <button
-                    type="button"
-                    class="shrink-0 text-text-muted hover:text-brand-600"
-                    [class.text-brand-600]="hasComment(student.uid)"
-                    [attr.aria-label]="i18n.t('gradebook', 'commentButtonLabel')"
-                    (click)="openCommentEditor(student)"
-                  >
-                    <svg lucideMessageSquare [size]="15" aria-hidden="true"></svg>
-                  </button>
-                  <button
-                    type="button"
-                    class="shrink-0 text-text-muted hover:text-brand-600"
-                    [attr.aria-label]="i18n.t('gradebook', 'historyButtonLabel')"
-                    (click)="openHistory(student)"
-                  >
-                    <svg lucideHistory [size]="15" aria-hidden="true"></svg>
-                  </button>
-                  @if (isRowDirty(student.uid)) {
-                    <span
-                      class="inline-flex shrink-0 items-center rounded-full bg-status-paused-soft px-2 py-0.5 text-xs font-medium whitespace-nowrap text-status-paused"
-                    >
-                      {{ i18n.t('gradebook', 'rowUnsaved') }}
-                    </span>
-                  }
-                </div>
-              </td>
+              <th class="px-3 py-2 font-medium" rowspan="2">
+                {{ i18n.t('gradebook', 'colFinalGrade') }}
+              </th>
+              @if (hasAnyDirtyRow()) {
+                <th class="px-3 py-2 font-medium" rowspan="2">
+                  {{ i18n.t('gradebook', 'colActions') }}
+                </th>
+              }
+            </tr>
+            <tr>
               @for (category of categories(); track category.id) {
-                @for (assignment of assignmentsFor(category.id); track assignment.id) {
-                  <td class="border-l border-border px-2 py-3">
-                    <input
-                      type="number"
-                      min="0"
-                      [max]="assignment.pointsPossible"
-                      class="h-9 w-14 rounded-xl border border-border bg-surface shadow-sm px-1.5 text-center text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                      [value]="inputValueFor(student.uid, assignment.id)"
-                      (input)="onScoreInput(student.uid, assignment.id, $any($event.target).value)"
+                @if (category.hasMultipleTasks !== false) {
+                  @for (assignment of assignmentsFor(category.id); track assignment.id) {
+                    <th
+                      class="border-l border-border bg-slate-50 px-2 py-2 font-medium whitespace-nowrap"
+                    >
+                      {{ assignment.name }}
+                      <span class="block font-normal text-text-muted"
+                        >/{{ assignment.pointsPossible }}</span
+                      >
+                    </th>
+                  }
+                }
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of students(); track student.uid) {
+              <tr
+                class="border-b border-border transition-colors last:border-0"
+                [class.bg-status-paused-soft]="isRowDirty(student.uid)"
+                [class.hover:bg-slate-50/60]="!isRowDirty(student.uid)"
+              >
+                <td
+                  class="sticky left-0 px-4 py-3 font-medium text-text"
+                  [class.bg-surface]="!isRowDirty(student.uid)"
+                  [class.bg-status-paused-soft]="isRowDirty(student.uid)"
+                >
+                  <div class="flex min-w-0 items-center gap-1.5">
+                    <span
+                      class="max-w-[8.5rem] truncate sm:max-w-[16rem] lg:max-w-none"
+                      [attr.title]="student.displayName ?? student.email"
+                      >{{ student.displayName ?? student.email }}</span
+                    >
+                    <button
+                      type="button"
+                      class="shrink-0 text-text-muted hover:text-brand-600"
+                      [class.text-brand-600]="hasComment(student.uid)"
+                      [attr.aria-label]="i18n.t('gradebook', 'commentButtonLabel')"
+                      (click)="openCommentEditor(student)"
+                    >
+                      <svg lucideMessageSquare [size]="15" aria-hidden="true"></svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="shrink-0 text-text-muted hover:text-brand-600"
+                      [attr.aria-label]="i18n.t('gradebook', 'historyButtonLabel')"
+                      (click)="openHistory(student)"
+                    >
+                      <svg lucideHistory [size]="15" aria-hidden="true"></svg>
+                    </button>
+                    @if (isRowDirty(student.uid)) {
+                      <span
+                        class="inline-flex shrink-0 items-center rounded-full bg-status-paused-soft px-2 py-0.5 text-xs font-medium whitespace-nowrap text-status-paused"
+                      >
+                        {{ i18n.t('gradebook', 'rowUnsaved') }}
+                      </span>
+                    }
+                  </div>
+                </td>
+                @for (category of categories(); track category.id) {
+                  @for (assignment of assignmentsFor(category.id); track assignment.id) {
+                    <td class="border-l border-border px-2 py-3">
+                      <input
+                        type="number"
+                        min="0"
+                        [max]="assignment.pointsPossible"
+                        class="h-9 w-14 rounded-xl border border-border bg-surface shadow-sm px-1.5 text-center text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        [value]="inputValueFor(student.uid, assignment.id)"
+                        (input)="
+                          onScoreInput(student.uid, assignment.id, $any($event.target).value)
+                        "
+                      />
+                    </td>
+                  }
+                }
+                <td class="px-3 py-3 font-semibold text-text">
+                  <div class="flex flex-col items-start gap-1">
+                    @if (finalGradeFor(student.uid) !== null) {
+                      <span>{{ finalGradeFor(student.uid) | number: '1.0-1' }}%</span>
+                    } @else {
+                      <span class="font-normal text-text-muted">{{
+                        i18n.t('gradebook', 'noGradeYet')
+                      }}</span>
+                    }
+                    <app-grade-status-badge
+                      [status]="creditStatusFor(student.uid)"
+                      [letter]="creditLetterFor(student.uid)"
                     />
+                  </div>
+                </td>
+                @if (hasAnyDirtyRow()) {
+                  <td class="px-3 py-3">
+                    @if (isRowDirty(student.uid)) {
+                      <div class="flex gap-1.5">
+                        <app-button
+                          variant="secondary"
+                          size="sm"
+                          [disabled]="savingRowUid() === student.uid"
+                          (pressed)="discardRow(student.uid)"
+                        >
+                          {{ i18n.t('gradebook', 'discard') }}
+                        </app-button>
+                        <app-button
+                          size="sm"
+                          [loading]="savingRowUid() === student.uid"
+                          (pressed)="openSaveRowConfirm(student.uid)"
+                        >
+                          {{ i18n.t('gradebook', 'save') }}
+                        </app-button>
+                      </div>
+                    }
                   </td>
                 }
-              }
-              <td class="px-3 py-3 font-semibold text-text">
-                <div class="flex flex-col items-start gap-1">
-                  @if (finalGradeFor(student.uid) !== null) {
-                    <span>{{ finalGradeFor(student.uid) | number: '1.0-1' }}%</span>
+              </tr>
+            } @empty {
+              <tr>
+                <td
+                  [attr.colspan]="assignments().length + 2"
+                  class="px-4 py-6 text-center text-text-muted"
+                >
+                  @if (studentsLoading()) {
+                    <app-loading />
                   } @else {
-                    <span class="font-normal text-text-muted">{{
-                      i18n.t('gradebook', 'noGradeYet')
-                    }}</span>
-                  }
-                  <app-grade-status-badge
-                    [status]="creditStatusFor(student.uid)"
-                    [letter]="creditLetterFor(student.uid)"
-                  />
-                </div>
-              </td>
-              @if (hasAnyDirtyRow()) {
-                <td class="px-3 py-3">
-                  @if (isRowDirty(student.uid)) {
-                    <div class="flex gap-1.5">
-                      <app-button
-                        variant="secondary"
-                        size="sm"
-                        [disabled]="savingRowUid() === student.uid"
-                        (pressed)="discardRow(student.uid)"
-                      >
-                        {{ i18n.t('gradebook', 'discard') }}
-                      </app-button>
-                      <app-button
-                        size="sm"
-                        [loading]="savingRowUid() === student.uid"
-                        (pressed)="openSaveRowConfirm(student.uid)"
-                      >
-                        {{ i18n.t('gradebook', 'save') }}
-                      </app-button>
-                    </div>
+                    {{ i18n.t('gradebook', 'noStudents') }}
                   }
                 </td>
-              }
-            </tr>
-          } @empty {
-            <tr>
-              <td
-                [attr.colspan]="assignments().length + 2"
-                class="px-4 py-6 text-center text-text-muted"
-              >
-                @if (studentsLoading()) {
-                  <app-loading />
-                } @else {
-                  {{ i18n.t('gradebook', 'noStudents') }}
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div
+        class="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-2xl bg-gradient-to-l from-black/10 to-transparent"
+        aria-hidden="true"
+      ></div>
     </div>
   </section>
 </app-page>

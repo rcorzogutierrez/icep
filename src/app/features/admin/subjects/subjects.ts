@@ -7,6 +7,7 @@ import { CoursesService } from '../../../core/courses/courses.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import type { Subject } from '../../../core/subjects/subjects.model';
+import { ActionMenu } from '../../../shared/components/action-menu/action-menu';
 import { Button } from '../../../shared/components/button/button';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { Loading } from '../../../shared/components/loading/loading';
@@ -26,7 +27,17 @@ interface SubjectOffering {
 @Component({
   selector: 'app-admin-subjects',
   standalone: true,
-  imports: [Button, ConfirmDialog, Loading, Modal, NgTemplateOutlet, Page, PageHeader, Select],
+  imports: [
+    ActionMenu,
+    Button,
+    ConfirmDialog,
+    Loading,
+    Modal,
+    NgTemplateOutlet,
+    Page,
+    PageHeader,
+    Select,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './subjects.html',
 })
