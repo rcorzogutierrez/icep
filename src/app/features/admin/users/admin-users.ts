@@ -5,15 +5,24 @@ import { CourseStudentsService } from '../../../core/courses/course-students.ser
 import { CourseTeachersService } from '../../../core/courses/course-teachers.service';
 import { CoursesService } from '../../../core/courses/courses.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import type { UserHistoryEntry } from '../../../core/users/user-history.model';
+import { UserHistoryService } from '../../../core/users/user-history.service';
 import type { UserProfile, UserRole, UserStatus } from '../../../core/users/users.model';
 import { UsersService } from '../../../core/users/users.service';
 import { Button } from '../../../shared/components/button/button';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { Loading } from '../../../shared/components/loading/loading';
+import { Modal } from '../../../shared/components/modal/modal';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
-import { IconChevronLeft, IconChevronRight, IconSearch } from '../../../shared/icons/icons';
+import {
+  IconArrowRight,
+  IconChevronLeft,
+  IconChevronRight,
+  IconHistory,
+  IconSearch,
+} from '../../../shared/icons/icons';
 
 const PAGE_SIZE = 10;
 
@@ -32,12 +41,15 @@ const STATUS_CLASS: Record<UserStatus, string> = {
     Button,
     ConfirmDialog,
     Loading,
+    Modal,
     Select,
     DatePipe,
     Page,
     PageHeader,
+    IconArrowRight,
     IconChevronLeft,
     IconChevronRight,
+    IconHistory,
     IconSearch,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,6 +57,7 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 })
 export class AdminUsers {
   protected readonly usersService = inject(UsersService);
+  protected readonly userHistoryService = inject(UserHistoryService);
   protected readonly i18n = inject(I18nService);
   private readonly authService = inject(AuthService);
   private readonly coursesService = inject(CoursesService);
@@ -62,6 +75,7 @@ export class AdminUsers {
     user: UserProfile;
     role: UserRole;
   } | null>(null);
+  protected readonly historyUser = signal<UserProfile | null>(null);
 
   protected readonly search = signal('');
   protected readonly roleFilter = signal<UserRole | 'all'>('all');
@@ -267,6 +281,33 @@ export class AdminUsers {
     } finally {
       this.removingUid.set(null);
     }
+  }
+
+  protected readonly historyEntries = computed<UserHistoryEntry[]>(() => {
+    const user = this.historyUser();
+    return user ? this.userHistoryService.forUser(user.uid) : [];
+  });
+
+  protected openHistory(user: UserProfile): void {
+    this.historyUser.set(user);
+  }
+
+  protected closeHistory(): void {
+    this.historyUser.set(null);
+  }
+
+  protected historyFieldLabel(field: UserHistoryEntry['field']): string {
+    return field === 'role'
+      ? this.i18n.t('adminUsers', 'fieldRole')
+      : this.i18n.t('adminUsers', 'fieldStatus');
+  }
+
+  /** `previousValue`/`newValue` quedan crudos en Firestore ('student'/'approved'/...) — acá se traducen con las mismas funciones que ya usa el resto de la pantalla. */
+  protected historyValueLabel(entry: UserHistoryEntry, value: string): string {
+    if (entry.field === 'role') {
+      return this.roleLabel(value as UserRole);
+    }
+    return this.statusLabel(value as UserStatus);
   }
 
   protected onSearchInput(value: string): void {
