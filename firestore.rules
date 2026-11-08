@@ -380,6 +380,24 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // userHistory/{id}: auditoría inmutable de cada cambio real de rol o
+    // estado de una cuenta (ver UsersService.updateRole/approve/reject) —
+    // mismo criterio que gradeHistory, pero solo admin lee: un cambio de
+    // rol/estado es siempre acción de admin (ver users/{userId} más
+    // arriba), así que a un profesor no le compete. Nunca se edita ni se
+    // borra, ni siquiera el admin.
+    match /userHistory/{entryId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.changedBy == request.auth.uid
+        && request.resource.data.field in ['role', 'status']
+        && request.resource.data.targetName is string
+        && request.resource.data.targetName.size() <= 150
+        && request.resource.data.changedByName is string
+        && request.resource.data.changedByName.size() <= 150;
+      allow update, delete: if false;
+    }
+
     // gradeComments/{id}: comentarios del profesor a un estudiante en una
     // oferta de curso (ver grade-comments.model.ts) — varios en el tiempo,
     // no un único valor reemplazable. A diferencia de gradeHistory, el

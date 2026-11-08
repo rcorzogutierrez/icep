@@ -6,7 +6,6 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  updateDoc,
   writeBatch,
   type WriteBatch,
 } from 'firebase/firestore';
@@ -15,6 +14,8 @@ import { CourseStudentsService } from '../courses/course-students.service';
 import { CourseSubjectTeachersService } from '../courses/course-subject-teachers.service';
 import { CourseTeachersService } from '../courses/course-teachers.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
+import { UserHistoryService } from './user-history.service';
+import { UserProfileService } from './user-profile.service';
 import type { UserProfile, UserRole } from './users.model';
 
 /**
@@ -30,6 +31,8 @@ export class UsersService {
   private readonly courseStudentsService = inject(CourseStudentsService);
   private readonly courseTeachersService = inject(CourseTeachersService);
   private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
+  private readonly userHistoryService = inject(UserHistoryService);
+  private readonly userProfileService = inject(UserProfileService);
 
   private readonly _users = signal<UserProfile[]>([]);
   private readonly _loading = signal(true);
@@ -81,11 +84,46 @@ export class UsersService {
     return this.setStatus(uid, 'rejected');
   }
 
-  private setStatus(uid: string, status: 'approved' | 'rejected') {
-    return updateDoc(doc(this.firestore, 'users', uid), {
+  /** Nombre visible de la cuenta afectada/de quien cambia, para denormalizar en userHistory (ver UserHistoryEntry). */
+  private targetLabel(uid: string): string {
+    const target = this._users().find((u) => u.uid === uid);
+    return target?.displayName ?? target?.email ?? uid;
+  }
+
+  private changedByLabel(): string {
+    const authUser = this.authService.user();
+    return (
+      this.userProfileService.profile()?.displayName ??
+      authUser?.displayName ??
+      authUser?.email ??
+      ''
+    );
+  }
+
+  /** El cambio de estado y su registro en userHistory van en el mismo writeBatch — o se aplican los dos, o ninguno. */
+  private async setStatus(uid: string, status: 'approved' | 'rejected'): Promise<void> {
+    const previousStatus = this._users().find((u) => u.uid === uid)?.status;
+    const batch = writeBatch(this.firestore);
+    batch.update(doc(this.firestore, 'users', uid), {
       status,
       updatedAt: serverTimestamp(),
     });
+    const changedBy = this.authService.user()?.uid;
+    if (previousStatus && previousStatus !== status && changedBy) {
+      this.userHistoryService.record(
+        {
+          targetUid: uid,
+          targetName: this.targetLabel(uid),
+          field: 'status',
+          previousValue: previousStatus,
+          newValue: status,
+          changedBy,
+          changedByName: this.changedByLabel(),
+        },
+        batch,
+      );
+    }
+    await batch.commit();
   }
 
   /**
@@ -106,6 +144,7 @@ export class UsersService {
    */
   /** El cambio de rol y la revocación de accesos van en el mismo `writeBatch` — o se aplica todo, o no se aplica nada (ver el comentario en CoursesService.remove sobre por qué). */
   async updateRole(uid: string, role: UserRole): Promise<void> {
+    const previousRole = this._users().find((u) => u.uid === uid)?.role;
     const batch = writeBatch(this.firestore);
     if (role === 'student') {
       await this.revokeTeachingAccess(uid, batch);
@@ -116,6 +155,21 @@ export class UsersService {
       role,
       updatedAt: serverTimestamp(),
     });
+    const changedBy = this.authService.user()?.uid;
+    if (previousRole && previousRole !== role && changedBy) {
+      this.userHistoryService.record(
+        {
+          targetUid: uid,
+          targetName: this.targetLabel(uid),
+          field: 'role',
+          previousValue: previousRole,
+          newValue: role,
+          changedBy,
+          changedByName: this.changedByLabel(),
+        },
+        batch,
+      );
+    }
     await batch.commit();
   }
 

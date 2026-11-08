@@ -70,7 +70,19 @@
                   {{ initial(user) }}
                 </span>
                 <div class="min-w-0">
-                  <div class="truncate font-medium text-text">{{ user.displayName ?? '—' }}</div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="truncate font-medium text-text">{{
+                      user.displayName ?? '—'
+                    }}</span>
+                    <button
+                      type="button"
+                      class="shrink-0 text-text-muted hover:text-brand-600"
+                      [attr.aria-label]="i18n.t('adminUsers', 'historyButtonLabel')"
+                      (click)="openHistory(user)"
+                    >
+                      <svg lucideHistory [size]="14" aria-hidden="true"></svg>
+                    </button>
+                  </div>
                   <div class="truncate text-text-muted">{{ user.email ?? '—' }}</div>
                 </div>
               </div>
@@ -238,4 +250,46 @@
     "
     (cancelled)="confirmingRoleChangeFromStudent.set(null)"
   />
+}
+
+@if (historyUser(); as user) {
+  <app-modal
+    [open]="true"
+    [title]="i18n.t('adminUsers', 'historyModalTitle')"
+    (closed)="closeHistory()"
+  >
+    <div class="flex flex-col gap-3">
+      <p class="text-sm font-medium text-text">{{ user.displayName ?? user.email }}</p>
+      @if (userHistoryService.loading()) {
+        <app-loading />
+      } @else if (historyEntries().length === 0) {
+        <p class="text-sm text-text-muted">{{ i18n.t('adminUsers', 'historyEmpty') }}</p>
+      } @else {
+        <ul class="flex max-h-96 flex-col gap-2 overflow-y-auto">
+          @for (entry of historyEntries(); track entry.id) {
+            <li class="rounded-xl border border-border bg-slate-50 px-3 py-2 text-sm">
+              <div class="flex items-center justify-between gap-3">
+                <span class="font-medium text-text">{{ historyFieldLabel(entry.field) }}</span>
+                @if (entry.changedAt) {
+                  <span class="shrink-0 text-xs text-text-muted">{{
+                    entry.changedAt.toDate() | date: 'medium'
+                  }}</span>
+                }
+              </div>
+              <div class="mt-1 flex items-center gap-1.5 text-text-muted">
+                <span>{{ historyValueLabel(entry, entry.previousValue) }}</span>
+                <svg lucideArrowRight [size]="12" aria-hidden="true"></svg>
+                <span class="font-medium text-text">{{
+                  historyValueLabel(entry, entry.newValue)
+                }}</span>
+              </div>
+              <p class="mt-1 text-xs text-text-muted">
+                {{ i18n.t('adminUsers', 'historyBy') }} {{ entry.changedByName }}
+              </p>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </app-modal>
 }
