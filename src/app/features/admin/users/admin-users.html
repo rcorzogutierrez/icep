@@ -3,6 +3,43 @@
     <span pageTitle>{{ i18n.t('adminUsers', 'title') }}</span>
   </app-page-header>
 
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="relative max-w-xs min-w-56 flex-1">
+      <svg
+        lucideSearch
+        [size]="16"
+        class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted"
+        aria-hidden="true"
+      ></svg>
+      <input
+        type="text"
+        [placeholder]="i18n.t('adminUsers', 'searchPlaceholder')"
+        class="h-10 w-full rounded-xl border border-border bg-surface pr-3 pl-9 text-sm text-text shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+        [value]="search()"
+        (input)="onSearchInput($any($event.target).value)"
+      />
+    </div>
+
+    <app-select
+      class="block w-44"
+      [options]="roleFilterOptions()"
+      [value]="roleFilter()"
+      (valueChange)="onRoleFilterChange($event)"
+    />
+
+    <app-select
+      class="block w-44"
+      [options]="statusFilterOptions()"
+      [value]="statusFilter()"
+      (valueChange)="onStatusFilterChange($event)"
+    />
+
+    <span class="ml-auto text-sm text-text-muted whitespace-nowrap">
+      {{ filteredUsers().length }} {{ i18n.t('adminUsers', 'resultsOf') }}
+      {{ usersService.users().length }} {{ i18n.t('adminUsers', 'resultsUsers') }}
+    </span>
+  </div>
+
   <div class="overflow-x-auto rounded-2xl border border-border shadow-sm">
     <table class="w-full text-left text-sm">
       <thead class="border-b border-border bg-slate-50 text-text-muted">
@@ -16,7 +53,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (user of usersService.users(); track user.uid) {
+        @for (user of pageUsers(); track user.uid) {
           <tr class="border-b border-border transition-colors last:border-0 hover:bg-slate-50/60">
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
@@ -105,8 +142,10 @@
             <td colspan="6" class="px-4 py-6 text-center text-text-muted">
               @if (usersService.loading()) {
                 <app-loading />
+              } @else if (usersService.users().length === 0) {
+                {{ i18n.t('adminUsers', 'empty') }}
               } @else {
-                —
+                {{ i18n.t('adminUsers', 'noFilterResults') }}
               }
             </td>
           </tr>
@@ -114,6 +153,47 @@
       </tbody>
     </table>
   </div>
+
+  @if (totalPages() > 1) {
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <span class="text-sm text-text-muted">
+        {{ i18n.t('adminUsers', 'showing') }} {{ rangeStart() }}–{{ rangeEnd() }}
+        {{ i18n.t('adminUsers', 'resultsOf') }} {{ filteredUsers().length }}
+      </span>
+
+      <div class="flex items-center gap-1.5">
+        <button
+          type="button"
+          class="flex size-8 items-center justify-center rounded-xl border border-border bg-surface text-text-muted disabled:pointer-events-none disabled:opacity-50"
+          [disabled]="currentPage() === 1"
+          [attr.aria-label]="i18n.t('adminUsers', 'prevPage')"
+          (click)="prevPage()"
+        >
+          <svg lucideChevronLeft [size]="14" aria-hidden="true"></svg>
+        </button>
+
+        @for (n of pageNumbers(); track n) {
+          <app-button
+            size="sm"
+            [variant]="n === currentPage() ? 'primary' : 'secondary'"
+            (pressed)="goToPage(n)"
+          >
+            {{ n }}
+          </app-button>
+        }
+
+        <button
+          type="button"
+          class="flex size-8 items-center justify-center rounded-xl border border-border bg-surface text-text-muted disabled:pointer-events-none disabled:opacity-50"
+          [disabled]="currentPage() === totalPages()"
+          [attr.aria-label]="i18n.t('adminUsers', 'nextPage')"
+          (click)="nextPage()"
+        >
+          <svg lucideChevronRight [size]="14" aria-hidden="true"></svg>
+        </button>
+      </div>
+    </div>
+  }
 </app-page>
 
 @if (confirmingRemoveUser(); as user) {
