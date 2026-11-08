@@ -1,9 +1,12 @@
 name: Deploy to Firebase Hosting
 
 # Runs only after CI succeeds on a push to master -- never deploys code
-# that didn't pass typecheck/lint/test/build. Only pushes Hosting (same
-# scope as `npm run deploy`, see CLAUDE.md); firestore.rules/storage.rules/
-# firestore.indexes.json still need their own explicit deploy.
+# that didn't pass typecheck/lint/test/build. `npm run deploy` (used here
+# too) only pushes Hosting, same as its documented local/manual meaning in
+# CLAUDE.md -- so firestore.rules/storage.rules/firestore.indexes.json get
+# their own explicit `firebase deploy` step below, unconditionally on every
+# run (idempotent if nothing changed), instead of relying on someone
+# remembering to run it by hand after a rules PR merges.
 on:
   workflow_run:
     workflows: ['CI']
@@ -33,3 +36,6 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ICEP }}
 
       - run: npm run deploy
+
+      - name: Deploy Firestore/Storage rules and indexes
+        run: npx firebase deploy --only firestore:rules,firestore:indexes,storage:rules
