@@ -10,6 +10,9 @@ import { Loading } from '../../../shared/components/loading/loading';
 import { Select, type SelectOption } from '../../../shared/components/select/select';
 import { Page } from '../../../shared/layout/page/page';
 import { PageHeader } from '../../../shared/layout/page-header/page-header';
+import { IconChevronLeft, IconChevronRight, IconSearch } from '../../../shared/icons/icons';
+
+const PAGE_SIZE = 10;
 
 /** Chip de estado relleno (fondo + texto), mismo patrón que el resto de la app. */
 const STATUS_CLASS: Record<UserStatus, string> = {
@@ -22,7 +25,18 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [Button, ConfirmDialog, Loading, Select, DatePipe, Page, PageHeader],
+  imports: [
+    Button,
+    ConfirmDialog,
+    Loading,
+    Select,
+    DatePipe,
+    Page,
+    PageHeader,
+    IconChevronLeft,
+    IconChevronRight,
+    IconSearch,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-users.html',
 })
@@ -42,6 +56,71 @@ export class AdminUsers {
     user: UserProfile;
     role: UserRole;
   } | null>(null);
+
+  protected readonly search = signal('');
+  protected readonly roleFilter = signal<UserRole | 'all'>('all');
+  protected readonly statusFilter = signal<UserStatus | 'all'>('all');
+  protected readonly page = signal(1);
+  protected readonly pageSize = PAGE_SIZE;
+
+  protected readonly roleFilterOptions = computed<SelectOption<UserRole | 'all'>[]>(() => [
+    { value: 'all', label: this.i18n.t('adminUsers', 'allRoles') },
+    { value: 'student', label: this.i18n.t('adminUsers', 'roleStudent') },
+    { value: 'teacher', label: this.i18n.t('adminUsers', 'roleTeacher') },
+    { value: 'admin', label: this.i18n.t('adminUsers', 'roleAdmin') },
+  ]);
+
+  protected readonly statusFilterOptions = computed<SelectOption<UserStatus | 'all'>[]>(() => [
+    { value: 'all', label: this.i18n.t('adminUsers', 'allStatuses') },
+    { value: 'approved', label: this.i18n.t('adminUsers', 'statusApproved') },
+    { value: 'rejected', label: this.i18n.t('adminUsers', 'statusRejected') },
+  ]);
+
+  /** Búsqueda + filtros de rol/estado sobre el listado completo (volumen trivial, ver UsersService). */
+  protected readonly filteredUsers = computed<UserProfile[]>(() => {
+    const query = this.search().trim().toLowerCase();
+    const role = this.roleFilter();
+    const status = this.statusFilter();
+    return this.usersService.users().filter((user) => {
+      if (role !== 'all' && user.role !== role) {
+        return false;
+      }
+      if (status !== 'all' && user.status !== status) {
+        return false;
+      }
+      if (query) {
+        const name = (user.displayName ?? '').toLowerCase();
+        const email = (user.email ?? '').toLowerCase();
+        if (!name.includes(query) && !email.includes(query)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  });
+
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredUsers().length / this.pageSize)),
+  );
+
+  /** Si un filtro deja menos páginas que la actual, esta la acota — `page` solo mueve dentro de lo que realmente hay. */
+  protected readonly currentPage = computed(() => Math.min(this.page(), this.totalPages()));
+
+  protected readonly pageUsers = computed<UserProfile[]>(() => {
+    const start = (this.currentPage() - 1) * this.pageSize;
+    return this.filteredUsers().slice(start, start + this.pageSize);
+  });
+
+  protected readonly rangeStart = computed(() =>
+    this.filteredUsers().length === 0 ? 0 : (this.currentPage() - 1) * this.pageSize + 1,
+  );
+  protected readonly rangeEnd = computed(() =>
+    Math.min(this.currentPage() * this.pageSize, this.filteredUsers().length),
+  );
+
+  protected readonly pageNumbers = computed(() =>
+    Array.from({ length: this.totalPages() }, (_, i) => i + 1),
+  );
 
   /**
    * El Select ya "eligió" el rol nuevo en cuanto el usuario lo clickeó — el
@@ -152,5 +231,32 @@ export class AdminUsers {
     } finally {
       this.removingUid.set(null);
     }
+  }
+
+  protected onSearchInput(value: string): void {
+    this.search.set(value);
+    this.page.set(1);
+  }
+
+  protected onRoleFilterChange(value: UserRole | 'all' | undefined): void {
+    this.roleFilter.set(value ?? 'all');
+    this.page.set(1);
+  }
+
+  protected onStatusFilterChange(value: UserStatus | 'all' | undefined): void {
+    this.statusFilter.set(value ?? 'all');
+    this.page.set(1);
+  }
+
+  protected goToPage(n: number): void {
+    this.page.set(n);
+  }
+
+  protected prevPage(): void {
+    this.page.set(Math.max(1, this.currentPage() - 1));
+  }
+
+  protected nextPage(): void {
+    this.page.set(Math.min(this.totalPages(), this.currentPage() + 1));
   }
 }
