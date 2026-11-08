@@ -1,30 +1,44 @@
-import { Injectable, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import {
   collection,
   deleteDoc,
   doc,
   getDoc,
   onSnapshot,
+  query,
   serverTimestamp,
   setDoc,
+  where,
+  type Query,
   type WriteBatch,
 } from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
+import { CourseSubjectTeachersService } from '../courses/course-subject-teachers.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
 import { GradeHistoryService } from './grade-history.service';
 import type { Grade } from './grades.model';
+
+/** Límite de valores de Firestore para un filtro `in`. */
+const IN_QUERY_CHUNK_SIZE = 30;
 
 /**
  * Las notas de cada estudiante por OFERTA DE CURSO (materia dictada en un
  * curso puntual — ver grades.model.ts::Grade.courseId; la misma materia en
  * otro curso es un `Grade` totalmente distinto, aunque sea el mismo
  * estudiante). Solo el admin o el profesor asignado a esa oferta
- * (`courseSubjectTeachers`, ver firestore.rules) puede cargar/editar; el
- * listado en vivo se sincroniza completo para staff (volumen trivial) y se
- * filtra en el cliente con `forCourseSubject`. Un estudiante resuelve la
- * suya con `fetchOwn` (getDoc puntual por el id determinístico, sin
- * necesitar permiso de "list").
+ * (`courseSubjectTeachers`, ver firestore.rules) puede cargar/editar.
+ *
+ * Listado en vivo, acotado por rol: el admin sincroniza la colección
+ * completa (la necesita para cascadas cross-curso como
+ * `SubjectsService.remove`); un profesor solo las notas de los cursos donde
+ * dicta alguna materia (`courseSubjectTeachers` con su `teacherId`, el
+ * mismo alcance que `accessibleCourseIds` en Gradebook/MyStudents/
+ * MyCourseDetail), en bloques de `in` de a 30. Antes cada profesor
+ * descargaba las notas de toda la institución al entrar y recibía cada
+ * cambio de cualquier curso. Después se filtra en el cliente con
+ * `forCourseSubject`. Un estudiante resuelve la suya con `fetchOwn` (getDoc
+ * puntual por el id determinístico, sin necesitar permiso de "list").
  */
 @Injectable({ providedIn: 'root' })
 export class GradesService {
@@ -32,12 +46,35 @@ export class GradesService {
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
   private readonly gradeHistoryService = inject(GradeHistoryService);
+  private readonly courseSubjectTeachersService = inject(CourseSubjectTeachersService);
 
   private readonly _grades = signal<Grade[]>([]);
   private readonly _loading = signal(true);
 
   readonly grades = this._grades.asReadonly();
   readonly loading = this._loading.asReadonly();
+
+  /**
+   * Cursos del profesor logueado, ordenados y unidos en un string para que
+   * el listener solo se rehaga cuando cambia SU conjunto de cursos, no ante
+   * cualquier cambio en `courseSubjectTeachers` de otro profesor.
+   */
+  private readonly teacherCourseKey = computed(() => {
+    const uid = this.authService.user()?.uid;
+    if (!uid) {
+      return '';
+    }
+    return [
+      ...new Set(
+        this.courseSubjectTeachersService
+          .rows()
+          .filter((r) => r.teacherId === uid)
+          .map((r) => r.courseId),
+      ),
+    ]
+      .sort()
+      .join('|');
+  });
 
   constructor() {
     effect((onCleanup) => {
@@ -46,7 +83,8 @@ export class GradesService {
       }
 
       const user = this.authService.user();
-      const isStaff = this.userProfileService.isAdmin() || this.userProfileService.isTeacher();
+      const isAdmin = this.userProfileService.isAdmin();
+      const isStaff = isAdmin || this.userProfileService.isTeacher();
 
       if (!user || !isStaff) {
         this._grades.set([]);
@@ -54,21 +92,59 @@ export class GradesService {
         return;
       }
 
-      this._loading.set(true);
-      const unsubscribe = onSnapshot(
-        collection(this.firestore, 'grades'),
-        (snapshot) => {
-          this._grades.set(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Grade));
-          this._loading.set(false);
-        },
-        (error) => {
-          console.error('[GradesService] grades listener failed:', error);
+      let queries: Query[];
+      if (isAdmin) {
+        queries = [collection(this.firestore, 'grades')];
+      } else {
+        // Sin las filas del profesor todavía no se sabe qué cursos pedir.
+        if (this.courseSubjectTeachersService.loading()) {
+          this._loading.set(true);
+          return;
+        }
+        const courseIds = this.teacherCourseKey().split('|').filter(Boolean);
+        if (courseIds.length === 0) {
           this._grades.set([]);
           this._loading.set(false);
-        },
+          return;
+        }
+        queries = [];
+        for (let i = 0; i < courseIds.length; i += IN_QUERY_CHUNK_SIZE) {
+          queries.push(
+            query(
+              collection(this.firestore, 'grades'),
+              where('courseId', 'in', courseIds.slice(i, i + IN_QUERY_CHUNK_SIZE)),
+            ),
+          );
+        }
+      }
+
+      this._loading.set(true);
+      const parts = new Map<number, Grade[]>();
+      const unsubscribes = queries.map((q, index) =>
+        onSnapshot(
+          q,
+          (snapshot) => {
+            parts.set(
+              index,
+              snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Grade),
+            );
+            if (parts.size === queries.length) {
+              this._grades.set([...parts.values()].flat());
+              this._loading.set(false);
+            }
+          },
+          (error) => {
+            console.error('[GradesService] grades listener failed:', error);
+            parts.set(index, []);
+            if (parts.size === queries.length) {
+              this._grades.set([...parts.values()].flat());
+            }
+            this._loading.set(false);
+          },
+        ),
       );
 
-      onCleanup(() => unsubscribe());
+      onCleanup(() => unsubscribes.forEach((unsubscribe) => unsubscribe()));
     });
   }
 

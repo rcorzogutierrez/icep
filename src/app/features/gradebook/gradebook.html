@@ -898,7 +898,7 @@
       <p class="text-sm font-medium text-text">
         {{ student.displayName ?? student.email }}
       </p>
-      @if (gradeHistoryService.loading()) {
+      @if (history.loading()) {
         <app-loading />
       } @else if (historyEntries().length === 0) {
         <p class="text-sm text-text-muted">{{ i18n.t('gradebook', 'historyEmpty') }}</p>

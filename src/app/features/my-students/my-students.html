@@ -413,7 +413,7 @@
   >
     <div class="flex flex-col gap-3">
       <p class="text-sm font-medium text-text">{{ subject.subjectName }}</p>
-      @if (gradeHistoryService.loading()) {
+      @if (history.loading()) {
         <app-loading />
       } @else if (historyEntries().length === 0) {
         <p class="text-sm text-text-muted">{{ i18n.t('myStudents', 'historyEmpty') }}</p>
