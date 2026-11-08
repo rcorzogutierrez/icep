@@ -1,6 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AuthService } from '../../../core/auth/auth.service';
+import { CourseStudentsService } from '../../../core/courses/course-students.service';
+import { CourseTeachersService } from '../../../core/courses/course-teachers.service';
+import { CoursesService } from '../../../core/courses/courses.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import type { UserProfile, UserRole, UserStatus } from '../../../core/users/users.model';
 import { UsersService } from '../../../core/users/users.service';
@@ -44,6 +47,9 @@ export class AdminUsers {
   protected readonly usersService = inject(UsersService);
   protected readonly i18n = inject(I18nService);
   private readonly authService = inject(AuthService);
+  private readonly coursesService = inject(CoursesService);
+  private readonly courseStudentsService = inject(CourseStudentsService);
+  private readonly courseTeachersService = inject(CourseTeachersService);
 
   protected readonly statusClass = STATUS_CLASS;
 
@@ -60,6 +66,7 @@ export class AdminUsers {
   protected readonly search = signal('');
   protected readonly roleFilter = signal<UserRole | 'all'>('all');
   protected readonly statusFilter = signal<UserStatus | 'all'>('all');
+  protected readonly courseFilter = signal<string | 'all'>('all');
   protected readonly page = signal(1);
   protected readonly pageSize = PAGE_SIZE;
 
@@ -76,16 +83,45 @@ export class AdminUsers {
     { value: 'rejected', label: this.i18n.t('adminUsers', 'statusRejected') },
   ]);
 
-  /** Búsqueda + filtros de rol/estado sobre el listado completo (volumen trivial, ver UsersService). */
+  /** Un curso cuenta como vigente si no tiene fecha de fin, o si todavía no llegó — mismo criterio "fail-open" que el resto de la app (ver grades.util.ts::isCourseEndingSoon y MyStudents). */
+  protected readonly activeCourses = computed(() =>
+    this.coursesService
+      .courses()
+      .filter((course) => !course.endDate || course.endDate.toMillis() > Date.now())
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  );
+
+  protected readonly courseFilterOptions = computed<SelectOption<string | 'all'>[]>(() => [
+    { value: 'all', label: this.i18n.t('adminUsers', 'allCourses') },
+    ...this.activeCourses().map((course) => ({ value: course.id, label: course.name })),
+  ]);
+
+  /** uids de estudiantes matriculados + profesores asignados al curso elegido (null = filtro de curso apagado). */
+  private readonly courseMemberUids = computed<Set<string> | null>(() => {
+    const courseId = this.courseFilter();
+    if (courseId === 'all') {
+      return null;
+    }
+    const uids = new Set<string>();
+    this.courseStudentsService.forCourse(courseId).forEach((cs) => uids.add(cs.studentUid));
+    this.courseTeachersService.forCourse(courseId).forEach((ct) => uids.add(ct.teacherId));
+    return uids;
+  });
+
+  /** Búsqueda + filtros de rol/estado/curso sobre el listado completo (volumen trivial, ver UsersService). */
   protected readonly filteredUsers = computed<UserProfile[]>(() => {
     const query = this.search().trim().toLowerCase();
     const role = this.roleFilter();
     const status = this.statusFilter();
+    const courseMembers = this.courseMemberUids();
     return this.usersService.users().filter((user) => {
       if (role !== 'all' && user.role !== role) {
         return false;
       }
       if (status !== 'all' && user.status !== status) {
+        return false;
+      }
+      if (courseMembers && !courseMembers.has(user.uid)) {
         return false;
       }
       if (query) {
@@ -245,6 +281,11 @@ export class AdminUsers {
 
   protected onStatusFilterChange(value: UserStatus | 'all' | undefined): void {
     this.statusFilter.set(value ?? 'all');
+    this.page.set(1);
+  }
+
+  protected onCourseFilterChange(value: string | undefined): void {
+    this.courseFilter.set(value ?? 'all');
     this.page.set(1);
   }
 
