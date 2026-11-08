@@ -89,7 +89,7 @@ export class Gradebook {
   protected readonly categoriesService = inject(GradeCategoriesService);
   protected readonly assignmentsService = inject(AssignmentsService);
   protected readonly gradesService = inject(GradesService);
-  protected readonly gradeHistoryService = inject(GradeHistoryService);
+  private readonly gradeHistoryService = inject(GradeHistoryService);
   protected readonly gradeCommentsService = inject(GradeCommentsService);
   protected readonly resourcesService = inject(SubjectResourcesService);
   protected readonly usersService = inject(UsersService);
@@ -599,12 +599,15 @@ export class Gradebook {
     email?: string | null;
   } | null>(null);
 
-  protected readonly historyEntries = computed(() => {
+  /** Consulta acotada: solo escucha mientras el modal de historial está abierto. */
+  protected readonly history = this.gradeHistoryService.watchStudent(() => {
     const student = this.historyStudent();
     return student
-      ? this.gradeHistoryService.forStudent(this.courseId(), this.subjectId(), student.uid)
-      : [];
+      ? { courseId: this.courseId(), subjectId: this.subjectId(), studentUid: student.uid }
+      : null;
   });
+
+  protected readonly historyEntries = this.history.entries;
 
   protected openHistory(student: {
     uid: string;

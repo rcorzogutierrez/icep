@@ -123,7 +123,7 @@ export class MyCourseDetail {
   private readonly gradeCategoriesService = inject(GradeCategoriesService);
   private readonly assignmentsService = inject(AssignmentsService);
   private readonly gradesService = inject(GradesService);
-  protected readonly gradeHistoryService = inject(GradeHistoryService);
+  private readonly gradeHistoryService = inject(GradeHistoryService);
   protected readonly gradeCommentsService = inject(GradeCommentsService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
@@ -284,13 +284,16 @@ export class MyCourseDetail {
     null,
   );
 
-  protected readonly historyEntries = computed(() => {
+  /** Consulta acotada: solo escucha mientras el modal de historial está abierto. */
+  protected readonly history = this.gradeHistoryService.watchStudent(() => {
     const subject = this.historySubject();
     const student = this.openStudent();
     return subject && student
-      ? this.gradeHistoryService.forStudent(this.courseId(), subject.subjectId, student.uid)
-      : [];
+      ? { courseId: this.courseId(), subjectId: subject.subjectId, studentUid: student.uid }
+      : null;
   });
+
+  protected readonly historyEntries = this.history.entries;
 
   protected openHistory(subjectId: string, subjectName: string): void {
     this.historySubject.set({ subjectId, subjectName });

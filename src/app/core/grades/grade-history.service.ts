@@ -1,9 +1,24 @@
-import { Injectable, effect, inject, signal } from '@angular/core';
-import { collection, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import { Injectable, effect, inject, signal, type Signal } from '@angular/core';
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from 'firebase/firestore';
 import { AuthService } from '../auth/auth.service';
 import { FIREBASE_FIRESTORE } from '../firebase/firebase.tokens';
 import { UserProfileService } from '../users/user-profile.service';
 import type { GradeHistoryEntry } from './grade-history.model';
+
+/** Estudiante + oferta de curso cuyo historial se quiere ver. */
+export interface GradeHistoryTarget {
+  courseId: string;
+  subjectId: string;
+  studentUid: string;
+}
 
 /**
  * Auditoría de cambios de nota (ver grade-history.model.ts). Solo staff
@@ -11,6 +26,14 @@ import type { GradeHistoryEntry } from './grade-history.model';
  * revisión, no algo que el estudiante consulta directo); `GradesService`
  * es el único que escribe acá, un registro por cada cambio real de
  * puntaje (ver `setScore`).
+ *
+ * A diferencia del resto de los servicios de `core/`, este NO mantiene un
+ * listener global de la colección: `gradeHistory` solo crece (nunca se
+ * borra nada) y se consulta para UN estudiante a la vez, desde un modal.
+ * Sincronizarla entera en cada sesión de staff hacía que cada profesor
+ * descargara el historial completo de la institución al entrar. Ahora cada
+ * modal abre su propia consulta acotada con `watchStudent` y la cierra al
+ * cerrarse.
  */
 @Injectable({ providedIn: 'root' })
 export class GradeHistoryService {
@@ -18,54 +41,61 @@ export class GradeHistoryService {
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
 
-  private readonly _entries = signal<GradeHistoryEntry[]>([]);
-  private readonly _loading = signal(true);
+  /**
+   * Historial en vivo de UN estudiante en una oferta de curso, los cambios
+   * más nuevos primero. Escucha solo mientras `target()` no sea null (es
+   * decir, mientras el modal esté abierto) y se cierra solo cuando el
+   * target cambia o el componente se destruye.
+   *
+   * Llamar en un contexto de inyección (inicializador de campo de un
+   * componente). La consulta usa solo igualdades, así que no necesita
+   * índice compuesto.
+   */
+  watchStudent(target: () => GradeHistoryTarget | null): {
+    entries: Signal<GradeHistoryEntry[]>;
+    loading: Signal<boolean>;
+  } {
+    const entries = signal<GradeHistoryEntry[]>([]);
+    const loading = signal(false);
 
-  readonly entries = this._entries.asReadonly();
-  readonly loading = this._loading.asReadonly();
-
-  constructor() {
     effect((onCleanup) => {
-      if (this.authService.initializing() || this.userProfileService.loading()) {
-        return;
-      }
-
-      const user = this.authService.user();
+      const current = target();
       const isStaff = this.userProfileService.isAdmin() || this.userProfileService.isTeacher();
 
-      if (!user || !isStaff) {
-        this._entries.set([]);
-        this._loading.set(false);
+      if (!current || !this.authService.user() || !isStaff) {
+        entries.set([]);
+        loading.set(false);
         return;
       }
 
-      this._loading.set(true);
+      entries.set([]);
+      loading.set(true);
       const unsubscribe = onSnapshot(
-        collection(this.firestore, 'gradeHistory'),
+        query(
+          collection(this.firestore, 'gradeHistory'),
+          where('courseId', '==', current.courseId),
+          where('subjectId', '==', current.subjectId),
+          where('studentUid', '==', current.studentUid),
+        ),
         (snapshot) => {
-          this._entries.set(
-            snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as GradeHistoryEntry),
+          entries.set(
+            snapshot.docs
+              .map((d) => ({ id: d.id, ...d.data() }) as GradeHistoryEntry)
+              .sort((a, b) => (b.changedAt?.toMillis() ?? 0) - (a.changedAt?.toMillis() ?? 0)),
           );
-          this._loading.set(false);
+          loading.set(false);
         },
         (error) => {
           console.error('[GradeHistoryService] history listener failed:', error);
-          this._entries.set([]);
-          this._loading.set(false);
+          entries.set([]);
+          loading.set(false);
         },
       );
 
       onCleanup(() => unsubscribe());
     });
-  }
 
-  /** Cambios de nota de un estudiante en una oferta de curso, los más nuevos primero. */
-  forStudent(courseId: string, subjectId: string, studentUid: string): GradeHistoryEntry[] {
-    return this._entries()
-      .filter(
-        (e) => e.courseId === courseId && e.subjectId === subjectId && e.studentUid === studentUid,
-      )
-      .sort((a, b) => (b.changedAt?.toMillis() ?? 0) - (a.changedAt?.toMillis() ?? 0));
+    return { entries: entries.asReadonly(), loading: loading.asReadonly() };
   }
 
   record(entry: Omit<GradeHistoryEntry, 'id' | 'changedAt'>): Promise<void> {
