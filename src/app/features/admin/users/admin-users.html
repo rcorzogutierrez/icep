@@ -34,6 +34,13 @@
       (valueChange)="onStatusFilterChange($event)"
     />
 
+    <app-select
+      class="block w-48"
+      [options]="courseFilterOptions()"
+      [value]="courseFilter()"
+      (valueChange)="onCourseFilterChange($event)"
+    />
+
     <span class="ml-auto text-sm text-text-muted whitespace-nowrap">
       {{ filteredUsers().length }} {{ i18n.t('adminUsers', 'resultsOf') }}
       {{ usersService.users().length }} {{ i18n.t('adminUsers', 'resultsUsers') }}
