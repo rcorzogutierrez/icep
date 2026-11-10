@@ -37,5 +37,20 @@ jobs:
 
       - run: npm run deploy
 
-      - name: Deploy Firestore/Storage rules and indexes
-        run: npx firebase deploy --only firestore:rules,firestore:indexes,storage:rules
+      # Firestore and Storage deploy are split into separate `firebase
+      # deploy` invocations on purpose: the CLI groups all `--only` targets
+      # into one deploy and aborts the WHOLE thing on the first target's
+      # pre-check failure, so bundling them meant a Storage-only permission
+      # problem (service account missing access to check
+      # firebasestorage.googleapis.com's enablement) silently also skipped
+      # the Firestore rules/indexes deploy. Firestore rules change with
+      # nearly every feature PR and must not depend on Storage's deploy
+      # succeeding; storage.rules is a static deny-all that rarely changes,
+      # so `continue-on-error` there avoids a Storage-only permissions issue
+      # marking this whole run red.
+      - name: Deploy Firestore rules and indexes
+        run: npx firebase deploy --only firestore:rules,firestore:indexes
+
+      - name: Deploy Storage rules
+        continue-on-error: true
+        run: npx firebase deploy --only storage:rules
