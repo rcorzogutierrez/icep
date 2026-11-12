@@ -50,6 +50,7 @@
         <tr>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colName') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colCode') }}</th>
+          <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colCourses') }}</th>
           <th class="px-4 py-2 font-medium">{{ i18n.t('adminSubjects', 'colActions') }}</th>
         </tr>
       </thead>
@@ -77,6 +78,27 @@
               <td class="px-4 py-3 font-medium text-text">{{ subject.name }}</td>
               <td class="px-4 py-3 font-mono text-text-muted">{{ subject.code }}</td>
             }
+
+            <td class="px-4 py-3">
+              @let status = courseStatusFor(subject);
+              <div class="flex flex-col items-start gap-1">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap"
+                  [class]="status.chipClass"
+                >
+                  <span class="size-1.5 shrink-0 rounded-full" [class]="status.dotClass"></span>
+                  {{ status.label }}
+                </span>
+                @if (status.detail) {
+                  <span
+                    class="block max-w-[220px] truncate text-xs text-text-muted"
+                    [title]="status.detailFull"
+                  >
+                    {{ status.detail }}
+                  </span>
+                }
+              </div>
+            </td>
 
             <td class="px-4 py-3">
               @if (editingId() === subject.id) {
@@ -126,7 +148,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="3" class="px-4 py-6 text-center text-text-muted">
+            <td colspan="4" class="px-4 py-6 text-center text-text-muted">
               @if (subjectsService.loading()) {
                 <app-loading />
               } @else {
