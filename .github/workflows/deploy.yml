@@ -43,12 +43,20 @@ jobs:
       # pre-check failure, so bundling them meant a Storage-only permission
       # problem (service account missing access to check
       # firebasestorage.googleapis.com's enablement) silently also skipped
-      # the Firestore rules/indexes deploy. Firestore rules change with
-      # nearly every feature PR and must not depend on Storage's deploy
-      # succeeding; storage.rules is a static deny-all that rarely changes,
-      # so `continue-on-error` there avoids a Storage-only permissions issue
-      # marking this whole run red.
+      # the Firestore rules/indexes deploy. KNOWN ISSUE as of 2026-11: the
+      # service account (FIREBASE_SERVICE_ACCOUNT_ICEP) currently lacks the
+      # `serviceusage.services.get` permission on the icep-44c27 GCP project
+      # itself, so BOTH steps below fail their enablement pre-check with
+      # "403 Permission denied to get service [...]" -- this needs a real
+      # IAM grant (e.g. Service Usage Consumer/Viewer) on that service
+      # account in Google Cloud Console, which nothing in this repo can fix.
+      # `continue-on-error` is on both steps for that reason: a step failing
+      # without it skips every later step in the same job, so without this
+      # a Firestore pre-check failure would also hide whether Storage's
+      # independently succeeds (and vice versa) once the permission is
+      # granted and only one of the two still has a real problem.
       - name: Deploy Firestore rules and indexes
+        continue-on-error: true
         run: npx firebase deploy --only firestore:rules,firestore:indexes
 
       - name: Deploy Storage rules
