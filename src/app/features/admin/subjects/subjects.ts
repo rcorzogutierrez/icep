@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { CourseSubjectTeachersService } from '../../../core/courses/course-subject-teachers.service';
 import { CourseSubjectsService } from '../../../core/courses/course-subjects.service';
 import { CoursesService } from '../../../core/courses/courses.service';
+import { isCourseActive } from '../../../core/courses/courses.util';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SubjectsService } from '../../../core/subjects/subjects.service';
 import type { Subject } from '../../../core/subjects/subjects.model';
@@ -22,6 +23,22 @@ interface SubjectOffering {
   courseName: string;
   teacherName: string | null;
 }
+
+/** Chip de la columna "Cursos" en la tabla: estado agregado de todas las ofertas de una materia. */
+interface SubjectCourseStatus {
+  chipClass: string;
+  dotClass: string;
+  label: string;
+  detail: string | null;
+  detailFull: string;
+}
+
+const ACTIVE_CHIP_CLASS = 'bg-status-active-soft text-status-active';
+const ACTIVE_DOT_CLASS = 'bg-status-active';
+const NEUTRAL_CHIP_CLASS = 'bg-slate-100 text-text-muted';
+const NEUTRAL_DOT_CLASS = 'bg-slate-300';
+/** Cuántos nombres de curso se listan antes de resumir el resto en "+N más". */
+const MAX_DETAIL_NAMES = 2;
 
 /** Panel de admin: crear/editar materias. Quién las dicta se asigna desde acá (modal "Gestionar") o desde Cursos. */
 @Component({
@@ -96,6 +113,63 @@ export class AdminSubjects {
       .filter((course) => !offeredCourseIds.has(course.id))
       .map((course) => ({ value: course.id, label: course.name }));
   });
+
+  /**
+   * Estado agregado de las ofertas de una materia para el chip de la columna
+   * "Cursos" — evita tener que entrar a "Gestionar" materia por materia para
+   * saber cuáles tienen curso cursando hoy. Mismo criterio "fail-open" de
+   * vigencia que `activeCourses` en AdminUsers (ver courses.util.ts).
+   */
+  protected courseStatusFor(subject: Subject): SubjectCourseStatus {
+    const courses = this.coursesService.courses();
+    const offerings = this.courseSubjectsService.forSubject(subject.id).map((cs) => {
+      const course = courses.find((c) => c.id === cs.courseId);
+      return {
+        name: course?.name ?? cs.courseId,
+        active: isCourseActive(course?.endDate ?? null),
+      };
+    });
+
+    const active = offerings.filter((o) => o.active);
+    if (active.length > 0) {
+      const names = active.map((o) => o.name);
+      return {
+        chipClass: ACTIVE_CHIP_CLASS,
+        dotClass: ACTIVE_DOT_CLASS,
+        label: `${active.length} ${this.i18n.t('adminSubjects', 'coursesActiveLabel')}`,
+        detail: this.summarizeNames(names),
+        detailFull: names.join(', '),
+      };
+    }
+
+    const finished = offerings.filter((o) => !o.active);
+    if (finished.length > 0) {
+      const names = finished.map((o) => o.name);
+      return {
+        chipClass: NEUTRAL_CHIP_CLASS,
+        dotClass: NEUTRAL_DOT_CLASS,
+        label: this.i18n.t('adminSubjects', 'coursesNoneActive'),
+        detail: this.summarizeNames(names),
+        detailFull: names.join(', '),
+      };
+    }
+
+    return {
+      chipClass: NEUTRAL_CHIP_CLASS,
+      dotClass: NEUTRAL_DOT_CLASS,
+      label: this.i18n.t('adminSubjects', 'coursesUnassigned'),
+      detail: null,
+      detailFull: '',
+    };
+  }
+
+  private summarizeNames(names: string[]): string {
+    const shown = names.slice(0, MAX_DETAIL_NAMES);
+    const extra = names.length - shown.length;
+    return extra > 0
+      ? `${shown.join(', ')} +${extra} ${this.i18n.t('adminSubjects', 'coursesMoreSuffix')}`
+      : shown.join(', ');
+  }
 
   /** El código ya existe en otra materia (comparación case-insensitive, excluyendo `excludeId`). */
   private isCodeTaken(code: string, excludeId?: string): boolean {

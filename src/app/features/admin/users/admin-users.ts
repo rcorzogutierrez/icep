@@ -4,6 +4,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { CourseStudentsService } from '../../../core/courses/course-students.service';
 import { CourseTeachersService } from '../../../core/courses/course-teachers.service';
 import { CoursesService } from '../../../core/courses/courses.service';
+import { isCourseActive } from '../../../core/courses/courses.util';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import type { UserHistoryEntry } from '../../../core/users/user-history.model';
 import { UserHistoryService } from '../../../core/users/user-history.service';
@@ -101,7 +102,7 @@ export class AdminUsers {
   protected readonly activeCourses = computed(() =>
     this.coursesService
       .courses()
-      .filter((course) => !course.endDate || course.endDate.toMillis() > Date.now())
+      .filter((course) => isCourseActive(course.endDate))
       .sort((a, b) => a.name.localeCompare(b.name)),
   );
 
